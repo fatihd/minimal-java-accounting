@@ -1,3 +1,5 @@
 dependencies {
     api project(':ports.messaging')
+
+    testImplementation(testFixtures(project(':ports.messaging')))
 }

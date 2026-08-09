@@ -105,3 +105,13 @@ HTTP, workers, and JMX registration together.
 `WorkerGroup` owns only lifecycle and receives poll functions from composition.
 Startup account data remains configuration rather than API behavior.
 `./gradlew test` completes successfully on Java 25.
+
+## 2026-08-09 — Export messaging adapter contracts
+
+`ports.messaging` now exports queue and topic behavior tests. Queue contracts
+cover receive limits, ACK removal, and NACK redelivery. Topic contracts cover
+independent subscriptions. They intentionally make no ordering or exactly-once
+claim.
+
+The in-memory adapter runs the contracts in addition to its focused poller
+tests. Every later broker adapter must do the same.
