@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.util.function.IntSupplier;
 
 @RequiredArgsConstructor
-final class InMemoryAccounting {
+final class InMemoryAccounting implements AccountingRuntime {
     private static final int MAXIMUM_POLL_CYCLES = 1_000;
 
     @NonNull
@@ -27,19 +27,23 @@ final class InMemoryAccounting {
     @NonNull
     private final List<IntSupplier> pollers;
 
-    AccountRepository accounts() {
+    @Override
+    public AccountRepository accounts() {
         return accounts;
     }
 
-    TransactionProcessor transactions() {
+    @Override
+    public TransactionProcessor transactions() {
         return transactions;
     }
 
-    MetricsRegistry metrics() {
+    @Override
+    public MetricsRegistry metrics() {
         return metrics;
     }
 
-    WorkerGroup startWorkers() {
+    @Override
+    public WorkerGroup startWorkers() {
         return WorkerGroup.start(pollers, Duration.ofMillis(10));
     }
 

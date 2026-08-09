@@ -150,3 +150,17 @@ owns a small Core session so ACK and NACK remain independent within a batch.
 The shared queue and topic contracts pass against Apache Artemis 2.55.0. An
 additional container test round-trips a real business message containing
 `Money` through adapter-local JSON serialization.
+
+## 2026-08-09 — Compose and restart the durable runtime
+
+The durable composition selects JDBC repositories, PostgreSQL outbox senders,
+Artemis command queues, Artemis event topics, typed subscriptions, handlers,
+and workers. External submission and every asynchronous handler run inside the
+JDBC transaction boundary. The outbox publisher runs independently.
+
+Durable server credentials come from environment variables. Startup account
+files are idempotent by account number. A container end-to-end test submits
+through real HTTP, stops before publication, recreates the runtime, completes
+from the retained outbox, and proves duplicate submission does not settle
+balances twice. The terminal convention remains journal retained, terminal
+account holds retained, and transient transaction removed.

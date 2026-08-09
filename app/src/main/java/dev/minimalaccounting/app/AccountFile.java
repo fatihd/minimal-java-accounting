@@ -3,6 +3,7 @@ package dev.minimalaccounting.app;
 import dev.minimalaccounting.shared.AccountNumber;
 import dev.minimalaccounting.shared.Money;
 import dev.minimalaccounting.core.account.Account;
+import dev.minimalaccounting.core.account.AccountReference;
 import dev.minimalaccounting.ports.persistence.AccountRepository;
 import lombok.NonNull;
 
@@ -43,7 +44,11 @@ final class AccountFile {
                 continue;
             }
             try {
-                accounts.add(account(value));
+                Account account = account(value);
+                if (accounts.get(AccountReference.number(account.getAccountNumber()))
+                        .isEmpty()) {
+                    accounts.add(account);
+                }
                 accountCount++;
             } catch (RuntimeException invalid) {
                 throw invalid(index, message(invalid));

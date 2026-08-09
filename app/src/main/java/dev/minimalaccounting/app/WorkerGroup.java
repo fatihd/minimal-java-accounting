@@ -65,7 +65,13 @@ final class WorkerGroup implements AutoCloseable {
                     LockSupport.parkNanos(idleDelayNanoseconds);
                 }
             } catch (RuntimeException failure) {
-                LOGGER.log(System.Logger.Level.ERROR, "Accounting worker failed");
+                if (!running.get() && Thread.currentThread().isInterrupted()) {
+                    return;
+                }
+                LOGGER.log(
+                        System.Logger.Level.ERROR,
+                        "Accounting worker failed",
+                        failure);
                 if (idleDelayNanoseconds > 0) {
                     LockSupport.parkNanos(idleDelayNanoseconds);
                 }

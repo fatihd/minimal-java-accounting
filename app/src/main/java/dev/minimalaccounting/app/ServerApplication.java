@@ -4,22 +4,32 @@ import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
 import dev.minimalaccounting.adapters.api.http.HttpTransactionServerFactory;
 import dev.minimalaccounting.observability.JmxMetrics;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-@RequiredArgsConstructor
 final class ServerApplication {
     private static final int DEFAULT_PORT = 8080;
     private static final int MAXIMUM_BODY_BYTES = 1_048_576;
 
-    @NonNull
     private final Clock clock;
+    private final Map<String, String> environment;
+
+    ServerApplication(@NonNull Clock clock) {
+        this(clock, System.getenv());
+    }
+
+    ServerApplication(
+            @NonNull Clock clock,
+            @NonNull Map<String, String> environment) {
+        this.clock = clock;
+        this.environment = environment;
+    }
 
     int run(String[] arguments, PrintStream out, PrintStream error) {
         Configuration configuration;
@@ -39,23 +49,38 @@ final class ServerApplication {
             printUsage(error);
             return 2;
         }
-        if (!"memory".equals(configuration.runtime())) {
-            error.println("Invalid server configuration: durable runtime is not available");
+        if (!"memory".equals(configuration.runtime())
+                && !"durable".equals(configuration.runtime())) {
+            error.println("Invalid server configuration: runtime must be memory or durable");
             return 2;
         }
 
-        var accounting = InMemoryAccountingFactory.create(clock);
+        DurableRuntimeConfiguration durable = null;
+        if ("durable".equals(configuration.runtime())) {
+            try {
+                durable = DurableRuntimeConfiguration.from(environment);
+            } catch (IllegalArgumentException invalid) {
+                error.println("Invalid durable configuration: " + invalid.getMessage());
+                return 2;
+            }
+        }
+
+        AccountingRuntime accounting;
         try {
+            accounting = durable == null
+                    ? InMemoryAccountingFactory.create(clock)
+                    : DurableAccountingFactory.create(durable, clock);
             AccountFile.load(configuration.accounts(), accounting.accounts());
         } catch (IOException | RuntimeException failure) {
-            error.println("Cannot load accounts: " + message(failure));
+            error.println("Cannot initialize accounting: " + message(failure));
             return 1;
         }
 
         var stopped = new CountDownLatch(1);
         Thread shutdown = new Thread(stopped::countDown, "accounting-shutdown");
         Runtime.getRuntime().addShutdownHook(shutdown);
-        try (var metrics = JmxMetrics.register(accounting.metrics());
+        try (accounting;
+             var metrics = JmxMetrics.register(accounting.metrics());
              var workers = accounting.startWorkers();
              var server = HttpTransactionServerFactory.create(
                      new HttpConfiguration(
@@ -89,9 +114,14 @@ final class ServerApplication {
         output.println("Usage: accounting server --accounts <file> [options]");
         output.println();
         output.println("Options:");
-        output.println("  --runtime memory     Runtime implementation (default: memory)");
+        output.println("  --runtime memory|durable  Runtime implementation (default: memory)");
         output.println("  --host <address>     Listen address (default: 127.0.0.1)");
         output.println("  --port <port>        Listen port (default: 8080)");
+        output.println();
+        output.println("Durable mode environment:");
+        output.println("  ACCOUNTING_DATABASE_URL, _USER, _PASSWORD");
+        output.println("  ACCOUNTING_BROKER_URL, _USER, _PASSWORD");
+        output.println("  ACCOUNTING_DESTINATION_PREFIX (optional)");
     }
 
     private static String message(Exception error) {

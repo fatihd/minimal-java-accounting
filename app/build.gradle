@@ -11,8 +11,36 @@ dependencies {
     implementation project(':adapters.api.console')
     implementation project(':adapters.api.http')
     implementation project(':adapters.persistence.in-memory')
+    implementation project(':adapters.persistence.postgresql')
     implementation project(':adapters.messaging.in-memory')
+    implementation project(':adapters.messaging.postgresql')
+    implementation project(':adapters.messaging.artemis')
     implementation project(':observability')
+
+    testImplementation 'org.testcontainers:testcontainers:2.0.5'
+    testImplementation 'org.testcontainers:testcontainers-postgresql:2.0.5'
+}
+
+sourceSets {
+    integrationTest {
+        java.srcDir 'src/integrationTest/java'
+        resources.srcDir 'src/integrationTest/resources'
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+tasks.register('integrationTest', Test) {
+    group = 'verification'
+    description = 'Runs the durable application against PostgreSQL and Artemis.'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    shouldRunAfter tasks.named('test')
 }
 
 application {

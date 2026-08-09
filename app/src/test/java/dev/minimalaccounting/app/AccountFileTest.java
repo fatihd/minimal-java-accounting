@@ -25,6 +25,7 @@ class AccountFileTest {
         ConcurrentAccountRepository accounts = new ConcurrentAccountRepository();
 
         AccountFile.load(file, accounts);
+        AccountFile.load(file, accounts);
 
         var account = accounts.get(AccountReference.number(new AccountNumber("ACCOUNT01")))
                 .orElseThrow();
