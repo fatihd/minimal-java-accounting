@@ -57,6 +57,10 @@ public final class JdbcTransactions implements TransactionBoundary {
         }
     }
 
+    public <T> T withRequiredConnection(@NonNull SqlFunction<T> work) {
+        return apply(work, requiredConnection());
+    }
+
     public Connection requiredConnection() {
         Connection connection = current.get();
         if (connection == null) {

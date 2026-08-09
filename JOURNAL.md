@@ -127,3 +127,15 @@ An explicit JDBC transaction boundary reuses one connection for nested work.
 Container tests cover rollback, stale updates, duplicate keys, child
 reconstruction, removal, and idempotent schema installation. Normal `test`
 remains Docker-free.
+
+## 2026-08-09 — Add the transactional outbox
+
+Added a PostgreSQL messaging adapter whose `Sender<T>` inserts typed JSON only
+inside the active JDBC transaction. A transactional handler decorator places
+the complete application handler around repository and outbox work.
+
+The publisher locks pending rows with `SKIP LOCKED`, routes payloads to concrete
+transport senders, and marks rows only after send success. The bridge is
+explicitly at-least-once: business idempotency handles the broker-success and
+database-rollback duplicate window. Container tests cover commit, rollback,
+refusal outside a transaction, retry, route validation, and schema installation.
