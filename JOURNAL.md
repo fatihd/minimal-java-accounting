@@ -115,3 +115,15 @@ claim.
 
 The in-memory adapter runs the contracts in addition to its focused poller
 tests. Every later broker adapter must do the same.
+
+## 2026-08-09 — Add PostgreSQL repositories
+
+Added plain JDBC account, transaction, and journal repositories with a
+checksummed, advisory-locked schema. They reconstruct detached aggregate
+graphs, enforce optimistic revisions, preserve natural-key uniqueness, and run
+the same explicit-update contract as the memory adapter.
+
+An explicit JDBC transaction boundary reuses one connection for nested work.
+Container tests cover rollback, stale updates, duplicate keys, child
+reconstruction, removal, and idempotent schema installation. Normal `test`
+remains Docker-free.

@@ -1,0 +1,30 @@
+dependencies {
+    api project(':core')
+    api project(':ports.persistence')
+    implementation 'org.postgresql:postgresql:42.7.13'
+
+    testImplementation(testFixtures(project(':ports.persistence')))
+    testImplementation 'org.testcontainers:testcontainers-postgresql:2.0.5'
+}
+
+sourceSets {
+    integrationTest {
+        java.srcDir 'src/integrationTest/java'
+        resources.srcDir 'src/integrationTest/resources'
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+tasks.register('integrationTest', Test) {
+    group = 'verification'
+    description = 'Runs the PostgreSQL adapter tests against a container.'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    shouldRunAfter tasks.named('test')
+}
