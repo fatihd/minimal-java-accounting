@@ -201,3 +201,12 @@ maintenance updates. Direct-push CI now runs only for `main`; pull requests keep
 their own unit and integration run without a duplicate branch-push run. The
 license file matches GitHub's canonical Apache 2.0 template exactly, and
 hosting metadata identifies it as `Apache-2.0`.
+
+## 2026-08-10 — Consolidate functional boundary observation
+
+Replaced one observability class per port with a single package-private
+operation observer over JDK `Consumer`, `IntFunction`, `Supplier`, and
+`ToLongFunction`. The public observability factory adapts business port methods
+by method reference; the ports retain their business vocabulary and do not
+inherit generic JDK function names. Receiver successes now use the same debug
+logging path as submission, handling, and sending.
