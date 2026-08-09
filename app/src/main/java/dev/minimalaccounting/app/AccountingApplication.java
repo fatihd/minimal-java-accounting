@@ -7,10 +7,22 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 final class AccountingApplication {
     int run(String[] arguments, PrintStream out, PrintStream error) {
+        if (arguments.length > 0 && "server".equals(arguments[0])) {
+            return new ServerApplication(Clock.systemUTC())
+                    .run(Arrays.copyOfRange(arguments, 1, arguments.length), out, error);
+        }
+        String[] consoleArguments = arguments.length > 0 && "console".equals(arguments[0])
+                ? Arrays.copyOfRange(arguments, 1, arguments.length)
+                : arguments;
+        return runConsole(consoleArguments, out, error);
+    }
+
+    private int runConsole(String[] arguments, PrintStream out, PrintStream error) {
         Arguments parsed;
         try {
             parsed = Arguments.parse(arguments);
@@ -60,7 +72,8 @@ final class AccountingApplication {
     }
 
     private static void printUsage(PrintStream output) {
-        output.println("Usage: accounting --accounts <file> <command>");
+        output.println("Usage: accounting [console] --accounts <file> <command>");
+        output.println("       accounting server --accounts <file> [options]");
         output.println();
         ConsoleTransactionAdapter.printUsage(output);
     }

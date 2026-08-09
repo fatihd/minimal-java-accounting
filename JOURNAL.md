@@ -94,3 +94,14 @@ explicit adapter factory. Socket-level tests cover successful translation,
 method and media rejection, malformed and oversized bodies, business errors,
 and internal failures. `./gradlew :adapters.api.http:test` completes
 successfully on Java 25.
+
+## 2026-08-09 — Add explicit console and server runtime modes
+
+The executable now selects between the one-shot console and long-running HTTP
+server. The memory server composes the same transaction processor, starts each
+adapter poller on a virtual worker, registers the metrics MXBean, and closes
+HTTP, workers, and JMX registration together.
+
+`WorkerGroup` owns only lifecycle and receives poll functions from composition.
+Startup account data remains configuration rather than API behavior.
+`./gradlew test` completes successfully on Java 25.

@@ -23,6 +23,7 @@ import lombok.NonNull;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.function.IntSupplier;
 
 final class InMemoryAccountingFactory {
     private static final int BATCH_SIZE = 20;
@@ -70,25 +71,25 @@ final class InMemoryAccountingFactory {
                 clock,
                 observability);
 
-        List<InMemoryPoller<?>> pollers = List.of(
+        List<IntSupplier> pollers = List.of(
                 poller(observability, "place-account-hold", placeAccountHolds,
-                        components.placeAccountHold()),
+                        components.placeAccountHold())::pollOnce,
                 poller(observability, "account-hold-placed", placedWorkflow,
-                        components.accountHoldPlaced()),
+                        components.accountHoldPlaced())::pollOnce,
                 poller(observability, "account-hold-declined", declinedWorkflow,
-                        components.accountHoldDeclined()),
+                        components.accountHoldDeclined())::pollOnce,
                 poller(observability, "release-account-hold", releaseAccountHolds,
-                        components.releaseAccountHold()),
+                        components.releaseAccountHold())::pollOnce,
                 poller(observability, "account-hold-released", releasedWorkflow,
-                        components.accountHoldReleased()),
+                        components.accountHoldReleased())::pollOnce,
                 poller(observability, "journalize-transaction", journalizeTransactions,
-                        components.journalizeTransaction()),
+                        components.journalizeTransaction())::pollOnce,
                 poller(observability, "transaction-journalized", journalizedWorkflow,
-                        components.transactionJournalized()),
+                        components.transactionJournalized())::pollOnce,
                 poller(observability, "settle-account-hold", settleAccountHolds,
-                        components.settleAccountHold()),
+                        components.settleAccountHold())::pollOnce,
                 poller(observability, "account-hold-settled", settledWorkflow,
-                        components.accountHoldSettled()));
+                        components.accountHoldSettled())::pollOnce);
 
         return new InMemoryAccounting(
                 accounts,

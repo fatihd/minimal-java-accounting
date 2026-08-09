@@ -9,6 +9,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.time.Duration;
+import java.util.function.IntSupplier;
 
 @RequiredArgsConstructor
 final class InMemoryAccounting {
@@ -23,7 +25,7 @@ final class InMemoryAccounting {
     @NonNull
     private final List<InMemoryQueue<?>> queues;
     @NonNull
-    private final List<InMemoryPoller<?>> pollers;
+    private final List<IntSupplier> pollers;
 
     AccountRepository accounts() {
         return accounts;
@@ -37,10 +39,14 @@ final class InMemoryAccounting {
         return metrics;
     }
 
+    WorkerGroup startWorkers() {
+        return WorkerGroup.start(pollers, Duration.ofMillis(10));
+    }
+
     void processUntilIdle() {
         for (int cycle = 0; cycle < MAXIMUM_POLL_CYCLES; cycle++) {
-            for (InMemoryPoller<?> poller : pollers) {
-                poller.pollOnce();
+            for (IntSupplier poller : pollers) {
+                poller.getAsInt();
             }
             if (idle()) {
                 return;

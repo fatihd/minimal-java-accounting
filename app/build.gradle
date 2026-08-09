@@ -9,6 +9,7 @@ dependencies {
     implementation project(':ports.persistence')
     implementation project(':ports.messaging')
     implementation project(':adapters.api.console')
+    implementation project(':adapters.api.http')
     implementation project(':adapters.persistence.in-memory')
     implementation project(':adapters.messaging.in-memory')
     implementation project(':observability')
@@ -17,6 +18,7 @@ dependencies {
 application {
     mainClass = 'dev.minimalaccounting.app.Main'
     applicationName = 'accounting'
+    applicationDefaultJvmArgs = ['--add-modules', 'jdk.httpserver']
 }
 
 tasks.named('run') {
