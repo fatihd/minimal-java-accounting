@@ -139,3 +139,14 @@ transport senders, and marks rows only after send success. The bridge is
 explicitly at-least-once: business idempotency handles the broker-success and
 database-rollback duplicate window. Container tests cover commit, rollback,
 refusal outside a transaction, retry, route validation, and schema installation.
+
+## 2026-08-09 — Add Apache Artemis messaging
+
+Added an Artemis Core adapter without JMS or framework integration. Typed
+queues implement sender and receiver ports. Typed topics implement a sender and
+create durable independent subscription receivers. Each in-flight delivery
+owns a small Core session so ACK and NACK remain independent within a batch.
+
+The shared queue and topic contracts pass against Apache Artemis 2.55.0. An
+additional container test round-trips a real business message containing
+`Money` through adapter-local JSON serialization.

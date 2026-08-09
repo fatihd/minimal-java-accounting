@@ -21,6 +21,7 @@ include 'adapters.api.http'
 include 'adapters.persistence.in-memory', 'adapters.messaging.in-memory'
 include 'adapters.persistence.postgresql'
 include 'adapters.messaging.postgresql'
+include 'adapters.messaging.artemis'
 include 'app'
 
 project(':ports.api').projectDir = file('ports/api')
@@ -34,5 +35,7 @@ project(':adapters.persistence.postgresql').projectDir =
         file('adapters/persistence/postgresql')
 project(':adapters.messaging.postgresql').projectDir =
         file('adapters/messaging/postgresql')
+project(':adapters.messaging.artemis').projectDir =
+        file('adapters/messaging/artemis')
 project(':adapters.messaging.in-memory').projectDir =
         file('adapters/messaging/in-memory')

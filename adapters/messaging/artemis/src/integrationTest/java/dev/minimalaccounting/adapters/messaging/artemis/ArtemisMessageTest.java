@@ -1,0 +1,34 @@
+package dev.minimalaccounting.adapters.messaging.artemis;
+
+import dev.minimalaccounting.core.account.PlaceAccountHold;
+import dev.minimalaccounting.shared.DebitCredit;
+import dev.minimalaccounting.shared.Money;
+import org.junit.jupiter.api.Test;
+
+import java.util.Currency;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ArtemisMessageTest {
+    @Test
+    void transportsARealBusinessMessage() {
+        try (var connection = ArtemisTestBroker.connect();
+             var queue = new ArtemisQueue<>(
+                     connection,
+                     ArtemisTestBroker.uniqueName("business-message"),
+                     PlaceAccountHold.class)) {
+            PlaceAccountHold expected = new PlaceAccountHold(
+                    41,
+                    73,
+                    2,
+                    DebitCredit.DEBIT,
+                    new Money(1250, Currency.getInstance("USD")));
+
+            queue.send(expected);
+            var received = queue.receive(1).getFirst();
+
+            assertEquals(expected, received.message());
+            queue.ack(received.messageId());
+        }
+    }
+}
