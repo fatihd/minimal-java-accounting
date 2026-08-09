@@ -193,3 +193,11 @@ now retain that order in an immutable linked map, and the release validation
 runs on the same Java 25 toolchain locally and in CI. Dependency review remains
 disabled during private staging, where it requires GitHub Advanced Security,
 and activates automatically when the repository becomes public.
+
+## 2026-08-10 — Complete publication preparation
+
+Accepted the independently green Gradle 9.7, Jackson 2.22.1, and JUnit 6.1.2
+maintenance updates. Direct-push CI now runs only for `main`; pull requests keep
+their own unit and integration run without a duplicate branch-push run. The
+license file matches GitHub's canonical Apache 2.0 template exactly, and
+hosting metadata identifies it as `Apache-2.0`.
