@@ -1,0 +1,23 @@
+plugins {
+    id 'application'
+}
+
+dependencies {
+    implementation project(':ports.api')
+    implementation project(':application')
+    implementation project(':core')
+    implementation project(':ports.persistence')
+    implementation project(':ports.messaging')
+    implementation project(':adapters.api.console')
+    implementation project(':adapters.persistence.in-memory')
+    implementation project(':adapters.messaging.in-memory')
+}
+
+application {
+    mainClass = 'dev.minimalaccounting.app.Main'
+    applicationName = 'accounting'
+}
+
+tasks.named('run') {
+    workingDir rootProject.projectDir
+}

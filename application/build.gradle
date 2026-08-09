@@ -1,0 +1,8 @@
+dependencies {
+    api project(':ports.api')
+    api project(':core')
+    api project(':ports.persistence')
+    api project(':ports.messaging')
+
+    testImplementation project(':adapters.persistence.in-memory')
+}

@@ -1,0 +1,104 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
+plugins {
+    id 'base'
+    id 'jacoco'
+}
+
+jacoco {
+    toolVersion = '0.8.15'
+}
+
+tasks.register('renderArchitecture', Exec) {
+    group = 'documentation'
+    description = 'Regenerates ARCHITECTURE.svg with the dependency-free custom renderer.'
+
+    def source = rootProject.file('tools/render-architecture.mjs')
+    def output = rootProject.file('ARCHITECTURE.svg')
+    inputs.file source
+    outputs.file output
+    commandLine 'node', source, output
+}
+
+tasks.register('renderStateTransitions', Exec) {
+    group = 'documentation'
+    description = 'Regenerates state-transition SVGs with the dependency-free custom renderer.'
+
+    def source = rootProject.file('tools/render-state-transitions.mjs')
+    def outputDirectory = rootProject.file('docs/state-transitions')
+    def domainSources = rootProject.files(
+            'core/src/main/java/dev/minimalaccounting/core/transaction/Transaction.java',
+            'core/src/main/java/dev/minimalaccounting/core/transaction/TransactionState.java',
+            'core/src/main/java/dev/minimalaccounting/core/transaction/AccountEffect.java',
+            'core/src/main/java/dev/minimalaccounting/core/transaction/AccountEffectState.java',
+            'core/src/main/java/dev/minimalaccounting/core/account/AccountHold.java',
+            'core/src/main/java/dev/minimalaccounting/core/account/AccountHoldState.java')
+    inputs.file source
+    inputs.files domainSources
+    outputs.files(
+            rootProject.file('docs/state-transitions/transaction.svg'),
+            rootProject.file('docs/state-transitions/account-effect.svg'),
+            rootProject.file('docs/state-transitions/account-hold.svg'))
+    commandLine 'node', source, outputDirectory
+}
+
+allprojects {
+    group = 'dev.minimalaccounting'
+    version = '0.1.0'
+}
+
+subprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = '0.8.15'
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
+        }
+    }
+
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+    }
+
+    dependencies {
+        compileOnly 'org.projectlombok:lombok:1.18.46'
+        annotationProcessor 'org.projectlombok:lombok:1.18.46'
+
+        testImplementation platform('org.junit:junit-bom:5.11.4')
+        testImplementation 'org.junit.jupiter:junit-jupiter'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+}
+
+def coverageProjects = subprojects
+
+tasks.register('jacocoAggregateReport', JacocoReport) {
+    group = 'verification'
+    description = 'Runs all tests and generates aggregate Java coverage reports.'
+    dependsOn coverageProjects.collect { it.tasks.named('test') }
+
+    executionData.from(coverageProjects.collect {
+        it.layout.buildDirectory.file('jacoco/test.exec')
+    })
+    sourceDirectories.from(coverageProjects.collect {
+        it.sourceSets.main.allSource.srcDirs
+    })
+    classDirectories.from(coverageProjects.collect {
+        it.sourceSets.main.output
+    })
+
+    reports {
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir(
+                'reports/jacoco/aggregate/html')
+        xml.required = true
+        xml.outputLocation = layout.buildDirectory.file(
+                'reports/jacoco/aggregate/report.xml')
+        csv.required = false
+    }
+}

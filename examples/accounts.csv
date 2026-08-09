@@ -1,0 +1,3 @@
+account_number,name,opening_balance_minor,currency,minimum_balance_minor,maximum_balance_minor
+DEBIT001,Debit account,1000,USD,,
+CREDIT01,Credit account,1000,USD,,
