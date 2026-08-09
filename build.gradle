@@ -77,6 +77,16 @@ subprojects {
 
 def coverageProjects = subprojects
 
+tasks.register('integrationTest') {
+    group = 'verification'
+    description = 'Runs every Docker-backed adapter and durable-runtime test.'
+    dependsOn(
+            ':adapters.persistence.postgresql:integrationTest',
+            ':adapters.messaging.postgresql:integrationTest',
+            ':adapters.messaging.artemis:integrationTest',
+            ':app:integrationTest')
+}
+
 tasks.register('jacocoAggregateReport', JacocoReport) {
     group = 'verification'
     description = 'Runs all tests and generates aggregate Java coverage reports.'
@@ -99,6 +109,36 @@ tasks.register('jacocoAggregateReport', JacocoReport) {
         xml.required = true
         xml.outputLocation = layout.buildDirectory.file(
                 'reports/jacoco/aggregate/report.xml')
+        csv.required = false
+    }
+}
+
+tasks.register('jacocoFullReport', JacocoReport) {
+    group = 'verification'
+    description = 'Runs unit and integration tests and generates full coverage reports.'
+    dependsOn tasks.named('integrationTest')
+    dependsOn coverageProjects.collect { it.tasks.named('test') }
+
+    executionData.from(coverageProjects.collectMany {
+        [
+                it.layout.buildDirectory.file('jacoco/test.exec'),
+                it.layout.buildDirectory.file('jacoco/integrationTest.exec')
+        ]
+    })
+    sourceDirectories.from(coverageProjects.collect {
+        it.sourceSets.main.allSource.srcDirs
+    })
+    classDirectories.from(coverageProjects.collect {
+        it.sourceSets.main.output
+    })
+
+    reports {
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir(
+                'reports/jacoco/full/html')
+        xml.required = true
+        xml.outputLocation = layout.buildDirectory.file(
+                'reports/jacoco/full/report.xml')
         csv.required = false
     }
 }

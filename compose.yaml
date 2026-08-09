@@ -1,0 +1,24 @@
+services:
+  postgresql:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_DB: accounting
+      POSTGRES_USER: ${ACCOUNTING_DATABASE_USER:-accounting}
+      POSTGRES_PASSWORD: ${ACCOUNTING_DATABASE_PASSWORD:?set ACCOUNTING_DATABASE_PASSWORD}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  artemis:
+    image: apache/artemis:2.55.0-alpine
+    environment:
+      ARTEMIS_USER: ${ACCOUNTING_BROKER_USER:-accounting}
+      ARTEMIS_PASSWORD: ${ACCOUNTING_BROKER_PASSWORD:?set ACCOUNTING_BROKER_PASSWORD}
+      ANONYMOUS_LOGIN: "false"
+    ports:
+      - "61616:61616"
+      - "8161:8161"

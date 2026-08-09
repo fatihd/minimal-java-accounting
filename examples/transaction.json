@@ -1,0 +1,21 @@
+{
+  "requestId": "request-1",
+  "documentType": "TRANSFER",
+  "documentNumber": "DOC-1",
+  "description": "example transfer",
+  "occurredAt": "2026-08-08T00:00:00Z",
+  "lines": [
+    {
+      "accountNumber": "DEBIT001",
+      "side": "DEBIT",
+      "transactionAmount": {"minor": 100, "currency": "USD"},
+      "ledgerAmount": {"minor": 100, "currency": "USD"}
+    },
+    {
+      "accountNumber": "CREDIT01",
+      "side": "CREDIT",
+      "transactionAmount": {"minor": 100, "currency": "USD"},
+      "ledgerAmount": {"minor": 100, "currency": "USD"}
+    }
+  ]
+}

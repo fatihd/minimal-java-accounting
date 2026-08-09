@@ -1,120 +1,119 @@
 # Design journal
 
-This journal records stable architectural decisions and their validation.
-Commands are relative to the repository root.
+This journal records stable architectural decisions and the evidence used to
+keep them. Commands are relative to the repository root so the record remains
+portable.
 
 ## 2026-08-08 — Establish the domain and module boundaries
 
 Started with one `core` module for account, transaction, and journal business
-state; a small `shared` module for boundary values; separate API, persistence,
-and messaging ports; adapter modules per implementation family; and an outer
-`app` composition root.
+state; a deliberately small `shared` module for boundary values; separate API,
+persistence, and messaging ports; adapter modules per implementation family;
+and an outer `app` composition root.
 
 The external API has one business operation:
 `TransactionProcessor.submit(Transaction)`. Account setup is startup
-configuration, not a test operation. Repository interfaces retain only `get`,
-`add`, `update`, and `remove`; key types carry lookup alternatives. Messaging
-retains only send, receive, ACK/NACK, and push handler operations.
+configuration, not an operation added for tests. Repository interfaces retain
+only `get`, `add`, `update`, and `remove`; key types carry ID and natural-key
+lookup alternatives. Messaging retains only send, receive, ACK/NACK, and push
+handler operations.
+
+Decision: modules represent architectural boundaries or independently
+replaceable implementations, not every aggregate, queue, or workflow step.
 
 ## 2026-08-08 — Keep lifecycle rules behind aggregate roots
 
 Grouped core packages by account, transaction, and journal. Transaction starts
 through a business factory and derives its owned `AccountEffect` children.
-Application code does not assign child lifecycle states. Account hold placement,
-release, and settlement remain behind `Account`; transaction effect progress
-remains behind `Transaction`.
+Application code no longer assigns child lifecycle states. Account hold
+placement, release, and settlement remain behind `Account`; transaction effect
+progress remains behind `Transaction`.
 
-Local validation lives on the smallest owning domain type. Aggregate roots
-retain cross-child and lifecycle invariants. Reproducible state diagrams under
-`docs/state-transitions` document accepted transitions.
+Local validation moved to the smallest owning domain type: money owns
+currency-safe arithmetic, debit/credit owns polarity, line values validate
+their fields, and balance limits own range checks. Aggregate roots retain
+cross-child and lifecycle invariants.
+
+Generated state diagrams under `docs/state-transitions` document the accepted
+transitions and are reproducible with `./gradlew renderStateTransitions`.
 
 ## 2026-08-08 — Separate handlers from workflow decisions
 
-Command handlers perform one I/O unit: load the target aggregate, invoke its
-operation, persist it, and emit the resulting event. Event handlers load the
-aggregate whose workflow advances and delegate pure progression to
+Command handlers now perform one I/O unit: load the target aggregate, invoke
+its operation, persist it, and emit the resulting event. Event handlers load
+the aggregate whose workflow advances and delegate pure progression to
 `TransactionProcessManager`.
 
-The process manager has no repository, transport, handler, clock, or sender
-dependency. Commands are imperative independent records; events are
-completed-fact independent records. Focused tests cover duplicate, stale,
-premature, contradictory, and out-of-order results.
+The process manager is constructed around a transaction, consumes completed
+facts, invokes transaction transitions, and derives the next typed commands. It
+has no repository, transport, handler, clock, or sender dependency. Commands
+are imperative independent records; events are completed-fact independent
+records. Transport message identity stays outside both.
+
+Focused tests cover duplicate, stale, premature, contradictory, and
+out-of-order hold results. Expected account refusal emits
+`AccountHoldDeclined` and ACKs; causal or consistency failures throw for NACK.
 
 ## 2026-08-08 — Define explicit-update persistence semantics
 
-The reusable in-memory repository generates identities and revisions while
-storing defensive copies in concurrent JDK collections. Values passed to
-`add` or `update`, and values returned by `get`, remain detached from stored
-state. The exported repository contract verifies that mutation is invisible
-until explicit update.
+Added a reusable in-memory repository based on concurrent JDK collections. It
+generates identities and revisions while storing defensive copies. Values
+passed to `add` or `update`, and values returned by `get`, remain detached from
+stored state.
 
-## 2026-08-09 — Add reproducible architecture, coverage, and CI
+`ports.persistence` exports a contract test proving that mutation after add,
+get, or update is invisible until an explicit update. Typed account,
+transaction, and journal repositories add only aggregate copying and
+natural-key indexing.
+
+Decision: the memory adapter should emulate the observable semantics of a
+durable explicit-update store, not dirty checking or a first-level cache.
+
+## 2026-08-09 — Add reproducible architecture and coverage
 
 Added JaCoCo aggregate reports and dependency-free SVG renderers for module
 architecture and state transitions. The architecture grid keeps composition at
 the left, shared values at the right, API adapters at the top, infrastructure
-adapters at the bottom, and ports between adapters and core logic.
+adapters at the bottom, and ports between adapters and core logic. Adapter,
+port, and core box heights use a stable 100:67:150 ratio.
 
-The initial GitHub Actions workflow runs the Docker-free test suite on Java 25.
-`./gradlew test renderArchitecture renderStateTransitions` completes
-successfully.
+Unit coverage is generated by `./gradlew jacocoAggregateReport`; full unit and
+container coverage is generated by `./gradlew jacocoFullReport`.
 
-## 2026-08-09 — Extract the in-memory composition factories
+## 2026-08-09 — Extract composition and boundary observability
 
-Moved repository, channel, handler, and poller construction out of
-`InMemoryAccounting`. The runtime is now an assignment-only object, while typed
-component records keep the graph explicit. `InMemoryAccountingFactory` selects
-memory adapters and `AccountingComponentsFactory` constructs application
-services once, providing the reuse point for later durable composition and
-decorators.
+Extracted typed repository, sender, component, and runtime factories so runtime
+objects only retain constructed dependencies. This gives memory and durable
+composition one application-service construction path.
 
-`./gradlew test` completes successfully on Java 25.
+Added the `observability` module. Generic decorators wrap the transaction API,
+senders, receivers, and handlers with `System.Logger`, concurrent counters,
+fixed latency histograms, immutable snapshots, and a lifecycle-controlled JMX
+view. Payloads are never logged. Core and application handlers remain unaware
+of metrics and logging.
 
-## 2026-08-09 — Add boundary observability decorators
+## 2026-08-09 — Add console and JDK HTTP API adapters
 
-Added the standalone `observability` module. Generic decorators wrap the
-transaction API, handlers, senders, and receivers with `System.Logger`,
-concurrent counters, fixed latency histograms, immutable snapshots, and a
-lifecycle-controlled JMX view. They log operation names and outcomes without
-logging business payloads and propagate runtime failures unchanged.
+Kept the one-shot console adapter and added `adapters.api.http` using the JDK
+HTTP server. `POST /transactions` translates JSON into the same external API
+and returns `202`. Focused socket tests cover method and media rejection,
+malformed and oversized bodies, business rejection, and hidden internal
+failure details.
 
-The component factory applies decorators centrally; core and application
-handlers remain unaware of observability. `./gradlew test` completes
-successfully on Java 25.
+The executable now selects explicit console or server modes. API adapters only
+translate representations; composition owns repositories, channels, handlers,
+workers, metrics, and startup account data.
 
-## 2026-08-09 — Add the embedded HTTP transaction adapter
+## 2026-08-09 — Export messaging contracts
 
-Added `adapters.api.http`, using the JDK HTTP server and adapter-local JSON
-translation for `POST /transactions`. It returns asynchronous `202`, limits
-request size, distinguishes transport errors from business rejection, and does
-not expose unexpected failure details.
-
-The server and virtual-thread executor are lifecycle objects built by an
-explicit adapter factory. Socket-level tests cover successful translation,
-method and media rejection, malformed and oversized bodies, business errors,
-and internal failures. `./gradlew :adapters.api.http:test` completes
-successfully on Java 25.
-
-## 2026-08-09 — Add explicit console and server runtime modes
-
-The executable now selects between the one-shot console and long-running HTTP
-server. The memory server composes the same transaction processor, starts each
-adapter poller on a virtual worker, registers the metrics MXBean, and closes
-HTTP, workers, and JMX registration together.
-
-`WorkerGroup` owns only lifecycle and receives poll functions from composition.
-Startup account data remains configuration rather than API behavior.
-`./gradlew test` completes successfully on Java 25.
-
-## 2026-08-09 — Export messaging adapter contracts
-
-`ports.messaging` now exports queue and topic behavior tests. Queue contracts
-cover receive limits, ACK removal, and NACK redelivery. Topic contracts cover
+`ports.messaging` exports queue and topic behavior tests. Queue contracts cover
+receive limits, ACK removal, and NACK redelivery. Topic contracts cover
 independent subscriptions. They intentionally make no ordering or exactly-once
 claim.
 
-The in-memory adapter runs the contracts in addition to its focused poller
-tests. Every later broker adapter must do the same.
+The in-memory messaging adapter runs these contracts and retains adapter-owned
+polling: pollers pull deliveries and push payloads into handlers. Normal return
+ACKs; runtime failure NACKs and stops the current batch.
 
 ## 2026-08-09 — Add PostgreSQL repositories
 
@@ -123,10 +122,10 @@ checksummed, advisory-locked schema. They reconstruct detached aggregate
 graphs, enforce optimistic revisions, preserve natural-key uniqueness, and run
 the same explicit-update contract as the memory adapter.
 
-An explicit JDBC transaction boundary reuses one connection for nested work.
-Container tests cover rollback, stale updates, duplicate keys, child
-reconstruction, removal, and idempotent schema installation. Normal `test`
-remains Docker-free.
+An explicit JDBC transaction boundary reuses one connection for nested
+repository work. Container tests cover rollback, nested transactions, stale
+updates, duplicate keys, child reconstruction, removal, and idempotent schema
+installation. Normal `test` remains Docker-free.
 
 ## 2026-08-09 — Add the transactional outbox
 
@@ -135,17 +134,21 @@ inside the active JDBC transaction. A transactional handler decorator places
 the complete application handler around repository and outbox work.
 
 The publisher locks pending rows with `SKIP LOCKED`, routes payloads to concrete
-transport senders, and marks rows only after send success. The bridge is
-explicitly at-least-once: business idempotency handles the broker-success and
-database-rollback duplicate window. Container tests cover commit, rollback,
-refusal outside a transaction, retry, route validation, and schema installation.
+transport senders, and marks rows only after send success. Container tests
+cover commit, rollback, non-transactional refusal, publication retry, duplicate
+routes, and idempotent schema installation.
+
+Decision: the bridge is explicitly at-least-once. A broker success followed by
+database rollback can duplicate delivery, so business idempotency remains the
+recovery mechanism.
 
 ## 2026-08-09 — Add Apache Artemis messaging
 
 Added an Artemis Core adapter without JMS or framework integration. Typed
 queues implement sender and receiver ports. Typed topics implement a sender and
 create durable independent subscription receivers. Each in-flight delivery
-owns a small Core session so ACK and NACK remain independent within a batch.
+owns a small Core session so ACK and NACK remain independent within a received
+batch.
 
 The shared queue and topic contracts pass against Apache Artemis 2.55.0. An
 additional container test round-trips a real business message containing
@@ -158,9 +161,35 @@ Artemis command queues, Artemis event topics, typed subscriptions, handlers,
 and workers. External submission and every asynchronous handler run inside the
 JDBC transaction boundary. The outbox publisher runs independently.
 
-Durable server credentials come from environment variables. Startup account
-files are idempotent by account number. A container end-to-end test submits
-through real HTTP, stops before publication, recreates the runtime, completes
-from the retained outbox, and proves duplicate submission does not settle
-balances twice. The terminal convention remains journal retained, terminal
-account holds retained, and transient transaction removed.
+Durable server configuration comes from environment variables; credentials do
+not appear in process arguments. Startup account files are idempotent by
+account number. A container end-to-end test submits through real HTTP, stops
+before publication, recreates the complete runtime, completes from the retained
+outbox, and proves duplicate HTTP submission does not settle balances twice.
+
+The established terminal convention remains journal retained, terminal account
+holds retained, and transient transaction removed.
+
+## 2026-08-09 — Prepare the public release
+
+Added pinned GitHub Actions for the Docker-free build, generated-diagram check,
+unit coverage, container integration coverage, and pull-request dependency
+review. Added Dependabot, a local Compose file, example HTTP input, an Apache
+2.0 license, and a private security-reporting policy.
+
+The final validation is:
+
+```shell
+./gradlew test renderArchitecture renderStateTransitions
+./gradlew jacocoFullReport
+```
+
+The public history is curated into architectural slices and audited to contain
+only relative paths, final terminology, and stable design conclusions.
+
+The first clean GitHub Actions run exposed that `Map.copyOf` does not preserve
+the registry's sorted metric iteration order across JDK builds. Metric snapshots
+now retain that order in an immutable linked map, and the release validation
+runs on the same Java 25 toolchain locally and in CI. Dependency review remains
+disabled during private staging, where it requires GitHub Advanced Security,
+and activates automatically when the repository becomes public.

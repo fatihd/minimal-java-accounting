@@ -1,166 +1,133 @@
 # Minimal Java Accounting
 
-A dependency-light accounting example with explicit ports and replaceable
-adapters. The current runtime uses only concurrent JDK collections: no database,
-ORM, broker, HTTP server, or dependency-injection framework.
+Minimal Java Accounting is a small double-entry posting workflow built to make
+ports, adapters, aggregate boundaries, retries, and durability visible. The
+business model has no ORM, broker, HTTP, JSON, logging, metrics, or dependency
+injection dependency. Those choices stay in independently replaceable adapter
+and composition modules.
 
-The Gradle modules are deliberately coarse:
+The repository includes two complete runtimes:
 
-- `shared` contains only `Money`, `AccountNumber`, `DebitCredit`, and the shared
-  posting-rejection exception under `dev.minimalaccounting.shared`. `Money` owns
-  currency-safe arithmetic and comparison, while debit/credit owns its
-  accounting polarity.
-- `ports.api` contains the external `TransactionProcessor` API and its immutable
-  transaction contract under `dev.minimalaccounting.ports.api`. It contains no
-  core entities or technical DTO types.
-- `core` contains entities, internal workflow messages, and pure accounting
-  rules. It has no persistence or messaging dependency. Its packages are
-  grouped by aggregate under `dev.minimalaccounting.core.account`,
-  `.transaction`, and `.journal`. An aggregate package contains its inbound
-  commands and outbound events as one protocol. The transaction package also
-  contains its pure process manager because that workflow advances transaction
-  state.
-- `application` implements transaction intake, account-hold placement and
-  release, journalization, and hold settlement. It performs repository and
-  messaging I/O around core rules; it is not an adapter. Handlers are grouped
-  by the aggregate they affect under `dev.minimalaccounting.application`:
-  account command handlers under `.account`, journal creation under `.journal`,
-  and event-driven transaction progress under `.transaction`.
-- `ports.persistence` contains entity-specific repositories with only `get`,
-  `add`, `update`, and `remove` operations. Its exported test fixtures define
-  the explicit-update snapshot contract shared by persistence adapters.
-- `ports.messaging` contains the generic `Sender<T>`, `Receiver<T>`,
-  `Received<T>`, and `Handler<T>` ports. Receivers expose explicit `ack` and
-  `nack` operations for their opaque transport message IDs.
-- `adapters.api.console` translates one-shot command-line input into a call to
-  `TransactionProcessor`. It is the console implementation paired with the
-  `ports.api` boundary.
-- `adapters.persistence.in-memory` and `adapters.messaging.in-memory` implement
-  the infrastructure ports with concurrent JDK collections. Commands use
-  queues; events use topics with independent named subscriptions.
-- `app` is the executable composition root. It loads startup accounts, wires the
-  concrete runtime, invokes the console adapter, and drives messaging until it
-  is idle. Nothing depends on it.
+- `memory` uses detached `ConcurrentHashMap` repositories plus in-memory queues
+  and topics.
+- `durable` uses plain JDBC PostgreSQL repositories, a transactional PostgreSQL
+  outbox, and Apache Artemis Core queues and topics.
 
-The in-memory poller unwraps `Received<T>` and pushes the business message into
-`Handler<T>`. Normal return ACKs the transport message ID; a runtime exception
-NACKs it and stops the current batch. Application handlers are idempotent where
-aggregate state permits it.
+Both expose the same `TransactionProcessor.submit(Transaction)` API through a
+console adapter or the JDK HTTP server. This is a reference implementation of
+the architectural boundaries and workflow rules, not a production accounting
+product or a claim of exactly-once delivery.
 
-Internal commands are independent imperative records such as
-`PlaceAccountHold`; events are independent completed facts such as
-`AccountHoldPlaced`. Command and event types are never nested together, and
-transport message IDs never appear in business payloads.
+## Architecture
 
-An account retains each hold as an owned lifecycle entity identified by
-transaction ID and effect number. Duplicate placement, release, and settlement
-commands therefore reconfirm their events without changing money twice. A late
-placement cannot reopen a released or settled hold, conflicting payloads for one
-hold identity fail, and release or settlement before placement throws so the
-delivery is retried. Declined placements retain their reason and reconfirm the
-same refusal on retry. Terminal hold records are deliberately retained as the
-current in-memory idempotency history.
+[![Module architecture](ARCHITECTURE.svg)](ARCHITECTURE.svg)
 
-The persistence adapter composes its typed account, transaction, and journal
-repositories from a small `InMemoryRepository`. That reusable implementation
-owns generated IDs, optimistic revisions, and detached snapshots; typed
-repositories own only aggregate copying and natural-key indexes. Mutating an
-entity after `add`, `get`, or `update` never changes stored state without an
-explicit `update`, matching the intended behavior of future durable adapters.
+The modules have intentionally narrow responsibilities:
 
-## Workflow responsibilities
+- `shared` contains only stable boundary values: `Money`, `AccountNumber`,
+  `DebitCredit`, and the shared posting-rejection exception.
+- `ports.api` contains the external business API and immutable request values.
+- `core` contains account, transaction, and journal aggregates, their commands
+  and events, pure posting rules, and the transaction process manager.
+- `application` performs repository and messaging I/O around core operations.
+  It implements use cases and handlers; it is not an adapter.
+- `ports.persistence` contains collection-shaped repositories and the explicit
+  transaction boundary. Its test fixture exports the detached explicit-update
+  repository contract.
+- `ports.messaging` contains only `Sender<T>`, `Receiver<T>`, `Received<T>`, and
+  `Handler<T>`. Its test fixtures export queue and topic contracts.
+- `adapters.api.console` and `adapters.api.http` translate external protocols
+  into the API port.
+- `adapters.persistence.in-memory` and `adapters.persistence.postgresql`
+  implement the same repository ports.
+- `adapters.messaging.in-memory` implements local queues, topics, and polling.
+- `adapters.messaging.postgresql` implements the transactional outbox.
+- `adapters.messaging.artemis` implements durable queues, topics,
+  subscriptions, and polling with the Artemis Core client.
+- `observability` decorates API and messaging boundaries with JDK logging,
+  concurrent counters, latency histograms, immutable snapshots, and JMX.
+- `app` is the only composition root. Nothing depends on it.
 
-An aggregate root validates a requested business change and mutates only its
-own state. For example, `Transaction.placeEffect` advances the transaction and
-its owned effect; it does not construct a release or journalization command.
-`AccountEffect` exposes package-private lifecycle operations such as `hold`,
-`beginRelease`, and `settle`; the transaction invokes those operations instead
-of assigning child state. Aggregate mutators return no workflow instructions.
-This keeps invariants and owned-entity mutation inside the root without making
-the root responsible for messaging.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for exact production module
+dependencies. See [STATE-TRANSITIONS.md](STATE-TRANSITIONS.md) for the generated
+`Transaction`, `AccountEffect`, and `AccountHold` lifecycle diagrams.
 
-A command handler performs the I/O around one command: load its target
-aggregate, invoke the matching business operation, persist the aggregate, and
-publish the resulting event. `PlaceAccountHoldHandler`, for example, invokes
-`Account.placeHold` and publishes either `AccountHoldPlaced` or the expected
-business-refusal event `AccountHoldDeclined`. It does not choose the next
-transaction command.
+## Business and workflow boundaries
 
-An asynchronous event handler loads the aggregate whose workflow the event
-advances and constructs a short-lived process manager around it. The handler
-passes in the event, persists or removes the changed aggregate, and mechanically
-sends the commands selected by the process manager. Repository lookup,
-transport delivery, retry behavior, and clocks therefore remain outside core.
+Aggregate roots validate and mutate their own business state. `Account` owns
+hold placement, release, and settlement. `Transaction` owns its state and
+`AccountEffect` children; callers request operations such as `placeEffect` or
+`settleEffect` rather than assigning child state.
 
-`TransactionProcessManager` is a pure domain object for the workflow governed
-by `TransactionState` and the transaction-owned `AccountEffectState` values. It
-consumes relevant completed facts, invokes transaction state changes, and
-derives typed next commands such as `ReleaseAccountHold`,
-`JournalizeTransaction`, and `SettleAccountHold` from the resulting state. It
-has no repository, sender, receiver, handler, clock, or transport dependency.
-The transaction can be passed directly when a flow is synchronous, while an
-asynchronous event handler can first rehydrate the same transaction and then use
-the same process manager.
+A command handler loads one target aggregate, invokes its matching operation,
+persists it, and emits the resulting event. An event handler loads the aggregate
+whose workflow advances and constructs `TransactionProcessManager` around it.
+The process manager consumes completed facts and derives the next typed commands
+without repositories, senders, receivers, handlers, clocks, or transport IDs.
 
-Transaction effect transitions distinguish duplicate, stale, premature, and
-contradictory events. Duplicates preserve state and rederive only outstanding
-commands, allowing a failed send after persistence to be retried. Stale events
-from an earlier completed phase return without regression. Premature release or
-settlement completion and mutually contradictory placed/declined results throw,
-causing NACK instead of silently losing a causal transition.
+Commands are independent imperative records such as `PlaceAccountHold`. Events
+are independent completed facts such as `AccountHoldPlaced`. Commands go to
+queues; events go to topics with independent subscriptions. Transport IDs stay
+in `Received<T>` and never enter business payloads.
 
-Journalization is replay-safe across its non-atomic persistence/send boundary.
-If a journal already exists for the transaction request, redelivery republishes
-`TransactionJournalized` with the existing identity. A command or event whose
-terminal transaction was removed is stale and ACKs. Missing accounts or a
-missing journal for a still-present transaction throw for retry, while account
-identity disagreement is rejected as inconsistent business state. Partial
-settlement-command publication may reissue commands; account-owned hold
-identity prevents duplicate monetary effects.
+Normal handler return means ACK. A runtime exception means NACK and retry.
+Expected business refusal is represented by an event such as
+`AccountHoldDeclined`, not an exception escaping the handler. Aggregate-owned
+hold identity and transaction workflow state make duplicate and out-of-order
+delivery safe wherever the business state can do so. Premature or contradictory
+facts throw instead of silently skipping a causal transition.
 
-This split makes workflow decisions testable without adapters, preserves
-aggregate encapsulation, and allows synchronous and asynchronous delivery to
-share one business progression model. It is intentionally lighter than a
-durable saga: there is no process repository, outbox, delivery history, or
-atomic persistence-and-message commit yet. Those guarantees can be introduced
-later through additional ports and adapters without moving business state into
-persistence.
+On successful completion the workflow retains the journal entry and terminal
+account holds, then removes the transient transaction. A repeated submission is
+therefore recognized by either the active transaction request key or the
+retained journal request key.
 
-The transaction derives its owned effects when it starts from lines whose
-account identities were resolved by the application. Cross-aggregate journal
-calculation reads roots without mutating a second aggregate or exposing
-transaction effects to application handlers.
+## Persistence and delivery semantics
 
-Local invariants live with their values: transaction and journal lines validate
-their own fields, and account balance bounds are represented by `BalanceLimits`.
-Aggregate roots retain only lifecycle and cross-value rules such as balanced
-transaction totals and projected account-balance policy.
+Both repository implementations behave like explicit-update durable stores:
+values passed to `add` or `update`, and values returned by `get`, are detached.
+Changing an object does not alter stored state until `update` is called. Both
+adapters run the same exported contract tests.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the module boundaries, exact direct
-dependencies, and checked-in SVG generated by a small dependency-free script.
-See
-[STATE-TRANSITIONS.md](STATE-TRANSITIONS.md) for the generated `Transaction`,
-`AccountEffect`, and `AccountHold` lifecycle diagrams.
+The durable composition wraps external submission and every asynchronous
+handler in one JDBC transaction. Repository changes and outbox inserts commit
+atomically. A separate publisher locks pending rows with `SKIP LOCKED`, sends
+them to Artemis, and marks them published only after the broker send returns.
 
-## Build and run
+This is at-least-once delivery. A broker send can succeed immediately before a
+database rollback, so a message may be delivered again. It cannot be made
+exactly once by hiding retries in persistence; idempotent aggregate operations
+and replay-safe application handlers are the intended recovery mechanism.
+
+## Build and test
 
 Use Java 25 and the checked-in Gradle wrapper:
 
 ```shell
-sdk env
 ./gradlew test
+./gradlew integrationTest
 ./gradlew jacocoAggregateReport
-./gradlew renderArchitecture
-./gradlew renderStateTransitions
-./gradlew :app:run --args='--help'
+./gradlew jacocoFullReport
+./gradlew renderArchitecture renderStateTransitions
 ```
 
-The aggregate coverage task runs every module's tests and writes its browsable
-report to `build/reports/jacoco/aggregate/html/index.html`. It also writes XML
-to `build/reports/jacoco/aggregate/report.xml` for programmatic analysis.
+`test` is Docker-free. `integrationTest` starts pinned PostgreSQL 17.6 and
+Apache Artemis 2.55.0 containers and runs repository contracts, messaging
+contracts, outbox failure tests, and the durable HTTP restart flow.
 
-`examples/accounts.csv` is a startup file, not an account-management API. Submit
-one transaction with:
+The reports are browsable at:
+
+- unit coverage: `build/reports/jacoco/aggregate/html/index.html`
+- unit plus integration coverage: `build/reports/jacoco/full/html/index.html`
+- durable runtime test: `app/build/reports/tests/integrationTest/index.html`
+
+The checked-in SVGs are generated by dependency-free Node scripts. CI rejects a
+diagram change that was not regenerated and uploads both coverage reports.
+
+## Run in memory
+
+`examples/accounts.csv` is composition configuration, not an account-management
+API. Run the one-shot console flow with:
 
 ```shell
 ./gradlew :app:run --args="--accounts examples/accounts.csv submit \
@@ -173,14 +140,60 @@ one transaction with:
   --line CREDIT01 CREDIT 100 USD 100 USD"
 ```
 
-Account files have this unquoted, six-column CSV shape; blank minimum and maximum
-balances mean no limit:
+Or start the memory HTTP runtime:
 
-```csv
-account_number,name,opening_balance_minor,currency,minimum_balance_minor,maximum_balance_minor
-DEBIT001,Debit account,1000,USD,,
-CREDIT01,Credit account,1000,USD,,
+```shell
+./gradlew :app:run --args='server --runtime memory --accounts examples/accounts.csv'
 ```
 
-Future HTTP, database, and broker integrations belong in new adapter modules.
-They should replace composition choices without changing core business rules.
+Submit through its only production operation:
+
+```shell
+curl --fail-with-body http://127.0.0.1:8080/transactions \
+  -H 'Content-Type: application/json' \
+  -d @examples/transaction.json
+```
+
+## Run durably
+
+The local Compose file starts only infrastructure. Generate local credentials,
+export runtime configuration, then run the same HTTP server with durable
+adapters:
+
+```shell
+export ACCOUNTING_DATABASE_USER=accounting
+export ACCOUNTING_DATABASE_PASSWORD="$(openssl rand -hex 24)"
+export ACCOUNTING_DATABASE_URL=jdbc:postgresql://127.0.0.1:5432/accounting
+export ACCOUNTING_BROKER_USER=accounting
+export ACCOUNTING_BROKER_PASSWORD="$(openssl rand -hex 24)"
+export ACCOUNTING_BROKER_URL=tcp://127.0.0.1:61616
+
+docker compose up -d
+./gradlew :app:run --args='server --runtime durable --accounts examples/accounts.csv'
+```
+
+`ACCOUNTING_DESTINATION_PREFIX` is optional and defaults to `accounting`. Use a
+different prefix when several logical instances share one broker.
+
+Metrics are available through the platform MBean server under
+`dev.minimalaccounting:type=Metrics`. Boundary decorators log operation names
+and outcomes without logging message payloads.
+
+## Scope and extension points
+
+The project’s long-term target is a compact, executable example showing that:
+
+- business state and transitions can remain independent of storage and broker
+  APIs;
+- push handlers and pull receivers can share minimal messaging ports;
+- durable retries can be explicit without embedding workflow logic in tables;
+- logging and metrics can be composed around boundaries without annotations or
+  framework-managed proxies; and
+- new HTTP, database, broker, LocalStack, or test adapters can be added as new
+  modules rather than edits to core rules.
+
+Likely next production-oriented extensions are dead-letter and poison-message
+policy, outbox retention, broker reconnect tuning, database migration tooling,
+health/read APIs in separate API ports, and load/chaos tests. These are omitted
+until they demonstrate a boundary or business guarantee rather than merely add
+framework surface area.

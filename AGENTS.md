@@ -3,7 +3,9 @@
 ## Build and history
 
 - Use Java 25 and the checked-in Gradle wrapper.
-- Run `./gradlew test` for the complete build.
+- Run `./gradlew test` for the complete Docker-free build. Run
+  `./gradlew integrationTest` when changing PostgreSQL, Artemis, the outbox, or
+  durable composition.
 - Lombok is a project-wide compile-time convention with no runtime dependency.
   Use `@NonNull` for required constructor parameters, method parameters, record
   components, and generated dependency constructors instead of handwritten
@@ -22,7 +24,8 @@
 - Read `JOURNAL.md` before changing the design. Append a dated entry after each
   meaningful design, implementation, benchmark, or investigation step. Keep
   entries concise and avoid machine-specific paths, temporary failure logs, or
-  credentials.
+  credentials. Consolidate history only when explicitly requested for a
+  release-history rewrite.
 - Keep this repository self-contained. Do not import source, persistence
   design, test harnesses, or module layouts from unrelated implementations.
 
@@ -104,10 +107,11 @@
 - Prefer one process manager for each aggregate-root workflow state machine.
   State on children owned by that root belongs to the same flow; do not create a
   separate process manager merely because a child has its own state enum.
-- A process manager here is lightweight domain coordination, not a claim of a
-  durable saga. Add explicit ports and adapters before introducing persisted
-  process state, outboxes, dispatch history, or atomic storage-and-message
-  guarantees.
+- A process manager here is lightweight domain coordination, not a persisted
+  saga. The durable runtime stores aggregate state and outgoing messages in one
+  PostgreSQL transaction, but process state remains the aggregate state. Do not
+  introduce a process repository or generic workflow table without a business
+  state that actually requires one.
 - Treat duplicate events as recovery opportunities: apply their aggregate
   transition idempotently and rederive only commands still outstanding from the
   persisted state. A stale event from an earlier completed phase must not
@@ -135,8 +139,10 @@
 - Repository interfaces use collection vocabulary only: `get`, `add`, `update`,
   and `remove`. Domain-specific lookup variants belong in repository key types,
   not in extra repository methods.
-- Keep persistence coordination out of entities and business services. Current
-  in-memory repositories use defensive copies and concurrent JDK collections.
+- Keep persistence coordination out of entities and business services. The
+  in-memory repositories use defensive copies and concurrent JDK collections;
+  the PostgreSQL repositories use plain JDBC and reconstruct equally detached
+  aggregate graphs.
 - Persistence adapters must behave like explicit-update stores: entities passed
   to `add` or `update`, and entities returned by `get`, are detached from stored
   state. Later mutation is invisible until `update` is called. Reuse the
@@ -165,6 +171,17 @@
   thrown runtime exception.
   Handlers and submission paths should be idempotent as far as their business
   state allows.
+- In durable composition, wrap the complete external submission or message
+  handler in the JDBC transaction boundary. Repository operations and
+  PostgreSQL outbox sends must share that transaction. Never let a repository
+  method publish directly.
+- Treat the outbox-to-broker bridge as at-least-once. Mark an outbox row only
+  after the broker send returns, use `SKIP LOCKED` for competing publishers,
+  and rely on business idempotency for the send-success/database-rollback
+  duplicate window. Do not claim exactly-once delivery.
+- Keep broker destinations in composition. Commands use Artemis anycast queues;
+  events use multicast addresses with one durable queue per subscription.
+  Serialization belongs to messaging adapters, not core messages.
 - An asynchronous command or event for a missing target may ACK as stale only
   when terminal removal makes that absence an expected state. Once the target
   exists, a missing referenced aggregate or journal is a consistency or
@@ -197,3 +214,6 @@
 - Prefer focused tests for independently meaningful behavior. End-to-end tests
   call the real external API and keep any internal setup or inspection inside a
   test fixture.
+- Keep `test` Docker-free. Put real PostgreSQL, broker, restart, and durable
+  delivery tests in `integrationTest`; expose reusable behavioral contracts from
+  the owning port module's test fixtures.
