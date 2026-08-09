@@ -11,6 +11,7 @@ dependencies {
     implementation project(':adapters.api.console')
     implementation project(':adapters.persistence.in-memory')
     implementation project(':adapters.messaging.in-memory')
+    implementation project(':observability')
 }
 
 application {

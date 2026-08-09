@@ -14,7 +14,7 @@ dependencyResolutionManagement {
 
 rootProject.name = 'minimal-java-accounting'
 
-include 'shared', 'core', 'application'
+include 'shared', 'core', 'application', 'observability'
 include 'ports.api', 'ports.persistence', 'ports.messaging'
 include 'adapters.api.console'
 include 'adapters.persistence.in-memory', 'adapters.messaging.in-memory'

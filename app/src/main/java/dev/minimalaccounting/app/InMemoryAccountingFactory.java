@@ -15,6 +15,10 @@ import dev.minimalaccounting.core.account.ReleaseAccountHold;
 import dev.minimalaccounting.core.account.SettleAccountHold;
 import dev.minimalaccounting.core.journal.JournalizeTransaction;
 import dev.minimalaccounting.core.journal.TransactionJournalized;
+import dev.minimalaccounting.observability.MetricsRegistry;
+import dev.minimalaccounting.observability.Observability;
+import dev.minimalaccounting.ports.messaging.Handler;
+import dev.minimalaccounting.ports.messaging.Receiver;
 import lombok.NonNull;
 
 import java.time.Clock;
@@ -48,6 +52,8 @@ final class InMemoryAccountingFactory {
         var journalizedWorkflow =
                 transactionsJournalized.subscribe("transaction-settlement");
         var settledWorkflow = accountHoldsSettled.subscribe("transaction-settlement");
+        var metrics = new MetricsRegistry(clock);
+        var observability = new Observability(metrics);
 
         var components = AccountingComponentsFactory.create(
                 new AccountingRepositories(accounts, transactions, journals),
@@ -61,22 +67,33 @@ final class InMemoryAccountingFactory {
                         accountHoldsReleased,
                         transactionsJournalized,
                         accountHoldsSettled),
-                clock);
+                clock,
+                observability);
 
         List<InMemoryPoller<?>> pollers = List.of(
-                poller(placeAccountHolds, components.placeAccountHold()),
-                poller(placedWorkflow, components.accountHoldPlaced()),
-                poller(declinedWorkflow, components.accountHoldDeclined()),
-                poller(releaseAccountHolds, components.releaseAccountHold()),
-                poller(releasedWorkflow, components.accountHoldReleased()),
-                poller(journalizeTransactions, components.journalizeTransaction()),
-                poller(journalizedWorkflow, components.transactionJournalized()),
-                poller(settleAccountHolds, components.settleAccountHold()),
-                poller(settledWorkflow, components.accountHoldSettled()));
+                poller(observability, "place-account-hold", placeAccountHolds,
+                        components.placeAccountHold()),
+                poller(observability, "account-hold-placed", placedWorkflow,
+                        components.accountHoldPlaced()),
+                poller(observability, "account-hold-declined", declinedWorkflow,
+                        components.accountHoldDeclined()),
+                poller(observability, "release-account-hold", releaseAccountHolds,
+                        components.releaseAccountHold()),
+                poller(observability, "account-hold-released", releasedWorkflow,
+                        components.accountHoldReleased()),
+                poller(observability, "journalize-transaction", journalizeTransactions,
+                        components.journalizeTransaction()),
+                poller(observability, "transaction-journalized", journalizedWorkflow,
+                        components.transactionJournalized()),
+                poller(observability, "settle-account-hold", settleAccountHolds,
+                        components.settleAccountHold()),
+                poller(observability, "account-hold-settled", settledWorkflow,
+                        components.accountHoldSettled()));
 
         return new InMemoryAccounting(
                 accounts,
                 components.transactions(),
+                metrics,
                 List.of(
                         placeAccountHolds,
                         releaseAccountHolds,
@@ -91,8 +108,13 @@ final class InMemoryAccountingFactory {
     }
 
     private static <T> InMemoryPoller<T> poller(
-            InMemoryQueue<T> receiver,
-            dev.minimalaccounting.ports.messaging.Handler<T> handler) {
-        return new InMemoryPoller<>(receiver, handler, BATCH_SIZE);
+            Observability observability,
+            String name,
+            Receiver<T> receiver,
+            Handler<T> handler) {
+        return new InMemoryPoller<>(
+                observability.receiver("receive." + name, receiver),
+                handler,
+                BATCH_SIZE);
     }
 }

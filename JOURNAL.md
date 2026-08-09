@@ -69,3 +69,15 @@ services once, providing the reuse point for later durable composition and
 decorators.
 
 `./gradlew test` completes successfully on Java 25.
+
+## 2026-08-09 — Add boundary observability decorators
+
+Added the standalone `observability` module. Generic decorators wrap the
+transaction API, handlers, senders, and receivers with `System.Logger`,
+concurrent counters, fixed latency histograms, immutable snapshots, and a
+lifecycle-controlled JMX view. They log operation names and outcomes without
+logging business payloads and propagate runtime failures unchanged.
+
+The component factory applies decorators centrally; core and application
+handlers remain unaware of observability. `./gradlew test` completes
+successfully on Java 25.
