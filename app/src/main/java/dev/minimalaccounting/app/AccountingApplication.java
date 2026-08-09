@@ -30,7 +30,7 @@ final class AccountingApplication {
             return 2;
         }
 
-        InMemoryAccounting accounting = new InMemoryAccounting(Clock.systemUTC());
+        InMemoryAccounting accounting = InMemoryAccountingFactory.create(Clock.systemUTC());
         try {
             AccountFile.load(parsed.accounts(), accounting.accounts());
         } catch (IOException | RuntimeException failure) {

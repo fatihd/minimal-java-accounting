@@ -58,3 +58,14 @@ adapters at the bottom, and ports between adapters and core logic.
 The initial GitHub Actions workflow runs the Docker-free test suite on Java 25.
 `./gradlew test renderArchitecture renderStateTransitions` completes
 successfully.
+
+## 2026-08-09 — Extract the in-memory composition factories
+
+Moved repository, channel, handler, and poller construction out of
+`InMemoryAccounting`. The runtime is now an assignment-only object, while typed
+component records keep the graph explicit. `InMemoryAccountingFactory` selects
+memory adapters and `AccountingComponentsFactory` constructs application
+services once, providing the reuse point for later durable composition and
+decorators.
+
+`./gradlew test` completes successfully on Java 25.
