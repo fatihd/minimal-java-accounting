@@ -17,6 +17,7 @@ rootProject.name = 'minimal-java-accounting'
 include 'shared', 'core', 'application', 'observability'
 include 'ports.api', 'ports.persistence', 'ports.messaging'
 include 'adapters.api.console'
+include 'adapters.api.http'
 include 'adapters.persistence.in-memory', 'adapters.messaging.in-memory'
 include 'app'
 
@@ -24,6 +25,7 @@ project(':ports.api').projectDir = file('ports/api')
 project(':ports.persistence').projectDir = file('ports/persistence')
 project(':ports.messaging').projectDir = file('ports/messaging')
 project(':adapters.api.console').projectDir = file('adapters/api/console')
+project(':adapters.api.http').projectDir = file('adapters/api/http')
 project(':adapters.persistence.in-memory').projectDir =
         file('adapters/persistence/in-memory')
 project(':adapters.messaging.in-memory').projectDir =

@@ -81,3 +81,16 @@ logging business payloads and propagate runtime failures unchanged.
 The component factory applies decorators centrally; core and application
 handlers remain unaware of observability. `./gradlew test` completes
 successfully on Java 25.
+
+## 2026-08-09 — Add the embedded HTTP transaction adapter
+
+Added `adapters.api.http`, using the JDK HTTP server and adapter-local JSON
+translation for `POST /transactions`. It returns asynchronous `202`, limits
+request size, distinguishes transport errors from business rejection, and does
+not expose unexpected failure details.
+
+The server and virtual-thread executor are lifecycle objects built by an
+explicit adapter factory. Socket-level tests cover successful translation,
+method and media rejection, malformed and oversized bodies, business errors,
+and internal failures. `./gradlew :adapters.api.http:test` completes
+successfully on Java 25.
