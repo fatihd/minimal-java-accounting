@@ -44,8 +44,9 @@ The modules have intentionally narrow responsibilities:
 - `adapters.messaging.postgresql` implements the transactional outbox.
 - `adapters.messaging.artemis` implements durable queues, topics,
   subscriptions, and polling with the Artemis Core client.
-- `observability` decorates API and messaging boundaries with JDK logging,
-  concurrent counters, latency histograms, immutable snapshots, and JMX.
+- `observability` adapts business ports through JDK functional interfaces and
+  decorates them with JDK logging, concurrent counters, latency histograms,
+  immutable snapshots, and JMX.
 - `app` is the only composition root. Nothing depends on it.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for exact production module
@@ -187,8 +188,8 @@ The project’s long-term target is a compact, executable example showing that:
   APIs;
 - push handlers and pull receivers can share minimal messaging ports;
 - durable retries can be explicit without embedding workflow logic in tables;
-- logging and metrics can be composed around boundaries without annotations or
-  framework-managed proxies; and
+- logging and metrics can be composed once around JDK functions, then adapted
+  to business ports without annotations or framework-managed proxies; and
 - new HTTP, database, broker, LocalStack, or test adapters can be added as new
   modules rather than edits to core rules.
 

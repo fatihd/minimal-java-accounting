@@ -198,6 +198,10 @@
 - Keep constructors to dependency and configuration assignment. Put startup
   parsing, object-graph construction, defaults, validation across components,
   and any other non-trivial creation logic in explicit composition factories.
+- Implement technical boundary decoration once over JDK functional interfaces
+  and adapt business-named ports through method references. Do not make domain
+  ports extend `Consumer` or `Function` merely to simplify a decorator, and do
+  not create one decorator class for every port shape.
 - Test the shared application through its public API with injected adapters and
   deterministic dependencies. Give adapter implementations focused contract
   tests and give composition factories a small wiring smoke test. A trivial

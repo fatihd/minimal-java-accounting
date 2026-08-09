@@ -6,44 +6,57 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class ObservedMessagingTest {
+class ObservabilityTest {
     @Test
-    void senderRecordsSuccessAndPreservesTheMessage() {
+    void adaptsSingleArgumentPortsThroughObservedConsumers() {
         var metrics = new MetricsRegistry(Clock.systemUTC());
-        var sent = new java.util.concurrent.atomic.AtomicReference<String>();
-        var sender = new ObservedSender<String>(
-                "sender", sent::set, metrics, System.getLogger("test"));
+        var observability = new Observability(metrics);
+        var submissions = new AtomicInteger();
+        var handled = new AtomicReference<String>();
+        var sent = new AtomicReference<String>();
 
-        sender.send("message");
+        observability.processor("transaction.submit", ignored -> submissions.incrementAndGet())
+                .submit(null);
+        observability.handler("command.handle", handled::set).handle("command");
+        observability.sender("event.send", sent::set).send("event");
 
-        assertEquals("message", sent.get());
-        assertEquals(1, metrics.snapshot().operations().get("sender").successes());
+        assertEquals(1, submissions.get());
+        assertEquals("command", handled.get());
+        assertEquals("event", sent.get());
+        var operations = metrics.snapshot().operations();
+        assertEquals(1, operations.get("transaction.submit").successes());
+        assertEquals(1, operations.get("command.handle").successes());
+        assertEquals(1, operations.get("event.send").successes());
     }
 
     @Test
-    void receiverCountsMessagesAndDispositions() {
+    void receiverAdaptsPollingAndBothDispositions() {
         var metrics = new MetricsRegistry(Clock.systemUTC());
         var delegate = new RecordingReceiver();
-        var receiver = new ObservedReceiver<>(
-                "queue", delegate, metrics, System.getLogger("test"));
+        var receiver = new Observability(metrics).receiver("queue", delegate);
 
         assertEquals(2, receiver.receive(2).size());
         receiver.ack("1");
         receiver.nack("2");
 
-        var operations = metrics.snapshot().operations();
-        assertEquals(2, operations.get("queue.receive").items());
+        assertEquals(2, delegate.limit);
         assertEquals("1", delegate.acked);
         assertEquals("2", delegate.nacked);
+        var operations = metrics.snapshot().operations();
+        assertEquals(2, operations.get("queue.receive").items());
+        assertEquals(1, operations.get("queue.ack").successes());
+        assertEquals(1, operations.get("queue.nack").successes());
     }
 
     @Test
-    void receiverRethrowsDispositionFailure() {
+    void receiverRethrowsTheSameDispositionFailure() {
         var metrics = new MetricsRegistry(Clock.systemUTC());
         var expected = new IllegalArgumentException("unknown");
         Receiver<String> delegate = new RecordingReceiver() {
@@ -52,8 +65,7 @@ class ObservedMessagingTest {
                 throw expected;
             }
         };
-        var receiver = new ObservedReceiver<>(
-                "queue", delegate, metrics, System.getLogger("test"));
+        var receiver = new Observability(metrics).receiver("queue", delegate);
 
         var thrown = assertThrows(IllegalArgumentException.class,
                 () -> receiver.ack("missing"));
@@ -63,11 +75,13 @@ class ObservedMessagingTest {
     }
 
     private static class RecordingReceiver implements Receiver<String> {
+        private int limit;
         private String acked;
         private String nacked;
 
         @Override
         public List<Received<String>> receive(int limit) {
+            this.limit = limit;
             return List.of(new Received<>("1", "first"), new Received<>("2", "second"));
         }
 
