@@ -89,6 +89,10 @@ final class ApplicationFactory {
                     modules.messaging().getAccountHoldsSettled());
 
     @Getter(lazy = true)
+    private final HandlerWrapper handlerWrapper =
+            observedHandlers().andThen(modules.handlerWrapper());
+
+    @Getter(lazy = true)
     private final ApplicationModuleFactory applicationModule =
             new ApplicationModuleFactory(
                     modules.persistence().getAccountRepository(),
@@ -103,105 +107,12 @@ final class ApplicationFactory {
                     getAccountHoldsReleased(),
                     getTransactionsJournalized(),
                     getAccountHoldsSettled(),
-                    clock);
-
-    @Getter(lazy = true)
-    private final Handler<SubmitTransaction> observedTransactions = getDecorators().handler(
-            "transaction.submit", getApplicationModule().getTransactionIntake());
-
-    @Getter(lazy = true)
-    private final Handler<PlaceAccountHold> observedPlaceAccountHold =
-            getDecorators().handler(
-                    "command.place-account-hold",
-                    getApplicationModule().getPlaceAccountHoldHandler());
-
-    @Getter(lazy = true)
-    private final Handler<AccountHoldPlaced> observedAccountHoldPlaced =
-            getDecorators().handler(
-                    "event.account-hold-placed",
-                    getApplicationModule().getAccountHoldPlacedHandler());
-
-    @Getter(lazy = true)
-    private final Handler<AccountHoldDeclined> observedAccountHoldDeclined =
-            getDecorators().handler(
-                    "event.account-hold-declined",
-                    getApplicationModule().getAccountHoldDeclinedHandler());
-
-    @Getter(lazy = true)
-    private final Handler<ReleaseAccountHold> observedReleaseAccountHold =
-            getDecorators().handler(
-                    "command.release-account-hold",
-                    getApplicationModule().getReleaseAccountHoldHandler());
-
-    @Getter(lazy = true)
-    private final Handler<AccountHoldReleased> observedAccountHoldReleased =
-            getDecorators().handler(
-                    "event.account-hold-released",
-                    getApplicationModule().getAccountHoldReleasedHandler());
-
-    @Getter(lazy = true)
-    private final Handler<JournalizeTransaction> observedJournalizeTransaction =
-            getDecorators().handler(
-                    "command.journalize-transaction",
-                    getApplicationModule().getJournalizeTransactionHandler());
-
-    @Getter(lazy = true)
-    private final Handler<TransactionJournalized> observedTransactionJournalized =
-            getDecorators().handler(
-                    "event.transaction-journalized",
-                    getApplicationModule().getTransactionJournalizedHandler());
-
-    @Getter(lazy = true)
-    private final Handler<SettleAccountHold> observedSettleAccountHold =
-            getDecorators().handler(
-                    "command.settle-account-hold",
-                    getApplicationModule().getSettleAccountHoldHandler());
-
-    @Getter(lazy = true)
-    private final Handler<AccountHoldSettled> observedAccountHoldSettled =
-            getDecorators().handler(
-                    "event.account-hold-settled",
-                    getApplicationModule().getAccountHoldSettledHandler());
+                    clock,
+                    getHandlerWrapper());
 
     @Getter(lazy = true)
     private final Handler<SubmitTransaction> transactions =
-            transactional(getObservedTransactions());
-
-    @Getter(lazy = true)
-    private final Handler<PlaceAccountHold> placeAccountHoldHandler =
-            transactional(getObservedPlaceAccountHold());
-
-    @Getter(lazy = true)
-    private final Handler<AccountHoldPlaced> accountHoldPlacedHandler =
-            transactional(getObservedAccountHoldPlaced());
-
-    @Getter(lazy = true)
-    private final Handler<AccountHoldDeclined> accountHoldDeclinedHandler =
-            transactional(getObservedAccountHoldDeclined());
-
-    @Getter(lazy = true)
-    private final Handler<ReleaseAccountHold> releaseAccountHoldHandler =
-            transactional(getObservedReleaseAccountHold());
-
-    @Getter(lazy = true)
-    private final Handler<AccountHoldReleased> accountHoldReleasedHandler =
-            transactional(getObservedAccountHoldReleased());
-
-    @Getter(lazy = true)
-    private final Handler<JournalizeTransaction> journalizeTransactionHandler =
-            transactional(getObservedJournalizeTransaction());
-
-    @Getter(lazy = true)
-    private final Handler<TransactionJournalized> transactionJournalizedHandler =
-            transactional(getObservedTransactionJournalized());
-
-    @Getter(lazy = true)
-    private final Handler<SettleAccountHold> settleAccountHoldHandler =
-            transactional(getObservedSettleAccountHold());
-
-    @Getter(lazy = true)
-    private final Handler<AccountHoldSettled> accountHoldSettledHandler =
-            transactional(getObservedAccountHoldSettled());
+            getApplicationModule().getTransactionIntake();
 
     @Getter(lazy = true)
     private final Receiver<PlaceAccountHold> placeAccountHoldReceiver =
@@ -263,39 +174,48 @@ final class ApplicationFactory {
 
     @Getter(lazy = true)
     private final IntSupplier placeAccountHoldPoller = poller(
-            getPlaceAccountHoldReceiver(), getPlaceAccountHoldHandler());
+            getPlaceAccountHoldReceiver(),
+            getApplicationModule().getPlaceAccountHoldHandler());
 
     @Getter(lazy = true)
     private final IntSupplier accountHoldPlacedPoller = poller(
-            getAccountHoldPlacedReceiver(), getAccountHoldPlacedHandler());
+            getAccountHoldPlacedReceiver(),
+            getApplicationModule().getAccountHoldPlacedHandler());
 
     @Getter(lazy = true)
     private final IntSupplier accountHoldDeclinedPoller = poller(
-            getAccountHoldDeclinedReceiver(), getAccountHoldDeclinedHandler());
+            getAccountHoldDeclinedReceiver(),
+            getApplicationModule().getAccountHoldDeclinedHandler());
 
     @Getter(lazy = true)
     private final IntSupplier releaseAccountHoldPoller = poller(
-            getReleaseAccountHoldReceiver(), getReleaseAccountHoldHandler());
+            getReleaseAccountHoldReceiver(),
+            getApplicationModule().getReleaseAccountHoldHandler());
 
     @Getter(lazy = true)
     private final IntSupplier accountHoldReleasedPoller = poller(
-            getAccountHoldReleasedReceiver(), getAccountHoldReleasedHandler());
+            getAccountHoldReleasedReceiver(),
+            getApplicationModule().getAccountHoldReleasedHandler());
 
     @Getter(lazy = true)
     private final IntSupplier journalizeTransactionPoller = poller(
-            getJournalizeTransactionReceiver(), getJournalizeTransactionHandler());
+            getJournalizeTransactionReceiver(),
+            getApplicationModule().getJournalizeTransactionHandler());
 
     @Getter(lazy = true)
     private final IntSupplier transactionJournalizedPoller = poller(
-            getTransactionJournalizedReceiver(), getTransactionJournalizedHandler());
+            getTransactionJournalizedReceiver(),
+            getApplicationModule().getTransactionJournalizedHandler());
 
     @Getter(lazy = true)
     private final IntSupplier settleAccountHoldPoller = poller(
-            getSettleAccountHoldReceiver(), getSettleAccountHoldHandler());
+            getSettleAccountHoldReceiver(),
+            getApplicationModule().getSettleAccountHoldHandler());
 
     @Getter(lazy = true)
     private final IntSupplier accountHoldSettledPoller = poller(
-            getAccountHoldSettledReceiver(), getAccountHoldSettledHandler());
+            getAccountHoldSettledReceiver(),
+            getApplicationModule().getAccountHoldSettledHandler());
 
     @Getter(lazy = true)
     private final List<IntSupplier> pollers = createPollers();
@@ -343,8 +263,14 @@ final class ApplicationFactory {
         throw new IllegalStateException("only in-memory messaging can be drained");
     }
 
-    private <T> Handler<T> transactional(Handler<T> handler) {
-        return modules.transactional(handler);
+    private HandlerWrapper observedHandlers() {
+        return new HandlerWrapper() {
+            @Override
+            public <T> Handler<T> apply(Handler<T> handler) {
+                return getDecorators().handler(
+                        "handler." + handler.getClass().getSimpleName(), handler);
+            }
+        };
     }
 
     private String receiveName(String memoryName, String durableName) {

@@ -175,10 +175,19 @@
   on another, call its getter; avoid nested object construction in field
   initializers. Prefer independent fields where the graph permits it.
 - Module factories expose undecorated objects owned by their represented
-  module. The overall `ApplicationFactory` currently owns cross-module joins,
-  boundary decorators, transaction wrappers, pollers, outbox routes, and
-  runtime assembly. Do not generalize cross-cutting-concern injection until a
-  later design explicitly introduces it.
+  module, except that factories creating application handlers receive one
+  already-composed, type-preserving handler wrapper from outer composition.
+  Apply that wrapper at the same lazy field that constructs the handler. Fake
+  composition supplies identity; durable composition adds its transaction
+  boundary. Do not duplicate observed and transactional handler fields in the
+  overall factory.
+- Use a generic-method handler-wrapper contract for one wrapper shared across
+  heterogeneous `Handler<T>` types. An ordinary JDK `Function<X, X>` cannot
+  express that rank-polymorphic relationship without unchecked casts. Keep
+  wrapper composition type-preserving and provide explicit identity and
+  composition operations.
+- The overall `ApplicationFactory` owns cross-module joins, boundary-wrapper
+  composition, pollers, outbox routes, and runtime assembly.
 
 ## Persistence and messaging
 

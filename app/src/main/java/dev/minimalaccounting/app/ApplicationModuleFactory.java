@@ -26,6 +26,8 @@ import dev.minimalaccounting.model.account.ReleaseAccountHold;
 import dev.minimalaccounting.model.account.SettleAccountHold;
 import dev.minimalaccounting.model.journal.JournalizeTransaction;
 import dev.minimalaccounting.model.journal.TransactionJournalized;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.shared.ports.Handler;
 import dev.minimalaccounting.shared.ports.Sender;
 
 import lombok.Getter;
@@ -48,57 +50,59 @@ final class ApplicationModuleFactory {
     private final Sender<TransactionJournalized> transactionsJournalized;
     private final Sender<AccountHoldSettled> accountHoldsSettled;
     private final Clock clock;
+    private final HandlerWrapper wrapper;
 
     @Getter(lazy = true)
-    private final TransactionIntake transactionIntake = new TransactionIntake(
-            accounts,
-            transactions,
-            journals,
-            placeAccountHolds,
-            journalizeTransactions,
-            clock);
+    private final Handler<SubmitTransaction> transactionIntake = wrapper.apply(
+            new TransactionIntake(
+                    accounts,
+                    transactions,
+                    journals,
+                    placeAccountHolds,
+                    journalizeTransactions,
+                    clock));
 
     @Getter(lazy = true)
-    private final PlaceAccountHoldHandler placeAccountHoldHandler =
+    private final Handler<PlaceAccountHold> placeAccountHoldHandler = wrapper.apply(
             new PlaceAccountHoldHandler(
-                    accounts, accountHoldsPlaced, accountHoldsDeclined);
+                    accounts, accountHoldsPlaced, accountHoldsDeclined));
 
     @Getter(lazy = true)
-    private final AccountHoldPlacedHandler accountHoldPlacedHandler =
+    private final Handler<AccountHoldPlaced> accountHoldPlacedHandler = wrapper.apply(
             new AccountHoldPlacedHandler(
-                    transactions, releaseAccountHolds, journalizeTransactions, clock);
+                    transactions, releaseAccountHolds, journalizeTransactions, clock));
 
     @Getter(lazy = true)
-    private final AccountHoldDeclinedHandler accountHoldDeclinedHandler =
-            new AccountHoldDeclinedHandler(transactions, releaseAccountHolds);
+    private final Handler<AccountHoldDeclined> accountHoldDeclinedHandler = wrapper.apply(
+            new AccountHoldDeclinedHandler(transactions, releaseAccountHolds));
 
     @Getter(lazy = true)
-    private final ReleaseAccountHoldHandler releaseAccountHoldHandler =
-            new ReleaseAccountHoldHandler(accounts, accountHoldsReleased);
+    private final Handler<ReleaseAccountHold> releaseAccountHoldHandler = wrapper.apply(
+            new ReleaseAccountHoldHandler(accounts, accountHoldsReleased));
 
     @Getter(lazy = true)
-    private final AccountHoldReleasedHandler accountHoldReleasedHandler =
-            new AccountHoldReleasedHandler(transactions);
+    private final Handler<AccountHoldReleased> accountHoldReleasedHandler = wrapper.apply(
+            new AccountHoldReleasedHandler(transactions));
 
     @Getter(lazy = true)
-    private final JournalizeTransactionHandler journalizeTransactionHandler =
+    private final Handler<JournalizeTransaction> journalizeTransactionHandler = wrapper.apply(
             new JournalizeTransactionHandler(
                     accounts,
                     transactions,
                     journals,
                     transactionsJournalized,
-                    clock);
+                    clock));
 
     @Getter(lazy = true)
-    private final TransactionJournalizedHandler transactionJournalizedHandler =
+    private final Handler<TransactionJournalized> transactionJournalizedHandler = wrapper.apply(
             new TransactionJournalizedHandler(
-                    transactions, journals, settleAccountHolds);
+                    transactions, journals, settleAccountHolds));
 
     @Getter(lazy = true)
-    private final SettleAccountHoldHandler settleAccountHoldHandler =
-            new SettleAccountHoldHandler(accounts, accountHoldsSettled);
+    private final Handler<SettleAccountHold> settleAccountHoldHandler = wrapper.apply(
+            new SettleAccountHoldHandler(accounts, accountHoldsSettled));
 
     @Getter(lazy = true)
-    private final AccountHoldSettledHandler accountHoldSettledHandler =
-            new AccountHoldSettledHandler(transactions);
+    private final Handler<AccountHoldSettled> accountHoldSettledHandler = wrapper.apply(
+            new AccountHoldSettledHandler(transactions));
 }

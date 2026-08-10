@@ -39,6 +39,11 @@ additional modules or adapter implementations. Both expose common component
 contracts to the overall factory, so choosing a runtime does not introduce
 implementation switches throughout the object graph.
 
+Application handlers receive one composed wrapper from outer composition and
+apply it at creation time. Fake composition contributes an identity wrapper;
+durable composition contributes the shared JDBC transaction boundary. This is
+internal wiring within `app` and does not add a module or logical port.
+
 Regenerate the checked-in image with:
 
 ```shell

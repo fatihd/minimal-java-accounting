@@ -311,3 +311,17 @@ Localized transaction wrapping, poller selection, outbox publication,
 destination naming, and runtime construction in the runtime variants. This is
 an internal package and composition change only; Gradle module dependencies and
 the generated module diagram remain unchanged.
+
+## 2026-08-10 — Apply composed wrappers where handlers are created
+
+Replaced parallel raw, observed, and transactional handler fields in the
+overall factory with one type-preserving `HandlerWrapper` passed into the
+application module factory. Each lazy handler now applies that wrapper directly
+to its concrete implementation. Fake composition supplies identity, while the
+durable runtime contributes its JDBC transaction wrapper after observation.
+
+Used a generic-method wrapper rather than `Function<X, X>` because one ordinary
+JDK function cannot safely quantify over all heterogeneous `Handler<T>` types.
+This removes unchecked casts and retains explicit composition order. Handler
+observation names now derive from the concrete handler class at the wrapping
+boundary.

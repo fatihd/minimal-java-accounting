@@ -70,7 +70,8 @@ class ApplicationFactoryTest {
                 null,
                 null,
                 null,
-                null);
+                null,
+                HandlerWrapper.identity());
 
         assertSame(
                 application.getPlaceAccountHoldHandler(),

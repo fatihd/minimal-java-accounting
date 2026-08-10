@@ -28,7 +28,7 @@ sealed interface RuntimeModules permits InMemoryModules, DurableModules {
 
     AccountingDestinations destinations();
 
-    <T> Handler<T> transactional(Handler<T> handler);
+    HandlerWrapper handlerWrapper();
 
     String receiveName(String localName, String destination);
 
@@ -49,8 +49,8 @@ record InMemoryModules(
         InMemoryMessagingModuleFactory messaging) implements RuntimeModules {
 
     @Override
-    public <T> Handler<T> transactional(Handler<T> handler) {
-        return handler;
+    public HandlerWrapper handlerWrapper() {
+        return HandlerWrapper.identity();
     }
 
     @Override
@@ -90,9 +90,14 @@ record DurableModules(
         OutboxMessagingModuleFactory messaging) implements RuntimeModules {
 
     @Override
-    public <T> Handler<T> transactional(Handler<T> handler) {
-        return message -> postgresql.getTransactions()
-                .inTransaction(() -> handler.handle(message));
+    public HandlerWrapper handlerWrapper() {
+        return new HandlerWrapper() {
+            @Override
+            public <T> Handler<T> apply(Handler<T> handler) {
+                return message -> postgresql.getTransactions()
+                        .inTransaction(() -> handler.handle(message));
+            }
+        };
     }
 
     @Override

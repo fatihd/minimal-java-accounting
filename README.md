@@ -64,6 +64,14 @@ the selected implementation. Runtime-specific transaction, polling, outbox,
 destination, and lifecycle behavior stays behind `RuntimeModules`. This keeps
 adapter modules generic and makes cross-module wiring visible.
 
+The overall factory composes handler observation with the selected runtime's
+transaction wrapper and passes one type-preserving `HandlerWrapper` into the
+application module factory. Each lazy handler is wrapped where it is created;
+fake composition supplies `identity()` while durable composition adds the JDBC
+transaction boundary. A small generic-method interface is used because one JDK
+`Function<X, X>` cannot remain type-safe across heterogeneous `Handler<T>`
+types.
+
 Feature adapters do not depend on one another. Composition supplies shared
 technical support to each adapter independently: the PostgreSQL persistence
 adapter reconstructs model aggregates, while the outbox adapter spans the
