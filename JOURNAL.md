@@ -271,3 +271,16 @@ Removed the feature-adapter dependency between messaging and persistence. Both
 adapters now depend independently on shared PostgreSQL support, and combined
 integration tests cover transactional staging, queue acknowledgement and retry,
 topic fan-out, and the durable application composition.
+
+## 2026-08-10 — Separate adapters from their external resources
+
+Updated the durable architecture view to show one selected implementation for
+each logical infrastructure port. The outbox messaging adapter uses both the
+Artemis broker and shared PostgreSQL foundation; the PostgreSQL persistence
+adapter uses that same neutral foundation without depending on messaging.
+
+External broker and database deployments are rendered as cylinders rather than
+modules. The repository adapter has a separate dependency arrow to `model`,
+making aggregate reconstruction visible in addition to its implementation of
+the logical persistence port. Documented the rule that feature adapters do not
+depend on one another and receive common technical context from composition.

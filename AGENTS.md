@@ -131,6 +131,17 @@
 - Put each implementation family in its own adapter Gradle module. New HTTP,
   RDBMS, LocalStack, ActiveMQ, or other integrations must be additional adapters,
   not changes to model rules.
+- Select one adapter per logical port in a runtime composition. Name an adapter
+  for the boundary implementation it provides, not necessarily for one vendor:
+  an outbox messaging adapter may legitimately span a database and a broker.
+- Feature adapters under `adapters.*` must not depend on one another. When two
+  adapters need the same technology context, extract the smallest neutral
+  support into `shared.adapters.<technology>` and inject it into both from
+  `app`. Shared technical support is not itself the selected feature adapter.
+- Draw external databases, brokers, and protocols as resources, not Gradle
+  modules. Architecture dependency views must show adapter-to-model
+  dependencies when an adapter reconstructs model objects, in addition to the
+  adapter's logical-port implementation relationship.
 - Match each Gradle module with its Java package root under
   `dev.minimalaccounting`: `model` for business types and stable values,
   `shared.ports` for generic boundary contracts, and

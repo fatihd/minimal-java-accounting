@@ -15,11 +15,20 @@ ports. `api`, `persistence`, and `messaging` remain meaningful architectural
 boundaries even though their interfaces are typed uses of generic contracts
 from the grey `shared.ports` module rather than separate Gradle subprojects.
 Hollow triangle arrows identify implementations of those logical interfaces;
-filled arrows identify ordinary use or module dependencies. Box height
+filled arrows identify ordinary use or module dependencies. Cylinders identify
+external systems rather than modules. Box height
 communicates architectural weight: adapters are 100 units high, ports are 67
 units, and model, application, or technical-infrastructure modules are 150
 units. `d.m.` abbreviates `dev.minimalaccounting`; Java package names omit
 Gradle hyphens.
+
+The durable selection has one adapter for each logical infrastructure port.
+`adapters.messaging.outbox` implements messaging as one boundary spanning
+transactional PostgreSQL staging and Artemis delivery.
+`adapters.persistence.postgresql` implements persistence and depends on the
+model because repository adapters reconstruct model aggregates. Both use the
+neutral `shared.adapters.postgresql` technical foundation; neither feature
+adapter depends on the other.
 
 Regenerate the checked-in image with:
 
@@ -35,19 +44,20 @@ Regenerate the checked-in image with:
 | `model` | — |
 | `application` | `model`, `shared.ports` |
 | `infrastructure` | `shared.ports` |
+| `shared.adapters.postgresql` | `shared.ports` |
 | `adapters.api.console` | `model`, `shared.ports` |
 | `adapters.api.http` | `model`, `shared.ports` |
 | `adapters.persistence.in-memory` | `model`, `shared.ports` |
-| `adapters.persistence.postgresql` | `model`, `shared.ports` |
+| `adapters.persistence.postgresql` | `model`, `shared.ports`, `shared.adapters.postgresql` |
 | `adapters.messaging.in-memory` | `shared.ports` |
-| `adapters.messaging.artemis` | `shared.ports` |
-| `adapters.messaging.postgresql` | `shared.ports`, `adapters.persistence.postgresql` |
+| `adapters.messaging.outbox` | `shared.ports`, `shared.adapters.postgresql` |
 | `app` | `shared.ports`, `infrastructure`, `application`, `model`, and all adapters |
 
-The PostgreSQL messaging adapter depends on the PostgreSQL persistence adapter
-only to share its active JDBC connection. That is what lets repository changes
-and outbox inserts commit atomically. It still implements `Sender<T>` and does
-not add messaging behavior to repository interfaces.
+Composition injects one `JdbcTransactions` context from
+`shared.adapters.postgresql` into the repository and outbox adapters. That lets
+repository changes and outbox inserts commit atomically without creating an
+adapter-to-adapter dependency. The outbox adapter still implements the generic
+messaging contracts and does not add messaging behavior to repositories.
 
 `shared.ports` supplies the generic technical vocabulary: handlers, senders,
 receivers, deliveries, repositories, and transaction boundaries. Domain

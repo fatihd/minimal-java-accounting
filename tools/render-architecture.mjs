@@ -16,29 +16,31 @@ const kinds = {
   core: { fill: "#fff3cd", stroke: "#a97900" },
   infrastructurePort: { fill: "#efeaff", stroke: "#7157b5" },
   infrastructureAdapter: { fill: "#eaf8ee", stroke: "#3e8b58" },
-  anchor: { fill: "#f3f5f6", stroke: "#65747b" },
+  shared: { fill: "#f3f5f6", stroke: "#65747b" },
 };
 
-const commonNodes = [
-  { id: "app", x: 35, y: 585, width: 220, height: ADAPTER_HEIGHT, kind: "anchor", label: "app", role: "composition root" },
-  { id: "infrastructure", x: 35, y: 715, width: 220, height: CORE_HEIGHT, kind: "anchor", label: "infrastructure", role: "boundary decorators and runtime signals" },
-  { id: "http", x: 1000, y: 130, width: 500, height: ADAPTER_HEIGHT, kind: "adapter", label: "adapters.api.http", role: "HTTP and JSON translation" },
-  { id: "application", x: 480, y: 535, width: 450, height: CORE_HEIGHT, kind: "core", label: "application", role: "use cases and handlers" },
-  { id: "model", x: 1040, y: 535, width: 420, height: CORE_HEIGHT, kind: "core", label: "model", role: "aggregates and process manager" },
-  { id: "artemis", x: 360, y: 1090, width: 350, height: ADAPTER_HEIGHT, kind: "infrastructureAdapter", label: "adapters.messaging.artemis", role: "durable queues and topics" },
-  { id: "postgresqlMessaging", x: 730, y: 1090, width: 350, height: ADAPTER_HEIGHT, kind: "infrastructureAdapter", label: "adapters.messaging.postgresql", role: "transactional outbox" },
-  { id: "postgresqlPersistence", x: 1275, y: 1090, width: 350, height: ADAPTER_HEIGHT, kind: "infrastructureAdapter", label: "adapters.persistence.postgresql", role: "plain JDBC repositories" },
+const nodes = [
+  { id: "app", x: 35, y: 560, width: 220, height: ADAPTER_HEIGHT, kind: "shared", label: "app", role: "composition root" },
+  { id: "infrastructure", x: 35, y: 700, width: 220, height: CORE_HEIGHT, kind: "shared", label: "infrastructure", role: "boundary decorators and runtime signals" },
+  { id: "http", x: 1080, y: 125, width: 440, height: ADAPTER_HEIGHT, kind: "adapter", label: "adapters.api.http", role: "HTTP and JSON translation" },
+  { id: "apiPort", x: 1090, y: 335, width: 420, height: PORT_HEIGHT, kind: "port", label: "api", detail: "Handler<SubmitTransaction>", role: "logical inbound API port", logical: true },
+  { id: "application", x: 545, y: 535, width: 520, height: CORE_HEIGHT, kind: "core", label: "application", role: "use cases and handlers" },
+  { id: "model", x: 1250, y: 535, width: 500, height: CORE_HEIGHT, kind: "core", label: "model", role: "aggregates and process manager" },
+  { id: "messagingPort", x: 480, y: 835, width: 650, height: PORT_HEIGHT, kind: "infrastructurePort", label: "messaging", detail: "Sender<T> · Receiver<T> · Handler<T>", role: "logical messaging ports", logical: true },
+  { id: "persistencePort", x: 1200, y: 835, width: 650, height: PORT_HEIGHT, kind: "infrastructurePort", label: "persistence", detail: "Repository<Identifier, Aggregate> · TransactionBoundary", role: "logical persistence ports", logical: true },
+  { id: "sharedPorts", x: 2220, y: 835, width: 240, height: ADAPTER_HEIGHT, kind: "shared", label: "shared.ports", role: "generic port contracts" },
+  { id: "outbox", x: 480, y: 1085, width: 650, height: ADAPTER_HEIGHT, kind: "infrastructureAdapter", label: "adapters.messaging.outbox", role: "PostgreSQL outbox to Artemis" },
+  { id: "postgresqlPersistence", x: 1240, y: 1085, width: 610, height: ADAPTER_HEIGHT, kind: "infrastructureAdapter", label: "adapters.persistence.postgresql", role: "plain JDBC repositories" },
+  { id: "sharedPostgresql", x: 1985, y: 1085, width: 475, height: ADAPTER_HEIGHT, kind: "shared", label: "shared.adapters.postgresql", role: "shared JDBC transactions and migrations" },
 ];
 
-const nodes = [
-  ...commonNodes,
-  { id: "apiPort", x: 1040, y: 340, width: 420, height: PORT_HEIGHT, kind: "port", label: "api", detail: "Handler<SubmitTransaction>", role: "logical inbound API port", logical: true },
-  { id: "messagingPort", x: 360, y: 835, width: 660, height: PORT_HEIGHT, kind: "infrastructurePort", label: "messaging", detail: "Sender<T> · Receiver<T> · Handler<T>", role: "logical messaging ports", logical: true },
-  { id: "persistencePort", x: 1080, y: 835, width: 740, height: PORT_HEIGHT, kind: "infrastructurePort", label: "persistence", detail: "Repository<Identifier, Aggregate> · TransactionBoundary", role: "logical persistence ports", logical: true },
-  { id: "sharedPorts", x: 2245, y: 835, width: 220, height: ADAPTER_HEIGHT, kind: "anchor", label: "shared.ports", role: "generic port contracts" },
+const resources = [
+  { id: "artemisBroker", x: 550, y: 1350, width: 500, height: 70, orientation: "horizontal", label: "Apache Artemis", detail: "broker" },
+  { id: "postgresqlDatabase", x: 2140, y: 1305, width: 170, height: 165, orientation: "vertical", label: "PostgreSQL", detail: "database" },
 ];
 
 const node = (id) => nodes.find((candidate) => candidate.id === id);
+const resource = (id) => resources.find((candidate) => candidate.id === id);
 const centerX = (id) => node(id).x + node(id).width / 2;
 const centerY = (id) => node(id).y + node(id).height / 2;
 const top = (id) => node(id).y;
@@ -50,30 +52,35 @@ const edges = [
   `M ${centerX("app")} ${bottom("app")} L ${centerX("infrastructure")} ${top("infrastructure")}`,
   `M ${centerX("http")} ${bottom("http")} L ${centerX("http")} ${top("apiPort")}`,
   `M ${right("application")} ${centerY("application")} L ${left("model")} ${centerY("model")}`,
-  `M 650 ${bottom("application")} L 650 770 L 690 770 L 690 ${top("messagingPort")}`,
-  `M 850 ${bottom("application")} L 850 750 L 1450 750 L 1450 ${top("persistencePort")}`,
-  `M ${right("postgresqlMessaging")} ${centerY("postgresqlMessaging")} L ${left("postgresqlPersistence")} ${centerY("postgresqlPersistence")}`,
+  `M 700 ${bottom("application")} L 700 ${top("messagingPort")}`,
+  `M 950 ${bottom("application")} L 950 770 L 1450 770 L 1450 ${top("persistencePort")}`,
+  `M ${right("postgresqlPersistence")} ${centerY("postgresqlPersistence")} L ${left("sharedPostgresql")} ${centerY("sharedPostgresql")}`,
+  `M 1080 ${bottom("outbox")} L 1080 1260 L 2050 1260 L 2050 ${bottom("sharedPostgresql")}`,
+  `M 805 ${bottom("outbox")} L 805 ${resource("artemisBroker").y}`,
+  `M ${centerX("sharedPostgresql")} ${bottom("sharedPostgresql")} L ${centerX("sharedPostgresql")} 1245 L ${resource("postgresqlDatabase").x + resource("postgresqlDatabase").width / 2} 1245 L ${resource("postgresqlDatabase").x + resource("postgresqlDatabase").width / 2} ${resource("postgresqlDatabase").y}`,
+  `M ${right("postgresqlPersistence")} ${centerY("postgresqlPersistence") - 18} L 1920 ${centerY("postgresqlPersistence") - 18} L 1920 ${centerY("model")} L ${right("model")} ${centerY("model")}`,
+  `M ${centerX("sharedPostgresql")} ${top("sharedPostgresql")} L ${centerX("sharedPostgresql")} ${bottom("sharedPorts")}`,
 ];
 
 const implementationEdges = [
-  `M 650 ${top("application")} L 650 470 L 1100 470 L 1100 ${bottom("apiPort")}`,
-  `M ${centerX("artemis")} ${top("artemis")} L 550 ${bottom("messagingPort")}`,
-  `M ${centerX("postgresqlMessaging")} ${top("postgresqlMessaging")} L 900 ${bottom("messagingPort")}`,
-  `M ${centerX("postgresqlPersistence")} ${top("postgresqlPersistence")} L 1450 ${bottom("persistencePort")}`,
+  `M 760 ${top("application")} L 760 470 L 1150 470 L 1150 ${bottom("apiPort")}`,
+  `M ${centerX("outbox")} ${top("outbox")} L ${centerX("outbox")} ${bottom("messagingPort")}`,
+  `M ${centerX("postgresqlPersistence")} ${top("postgresqlPersistence")} L ${centerX("postgresqlPersistence")} ${bottom("persistencePort")}`,
 ];
 
 const bands = [
-  { x: 290, y: 105, width: 1920, height: 150, fill: "#fff8f5", stroke: "#e7b5a8", label: "API ADAPTERS" },
-  { x: 290, y: 295, width: 1920, height: 155, fill: "#f4f8ff", stroke: "#a9c7e8", label: "LOGICAL API PORT" },
-  { x: 290, y: 490, width: 1920, height: 235, fill: "#fffaf0", stroke: "#dbc88f", label: "CORE" },
-  { x: 290, y: 790, width: 1920, height: 175, fill: "#f8f5ff", stroke: "#c8b9e8", label: "LOGICAL INFRASTRUCTURE PORTS" },
-  { x: 290, y: 1040, width: 1920, height: 200, fill: "#f2fbf5", stroke: "#acd7b9", label: "INFRASTRUCTURE ADAPTERS" },
+  { x: 290, y: 100, width: 1900, height: 150, fill: "#fff8f5", stroke: "#e7b5a8", label: "API ADAPTERS" },
+  { x: 290, y: 295, width: 1900, height: 150, fill: "#f4f8ff", stroke: "#a9c7e8", label: "LOGICAL API PORT" },
+  { x: 290, y: 490, width: 1900, height: 235, fill: "#fffaf0", stroke: "#dbc88f", label: "CORE" },
+  { x: 290, y: 790, width: 1900, height: 175, fill: "#f8f5ff", stroke: "#c8b9e8", label: "LOGICAL INFRASTRUCTURE PORTS" },
+  { x: 290, y: 1040, width: 1900, height: 190, fill: "#f2fbf5", stroke: "#acd7b9", label: "INFRASTRUCTURE ADAPTERS" },
+  { x: 290, y: 1300, width: 1900, height: 180, fill: "#f7f8f9", stroke: "#c4cdd1", label: "EXTERNAL SYSTEMS" },
 ];
 
-const title = "Minimal Java Accounting — logical ports and adapters";
-const subtitle = "Dashed logical ports · generic contracts in shared.ports · Gradle modules remain solid";
-const description = "Two-axis ports and adapters diagram with dashed logical API, persistence, and messaging ports backed by generic contracts in the shared ports module.";
-const firstNote = "Solid boxes are Gradle modules; dashed boxes are logical typed ports backed by the generic contracts in shared.ports.";
+const title = "Minimal Java Accounting — logical ports, adapters, and resources";
+const subtitle = "One selected adapter per logical port · shared technical support stays neutral · external systems are cylinders";
+const description = "Two-axis ports and adapters diagram showing the durable outbox messaging adapter using PostgreSQL and Artemis, and the PostgreSQL repository adapter depending on the accounting model.";
+const firstNote = "Solid boxes are Gradle modules; dashed boxes are logical typed ports; cylinders are independently deployed external systems.";
 const secondNote = `Hollow triangles mean implements; filled arrows mean uses or depends on. Logical ports are ${PORT_HEIGHT} units high. d.m. = dev.minimalaccounting.`;
 
 const escape = (value) => value
@@ -104,8 +111,34 @@ const nodeSvg = nodes.map((item) => {
   </g>`;
 }).join("");
 
+const resourceSvg = resources.map((item) => {
+  const midpointX = item.x + item.width / 2;
+  const midpointY = item.y + item.height / 2;
+  if (item.orientation === "horizontal") {
+    const cap = 24;
+    return `
+  <g>
+    <title>${escape(item.label)} — external ${escape(item.detail)}</title>
+    <rect class="resource-body" x="${item.x + cap}" y="${item.y}" width="${item.width - cap * 2}" height="${item.height}"/>
+    <ellipse class="resource-cap" cx="${item.x + cap}" cy="${midpointY}" rx="${cap}" ry="${item.height / 2}"/>
+    <ellipse class="resource-cap" cx="${item.x + item.width - cap}" cy="${midpointY}" rx="${cap}" ry="${item.height / 2}"/>
+    <text class="module" x="${midpointX}" y="${midpointY + 6}">${escape(item.label)} · ${escape(item.detail)}</text>
+  </g>`;
+  }
+  const cap = 20;
+  return `
+  <g>
+    <title>${escape(item.label)} — external ${escape(item.detail)}</title>
+    <rect class="resource-body" x="${item.x}" y="${item.y + cap}" width="${item.width}" height="${item.height - cap * 2}"/>
+    <ellipse class="resource-cap" cx="${midpointX}" cy="${item.y + cap}" rx="${item.width / 2}" ry="${cap}"/>
+    <ellipse class="resource-cap" cx="${midpointX}" cy="${item.y + item.height - cap}" rx="${item.width / 2}" ry="${cap}"/>
+    <text class="module resource-label" x="${midpointX}" y="${midpointY - 3}">${escape(item.label)}</text>
+    <text class="package" x="${midpointX}" y="${midpointY + 23}">${escape(item.detail)}</text>
+  </g>`;
+}).join("");
+
 const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1375" viewBox="0 0 2500 1375" role="img" aria-labelledby="title description">
+<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1615" viewBox="0 0 2500 1615" role="img" aria-labelledby="title description">
   <title id="title">${escape(title)}</title>
   <desc id="description">${escape(description)}</desc>
   <defs>
@@ -131,17 +164,21 @@ const svg = `<?xml version="1.0" encoding="UTF-8"?>
       .logical-node { stroke-dasharray: 10 7; filter: none; }
       .edge { fill: none; stroke: #263238; stroke-width: 3; marker-end: url(#arrow); stroke-linecap: round; stroke-linejoin: round; }
       .implementation-edge { marker-end: url(#implementation-arrow); }
+      .resource-body, .resource-cap { fill: #eceff1; stroke: #65747b; stroke-width: 2.5; }
+      .resource-body { filter: url(#shadow); }
+      .resource-label { font-size: 17px; }
     </style>
   </defs>
-  <rect class="canvas" x="0" y="0" width="2500" height="1375"/>
+  <rect class="canvas" x="0" y="0" width="2500" height="1615"/>
   <text class="title" x="55" y="58">${escape(title)}</text>
   <text class="subtitle" x="55" y="91">${escape(subtitle)}</text>
 ${bandSvg}
 ${edgeSvg}
 ${nodeSvg}
-  <line x1="55" y1="1290" x2="2445" y2="1290" stroke="#d7dee1" stroke-width="1.5"/>
-  <text class="note" x="55" y="1328">${escape(firstNote)}</text>
-  <text class="note" x="55" y="1355">${escape(secondNote)}</text>
+${resourceSvg}
+  <line x1="55" y1="1530" x2="2445" y2="1530" stroke="#d7dee1" stroke-width="1.5"/>
+  <text class="note" x="55" y="1568">${escape(firstNote)}</text>
+  <text class="note" x="55" y="1595">${escape(secondNote)}</text>
 </svg>
 `;
 

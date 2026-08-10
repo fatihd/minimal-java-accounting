@@ -10,8 +10,9 @@ The repository includes two complete runtimes:
 
 - `memory` uses detached `ConcurrentHashMap` repositories plus in-memory queues
   and topics.
-- `durable` uses plain JDBC PostgreSQL repositories, a transactional PostgreSQL
-  outbox, and Apache Artemis Core queues and topics.
+- `durable` uses plain JDBC PostgreSQL repositories and one outbox messaging
+  adapter spanning transactional PostgreSQL staging and Apache Artemis Core
+  queues and topics.
 
 Both expose the same `Handler<SubmitTransaction>.handle(SubmitTransaction)` API
 through a console adapter or the JDK HTTP server. This is a reference
@@ -39,9 +40,12 @@ The modules have intentionally narrow responsibilities:
   implement `Repository<Identifier, Aggregate>`. The shared test fixture
   exports their detached explicit-update contract.
 - `adapters.messaging.in-memory` implements local queues, topics, and polling.
-- `adapters.messaging.postgresql` implements the transactional outbox.
-- `adapters.messaging.artemis` implements durable queues, topics,
-  subscriptions, and polling with the Artemis Core client.
+- `adapters.messaging.outbox` is the selected durable messaging adapter. It
+  stages sends in PostgreSQL and delivers queues, topics, subscriptions, and
+  polling through the Artemis Core client.
+- `shared.adapters.postgresql` provides JDBC transactions, migration
+  coordination, and failure translation reused independently by the durable
+  messaging and persistence adapters.
 - `infrastructure` provides boundary decorators backed by JDK logging,
   concurrent counters, latency histograms, immutable snapshots, and JMX.
 - `app` is the only composition root. Nothing depends on it.
@@ -54,6 +58,11 @@ only the dependencies used by the graph branch it requests. Module contexts
 expose raw objects; the overall `ApplicationFactory` joins modules and applies
 the current logging, metrics, JDBC transaction, polling, and outbox wrappers.
 This keeps adapter modules generic and makes cross-module wiring visible.
+
+Feature adapters do not depend on one another. Composition supplies shared
+technical support to each adapter independently: the PostgreSQL persistence
+adapter reconstructs model aggregates, while the outbox adapter spans the
+database and broker resources required to implement durable messaging.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for exact production module
 dependencies. See [STATE-TRANSITIONS.md](STATE-TRANSITIONS.md) for the generated
