@@ -1,5 +1,8 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
+import dev.minimalaccounting.shared.adapters.postgresql.JdbcTransactions;
+import dev.minimalaccounting.shared.adapters.postgresql.PostgresqlConfiguration;
+import dev.minimalaccounting.shared.adapters.postgresql.PostgresqlDataSourceFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.UUID;

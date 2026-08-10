@@ -1,7 +1,7 @@
 package dev.minimalaccounting.app;
 
 import dev.minimalaccounting.adapters.messaging.artemis.ArtemisConfiguration;
-import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlConfiguration;
+import dev.minimalaccounting.shared.adapters.postgresql.PostgresqlConfiguration;
 import lombok.NonNull;
 
 import java.util.Map;

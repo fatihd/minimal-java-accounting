@@ -1,5 +1,6 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
+import dev.minimalaccounting.shared.adapters.postgresql.JdbcTransactions;
 import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.model.account.Account;
 import dev.minimalaccounting.model.account.AccountHold;

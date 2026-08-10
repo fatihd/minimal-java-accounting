@@ -1,6 +1,6 @@
 package dev.minimalaccounting.adapters.messaging.postgresql;
 
-import dev.minimalaccounting.adapters.persistence.postgresql.JdbcTransactions;
+import dev.minimalaccounting.shared.adapters.postgresql.JdbcTransactions;
 import lombok.NonNull;
 
 import java.sql.Connection;

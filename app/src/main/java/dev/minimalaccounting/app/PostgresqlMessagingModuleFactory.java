@@ -2,7 +2,7 @@ package dev.minimalaccounting.app;
 
 import dev.minimalaccounting.adapters.messaging.postgresql.PostgresqlOutboxSchema;
 import dev.minimalaccounting.adapters.messaging.postgresql.PostgresqlOutboxSender;
-import dev.minimalaccounting.adapters.persistence.postgresql.JdbcTransactions;
+import dev.minimalaccounting.shared.adapters.postgresql.JdbcTransactions;
 import dev.minimalaccounting.model.account.AccountHoldDeclined;
 import dev.minimalaccounting.model.account.AccountHoldPlaced;
 import dev.minimalaccounting.model.account.AccountHoldReleased;
@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 final class PostgresqlMessagingModuleFactory {
-    private final PostgresqlPersistenceModuleFactory persistence;
+    private final PostgresqlModuleFactory postgresql;
     private final AccountingDestinations destinations;
 
     @Getter(lazy = true)
@@ -60,7 +60,7 @@ final class PostgresqlMessagingModuleFactory {
             sender(destinations.accountHoldSettled());
 
     private JdbcTransactions initializeOutbox() {
-        JdbcTransactions transactions = persistence.getJdbcTransactions();
+        JdbcTransactions transactions = postgresql.getTransactions();
         PostgresqlOutboxSchema.install(transactions);
         return transactions;
     }

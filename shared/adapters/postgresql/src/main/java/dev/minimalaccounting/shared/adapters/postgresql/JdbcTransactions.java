@@ -1,4 +1,4 @@
-package dev.minimalaccounting.adapters.persistence.postgresql;
+package dev.minimalaccounting.shared.adapters.postgresql;
 
 import dev.minimalaccounting.shared.ports.TransactionBoundary;
 

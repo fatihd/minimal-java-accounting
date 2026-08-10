@@ -1,9 +1,8 @@
 package dev.minimalaccounting.adapters.messaging.postgresql;
 
-import dev.minimalaccounting.adapters.persistence.postgresql.JdbcTransactions;
-import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlConfiguration;
-import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlDataSourceFactory;
-import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlSchema;
+import dev.minimalaccounting.shared.adapters.postgresql.JdbcTransactions;
+import dev.minimalaccounting.shared.adapters.postgresql.PostgresqlConfiguration;
+import dev.minimalaccounting.shared.adapters.postgresql.PostgresqlDataSourceFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -43,7 +42,6 @@ class PostgresqlOutboxTest {
             }
             return null;
         });
-        PostgresqlSchema.install(transactions);
         PostgresqlOutboxSchema.install(transactions);
     }
 
@@ -117,7 +115,7 @@ class PostgresqlOutboxTest {
 
         PostgresqlOutboxSchema.install(transactions);
 
-        assertEquals(2, migrationCount());
+        assertEquals(1, migrationCount());
     }
 
     private long migrationCount() {

@@ -81,6 +81,7 @@ tasks.register('integrationTest') {
     group = 'verification'
     description = 'Runs every Docker-backed adapter and durable-runtime test.'
     dependsOn(
+            ':shared.adapters.postgresql:integrationTest',
             ':adapters.persistence.postgresql:integrationTest',
             ':adapters.messaging.postgresql:integrationTest',
             ':adapters.messaging.artemis:integrationTest',

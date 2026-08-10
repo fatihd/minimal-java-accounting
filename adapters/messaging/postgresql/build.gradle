@@ -1,6 +1,6 @@
 dependencies {
     api project(':shared.ports')
-    implementation project(':adapters.persistence.postgresql')
+    api project(':shared.adapters.postgresql')
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.0'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.0'
 

@@ -1,4 +1,4 @@
-package dev.minimalaccounting.adapters.persistence.postgresql;
+package dev.minimalaccounting.shared.adapters.postgresql;
 
 public final class PostgresqlFailure extends IllegalStateException {
     private final String sqlState;

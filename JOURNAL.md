@@ -249,3 +249,12 @@ and exceptions live at its root, with aggregate types beneath account,
 transaction, and journal packages. The retained architecture view renders
 typed API, messaging, and persistence capabilities as dashed logical ports
 without pretending that each use of a generic contract is a Gradle module.
+
+## 2026-08-10 — Share PostgreSQL adapter support
+
+Extracted PostgreSQL configuration, data-source construction, JDBC transaction
+context, failure translation, and migration coordination into
+`shared.adapters.postgresql`. Persistence and outbox adapters now receive the
+same transaction context independently from composition instead of one adapter
+importing the other. A shared migration runner makes their schemas idempotent
+and independent of initialization order.

@@ -435,13 +435,13 @@ final class ApplicationFactory {
             Clock clock) {
         AccountingDestinations destinations =
                 AccountingDestinations.prefixed(configuration.destinationPrefix());
-        var persistence =
-                new PostgresqlPersistenceModuleFactory(configuration.database());
-        var outbox = new PostgresqlMessagingModuleFactory(persistence, destinations);
+        var postgresql = new PostgresqlModuleFactory(configuration.database());
+        var persistence = new PostgresqlPersistenceModuleFactory(postgresql);
+        var outbox = new PostgresqlMessagingModuleFactory(postgresql, destinations);
         var broker = new ArtemisMessagingModuleFactory(
                 configuration.broker(), destinations);
         var runtimeModules = new DurableModules(
-                destinations, persistence, outbox, broker);
+                destinations, postgresql, persistence, outbox, broker);
         var infrastructure = new InfrastructureModuleFactory(clock);
         return new ApplicationFactory(clock, runtimeModules, infrastructure);
     }
@@ -610,7 +610,7 @@ final class ApplicationFactory {
     private <T> Handler<T> transactional(Handler<T> handler) {
         if (modules instanceof DurableModules durable) {
             return new TransactionalHandler<>(
-                    durable.persistence().getJdbcTransactions(), handler);
+                    durable.postgresql().getTransactions(), handler);
         }
         return handler;
     }

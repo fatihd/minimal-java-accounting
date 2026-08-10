@@ -3,7 +3,7 @@ package dev.minimalaccounting.app;
 import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
 import dev.minimalaccounting.adapters.messaging.artemis.ArtemisConfiguration;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryTopic;
-import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlConfiguration;
+import dev.minimalaccounting.shared.adapters.postgresql.PostgresqlConfiguration;
 import dev.minimalaccounting.model.account.AccountHoldDeclined;
 import dev.minimalaccounting.model.account.AccountHoldPlaced;
 import dev.minimalaccounting.model.transaction.SubmitTransaction;

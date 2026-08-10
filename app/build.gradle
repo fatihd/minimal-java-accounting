@@ -6,6 +6,7 @@ dependencies {
     implementation project(':application')
     implementation project(':model')
     implementation project(':shared.ports')
+    implementation project(':shared.adapters.postgresql')
     implementation project(':adapters.api.console')
     implementation project(':adapters.api.http')
     implementation project(':adapters.persistence.in-memory')
