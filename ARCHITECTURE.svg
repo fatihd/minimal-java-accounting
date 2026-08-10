@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1615" viewBox="0 0 2500 1615" role="img" aria-labelledby="title description">
   <title id="title">Minimal Java Accounting — logical ports, adapters, and resources</title>
-  <desc id="description">Two-axis ports and adapters diagram showing the durable outbox messaging adapter using PostgreSQL and Artemis, and the PostgreSQL repository adapter depending on the accounting model.</desc>
+  <desc id="description">Two-axis ports and adapters diagram showing the durable outbox messaging adapter using PostgreSQL and Artemis, and the logical persistence capability depending on the accounting model.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#263238"/>
@@ -54,7 +54,7 @@
   <path class="edge" d="M 805 1185 L 805 1350"/>
   <path class="edge" d="M 1080 1185 L 1080 1260 L 1400 1260 L 1400 1387.5 L 1440 1387.5"/>
   <path class="edge" d="M 1525 1185 L 1525 1305"/>
-  <path class="edge" d="M 1830 1117 L 1920 1117 L 1920 610 L 1750 610"/>
+  <path class="edge" d="M 1650 835 L 1650 685"/>
   <path class="edge implementation-edge" d="M 760 535 L 760 470 L 1150 470 L 1150 402"/>
   <path class="edge implementation-edge" d="M 805 1085 L 805 902"/>
   <path class="edge implementation-edge" d="M 1525 1085 L 1525 902"/>

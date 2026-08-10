@@ -57,7 +57,7 @@ const edges = [
   `M 805 ${bottom("outbox")} L 805 ${resource("artemisBroker").y}`,
   `M 1080 ${bottom("outbox")} L 1080 1260 L 1400 1260 L 1400 ${resource("postgresqlDatabase").y + resource("postgresqlDatabase").height / 2} L ${resource("postgresqlDatabase").x} ${resource("postgresqlDatabase").y + resource("postgresqlDatabase").height / 2}`,
   `M ${centerX("postgresqlPersistence")} ${bottom("postgresqlPersistence")} L ${centerX("postgresqlPersistence")} ${resource("postgresqlDatabase").y}`,
-  `M ${right("postgresqlPersistence")} ${centerY("postgresqlPersistence") - 18} L 1920 ${centerY("postgresqlPersistence") - 18} L 1920 ${centerY("model")} L ${right("model")} ${centerY("model")}`,
+  `M 1650 ${top("persistencePort")} L 1650 ${bottom("model")}`,
 ];
 
 const implementationEdges = [
@@ -77,7 +77,7 @@ const bands = [
 
 const title = "Minimal Java Accounting — logical ports, adapters, and resources";
 const subtitle = "One selected adapter per logical port · shared technical support stays neutral · external systems are cylinders";
-const description = "Two-axis ports and adapters diagram showing the durable outbox messaging adapter using PostgreSQL and Artemis, and the PostgreSQL repository adapter depending on the accounting model.";
+const description = "Two-axis ports and adapters diagram showing the durable outbox messaging adapter using PostgreSQL and Artemis, and the logical persistence capability depending on the accounting model.";
 const firstNote = "Solid boxes are Gradle modules; dashed boxes are logical typed ports; cylinders are independently deployed external systems.";
 const secondNote = `Hollow triangles mean implements; filled arrows mean uses or depends on. Logical ports are ${PORT_HEIGHT} units high. d.m. = dev.minimalaccounting.`;
 

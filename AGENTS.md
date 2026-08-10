@@ -139,9 +139,10 @@
   support into `shared.adapters.<technology>` and inject it into both from
   `app`. Shared technical support is not itself the selected feature adapter.
 - Draw external databases, brokers, and protocols as resources, not Gradle
-  modules. Architecture dependency views must show adapter-to-model
-  dependencies when an adapter reconstructs model objects, in addition to the
-  adapter's logical-port implementation relationship.
+  modules. Architecture views show a logical persistence port's dependency on
+  the model types it stores and reconstructs. Concrete persistence adapters
+  acquire that relationship by implementing the port; do not duplicate it with
+  an adapter-to-model arrow.
 - Match each Gradle module with its Java package root under
   `dev.minimalaccounting`: `model` for business types and stable values,
   `shared.ports` for generic boundary contracts, and

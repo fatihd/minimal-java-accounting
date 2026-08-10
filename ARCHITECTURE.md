@@ -25,12 +25,13 @@ Gradle hyphens.
 The durable selection has one adapter for each logical infrastructure port.
 `adapters.messaging.outbox` implements messaging as one boundary spanning
 transactional PostgreSQL staging and Artemis delivery.
-`adapters.persistence.postgresql` implements persistence and depends on the
-model because repository adapters reconstruct model aggregates. Both use the
-neutral `shared.adapters.postgresql` technical foundation; neither feature
-adapter depends on the other. The shared module remains visible without its
-ordinary dependency arrows to reduce noise. Filled arrows from both adapters to
-the PostgreSQL cylinder show their direct JDBC use.
+The logical persistence port depends on the model types it stores and
+reconstructs; `adapters.persistence.postgresql` acquires that relationship by
+implementing the port. Both durable adapters use the neutral
+`shared.adapters.postgresql` technical foundation; neither feature adapter
+depends on the other. The shared module remains visible without its ordinary
+dependency arrows to reduce noise. Filled arrows from both adapters to the
+PostgreSQL cylinder show their direct JDBC use.
 
 Regenerate the checked-in image with:
 

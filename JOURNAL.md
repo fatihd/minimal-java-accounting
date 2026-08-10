@@ -291,3 +291,10 @@ Aligned the PostgreSQL resource with the persistence port and gave the outbox
 and repository adapters separate filled arrows to the database they access.
 Kept shared PostgreSQL support visible as neutral structure while omitting its
 ordinary dependency arrows, which are already captured by the module table.
+
+## 2026-08-10 — Assign model use to the persistence capability
+
+Moved the model-use arrow from the concrete PostgreSQL repository adapter to
+the logical persistence port. Concrete adapters acquire that model relationship
+by implementing the port, so repeating it on each implementation obscures the
+capability boundary.
