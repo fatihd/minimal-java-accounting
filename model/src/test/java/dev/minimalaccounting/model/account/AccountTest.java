@@ -64,10 +64,9 @@ class AccountTest {
         account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
         account.releaseHold(10, 0, DebitCredit.DEBIT, AMOUNT);
 
-        AccountHoldState state = account.releaseHold(
-                10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.releaseHold(10, 0, DebitCredit.DEBIT, AMOUNT);
 
-        assertEquals(AccountHoldState.RELEASED, state);
+        assertEquals(AccountHoldState.RELEASED, account.getHolds().getFirst().getState());
         assertEquals(0, account.getDebitsHeld().minor());
     }
 
@@ -77,10 +76,9 @@ class AccountTest {
         account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
         account.settleHold(10, 0, DebitCredit.DEBIT, AMOUNT);
 
-        AccountHoldState state = account.settleHold(
-                10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.settleHold(10, 0, DebitCredit.DEBIT, AMOUNT);
 
-        assertEquals(AccountHoldState.SETTLED, state);
+        assertEquals(AccountHoldState.SETTLED, account.getHolds().getFirst().getState());
         assertEquals(1100, account.getBalance().minor());
     }
 

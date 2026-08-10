@@ -2,6 +2,7 @@ package dev.minimalaccounting.model.account;
 
 import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
+import dev.minimalaccounting.model.PostingRejectedException;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +18,9 @@ public final class AccountHold {
     private int effectNumber;
     private DebitCredit side;
     private Money amount;
+    @Setter(AccessLevel.NONE)
     private AccountHoldState state;
+    @Setter(AccessLevel.NONE)
     private String failureReason;
 
     public AccountHold(
@@ -34,6 +37,36 @@ public final class AccountHold {
         this.state = state;
         this.failureReason = failureReason;
         validate();
+    }
+
+    static AccountHold placed(
+            long transactionId,
+            int effectNumber,
+            DebitCredit side,
+            Money amount) {
+        return new AccountHold(
+                transactionId,
+                effectNumber,
+                side,
+                amount,
+                AccountHoldState.HELD,
+                null);
+    }
+
+    AccountHoldState confirmPlacement(DebitCredit expectedSide, Money expectedAmount) {
+        requireMatches(expectedSide, expectedAmount);
+        if (state == AccountHoldState.DECLINED) {
+            throw new PostingRejectedException(failureReason);
+        }
+        return state;
+    }
+
+    Identifier identifier() {
+        return new Identifier(transactionId, effectNumber);
+    }
+
+    boolean hasIdentity(long expectedTransactionId, int expectedEffectNumber) {
+        return transactionId == expectedTransactionId && effectNumber == expectedEffectNumber;
     }
 
     void validate() {
@@ -90,5 +123,24 @@ public final class AccountHold {
             case null, default -> throw new IllegalStateException(
                     "Account hold in " + state + " state cannot be settled");
         };
+    }
+
+    boolean requiresSettlement() {
+        return switch (state) {
+            case HELD -> true;
+            case SETTLED -> false;
+            case null, default -> throw new IllegalStateException(
+                    "Account hold in " + state + " state cannot be settled");
+        };
+    }
+
+    Money heldAmount(DebitCredit expectedSide) {
+        if (state == AccountHoldState.HELD && side == expectedSide) {
+            return amount;
+        }
+        return Money.zero(amount.currency());
+    }
+
+    record Identifier(long transactionId, int effectNumber) {
     }
 }

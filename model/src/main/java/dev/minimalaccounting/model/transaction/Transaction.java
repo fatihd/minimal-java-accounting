@@ -93,29 +93,15 @@ public class Transaction {
         if (state != null) {
             throw new IllegalStateException("Transaction has already started");
         }
-        Map<Long, Long> changes = new LinkedHashMap<>();
-        Map<Long, TransactionLine> accounts = new LinkedHashMap<>();
-        for (TransactionLine line : lines) {
-            TransactionLine existing = accounts.putIfAbsent(line.getAccountId(), line);
-            if (existing != null
-                    && !existing.getAccountNumber().equals(line.getAccountNumber())) {
-                throw new PostingRejectedException(
-                        "Account identity does not match transaction lines");
-            }
-            long signed = line.getSide().signed(line.getLedgerAmount().minor());
-            changes.merge(line.getAccountId(), signed, Math::addExact);
-        }
-        effects = new ArrayList<>();
-        for (Map.Entry<Long, Long> change : changes.entrySet()) {
-            if (change.getValue() != 0) {
-                effects.add(accountEffect(
-                        change.getKey(), accounts.get(change.getKey()), change.getValue()));
-            }
-        }
+        effects = deriveAccountEffects();
         receivedAt = startedAt;
-        heldAt = effects.isEmpty() ? startedAt : null;
+        heldAt = null;
         failureReason = null;
-        state = effects.isEmpty() ? TransactionState.HELD : TransactionState.PLACING_HOLDS;
+        if (effects.isEmpty()) {
+            this.hold(startedAt);
+        } else {
+            state = TransactionState.PLACING_HOLDS;
+        }
     }
 
     public void placeEffect(
@@ -123,45 +109,29 @@ public class Transaction {
             int effectNumber,
             @NonNull Instant now) {
         AccountEffect effect = effect(accountId, effectNumber);
-        switch (effect.getState()) {
-            case PENDING -> {
-                switch (state) {
-                    case PLACING_HOLDS -> effect.hold();
-                    case RELEASING_HOLDS -> {
-                        effect.beginRelease();
-                        return;
-                    }
-                    case null, default -> throw unexpectedEffectState("place", effect);
-                }
+        if (effect.isAwaitingHold()
+                && state != TransactionState.PLACING_HOLDS
+                && state != TransactionState.RELEASING_HOLDS) {
+            throw unexpectedTransactionState("place");
+        }
+        if (!effect.hold()) {
+            return;
+        }
+        switch (state) {
+            case PLACING_HOLDS, HELD -> {
+                // Continue below to determine whether every effect is held.
             }
-            case HELD -> {
-                switch (state) {
-                    case PLACING_HOLDS, HELD -> {
-                        // Continue below to determine whether every effect is held.
-                    }
-                    case RELEASING_HOLDS -> {
-                        effect.beginRelease();
-                        return;
-                    }
-                    case SETTLING, COMPLETED -> {
-                        return;
-                    }
-                    case null, default -> throw unexpectedEffectState("place", effect);
-                }
-            }
-            case RELEASING, RELEASED, SETTLING, SETTLED -> {
+            case RELEASING_HOLDS -> {
+                effect.beginRelease();
                 return;
             }
-            case DECLINED -> throw new IllegalStateException(
-                    "Account hold cannot be both placed and declined");
-        }
-        boolean complete = effects.stream()
-                .allMatch(candidate -> candidate.getState() == AccountEffectState.HELD);
-        if (complete) {
-            state = TransactionState.HELD;
-            if (heldAt == null) {
-                heldAt = now;
+            case SETTLING, COMPLETED -> {
+                return;
             }
+            case null, default -> throw unexpectedTransactionState("place");
+        }
+        if (allHoldsPlaced()) {
+            this.hold(now);
         }
     }
 
@@ -170,30 +140,15 @@ public class Transaction {
             int effectNumber,
             String reason) {
         AccountEffect effect = effect(accountId, effectNumber);
-        switch (effect.getState()) {
-            case PENDING -> {
-                switch (state) {
-                    case PLACING_HOLDS, RELEASING_HOLDS -> {
-                        effect.decline();
-                        failureReason = reason;
-                    }
-                    case null, default -> throw unexpectedEffectState("decline", effect);
-                }
-            }
-            case DECLINED -> {
-                // A duplicate refusal reconfirms the same release decision.
-            }
-            default -> throw new IllegalStateException(
-                    "Account hold cannot be both declined and "
-                            + effect.getState().name().toLowerCase());
+        if (effect.isAwaitingHold()
+                && state != TransactionState.PLACING_HOLDS
+                && state != TransactionState.RELEASING_HOLDS) {
+            throw unexpectedTransactionState("decline");
         }
-        state = TransactionState.RELEASING_HOLDS;
-        for (AccountEffect candidate : effects) {
-            if (candidate.getState() == AccountEffectState.HELD) {
-                candidate.beginRelease();
-            }
+        if (effect.decline()) {
+            failureReason = reason;
         }
-        rejectIfFinished();
+        beginRelease();
     }
 
     public void releaseEffect(long accountId, int effectNumber) {
@@ -217,22 +172,17 @@ public class Transaction {
                     "Transaction account holds are not complete");
         }
         if (effects.isEmpty()) {
-            state = TransactionState.COMPLETED;
+            complete();
         } else {
-            state = TransactionState.SETTLING;
-            for (AccountEffect effect : effects) {
-                effect.beginSettlement();
-            }
+            beginSettlement();
         }
     }
 
     public void settleEffect(long accountId, int effectNumber) {
         AccountEffect effect = effect(accountId, effectNumber);
         effect.settle();
-        boolean complete = effects.stream()
-                .allMatch(candidate -> candidate.getState() == AccountEffectState.SETTLED);
-        if (complete) {
-            state = TransactionState.COMPLETED;
+        if (allHoldsSettled()) {
+            complete();
         }
     }
 
@@ -243,44 +193,83 @@ public class Transaction {
         }
     }
 
+    private List<AccountEffect> deriveAccountEffects() {
+        Map<Long, Long> changes = new LinkedHashMap<>();
+        Map<Long, TransactionLine> accounts = new LinkedHashMap<>();
+        for (TransactionLine line : lines) {
+            TransactionLine existing = accounts.putIfAbsent(line.getAccountId(), line);
+            if (existing != null
+                    && !existing.getAccountNumber().equals(line.getAccountNumber())) {
+                throw new PostingRejectedException(
+                        "Account identity does not match transaction lines");
+            }
+            long signed = line.getSide().signed(line.getLedgerAmount().minor());
+            changes.merge(line.getAccountId(), signed, Math::addExact);
+        }
+        List<AccountEffect> derived = new ArrayList<>();
+        for (Map.Entry<Long, Long> change : changes.entrySet()) {
+            if (change.getValue() != 0) {
+                TransactionLine line = accounts.get(change.getKey());
+                derived.add(AccountEffect.pending(
+                        change.getKey(),
+                        line.getAccountNumber(),
+                        new Money(change.getValue(), line.getLedgerAmount().currency())));
+            }
+        }
+        return derived;
+    }
+
+    private void hold(Instant now) {
+        state = TransactionState.HELD;
+        if (heldAt == null) {
+            heldAt = now;
+        }
+    }
+
+    private boolean allHoldsPlaced() {
+        return effects.stream().allMatch(AccountEffect::isHeld);
+    }
+
+    private void beginRelease() {
+        state = TransactionState.RELEASING_HOLDS;
+        for (AccountEffect candidate : effects) {
+            candidate.beginReleaseIfHeld();
+        }
+        rejectIfFinished();
+    }
+
+    private void beginSettlement() {
+        state = TransactionState.SETTLING;
+        for (AccountEffect effect : effects) {
+            effect.beginSettlement();
+        }
+    }
+
+    private boolean allHoldsSettled() {
+        return effects.stream().allMatch(AccountEffect::isSettled);
+    }
+
+    private void complete() {
+        state = TransactionState.COMPLETED;
+    }
+
     private AccountEffect effect(long accountId, int effectNumber) {
         if (effectNumber < 0 || effectNumber >= effects.size()) {
             throw new IllegalArgumentException("Transaction effect does not exist");
         }
         AccountEffect effect = effects.get(effectNumber);
-        if (effect.getAccountId() != accountId) {
-            throw new IllegalArgumentException("Account does not match transaction effect");
-        }
+        effect.requireAccount(accountId);
         return effect;
     }
 
-    private static IllegalStateException unexpectedEffectState(
-            String operation,
-            AccountEffect effect) {
+    private IllegalStateException unexpectedTransactionState(String operation) {
         return new IllegalStateException(
-                "Cannot " + operation + " account hold in " + effect.getState() + " state");
-    }
-
-    private static AccountEffect accountEffect(
-            long accountId,
-            TransactionLine line,
-            long signedAmount) {
-        DebitCredit side = signedAmount > 0 ? DebitCredit.DEBIT : DebitCredit.CREDIT;
-        return new AccountEffect(
-                accountId,
-                line.getAccountNumber(),
-                side,
-                new Money(
-                        signedAmount > 0
-                                ? signedAmount
-                                : Math.negateExact(signedAmount),
-                        line.getLedgerAmount().currency()),
-                AccountEffectState.PENDING);
+                "Cannot " + operation + " account hold while transaction is " + state);
     }
 
     private void rejectIfFinished() {
         boolean finished = effects.stream()
-                .allMatch(AccountEffect::releaseFinished);
+                .allMatch(AccountEffect::isReleaseFinished);
         if (finished) {
             state = TransactionState.REJECTED;
         }

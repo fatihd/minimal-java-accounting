@@ -325,3 +325,20 @@ JDK function cannot safely quantify over all heterogeneous `Handler<T>` types.
 This removes unchecked casts and retains explicit composition order. Handler
 observation names now derive from the concrete handler class at the wrapping
 boundary.
+
+## 2026-08-10 — Put owned lifecycle behavior on the owning entity
+
+Moved intrinsic account-effect creation, identity checks, transitions,
+idempotency, conflicts, and state queries from `Transaction` into
+`AccountEffect`. `Transaction` retains netting, root state and timestamps,
+failure reason, and decisions spanning its effect collection. The process
+manager now asks effects intention-revealing questions instead of interpreting
+their lifecycle enum.
+
+Applied the same boundary to `AccountHold`. The child now owns placement retry
+behavior, composite identity, settlement eligibility, and held-balance
+contribution. `Account` retains collection uniqueness, account currency,
+projected balance and limits, and the actual balance mutation. Release and
+settlement no longer return child state that production callers ignored. These
+changes make lifecycle rules directly testable without changing the existing
+state machines or exposing child mutation outside the aggregate root.

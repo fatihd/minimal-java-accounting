@@ -61,7 +61,7 @@ public final class TransactionProcessManager {
         List<PlaceAccountHold> commands = new ArrayList<>();
         for (int effectNumber = 0; effectNumber < effects.size(); effectNumber++) {
             AccountEffect effect = effects.get(effectNumber);
-            if (effect.getState() == AccountEffectState.PENDING) {
+            if (effect.isAwaitingHold()) {
                 commands.add(new PlaceAccountHold(
                         effect.getAccountId(), transactionId(), effectNumber,
                         effect.getSide(), effect.getLedgerAmount()));
@@ -75,7 +75,7 @@ public final class TransactionProcessManager {
             return Optional.empty();
         }
         AccountEffect effect = effect(effectNumber);
-        if (effect.getState() != AccountEffectState.RELEASING) {
+        if (!effect.isAwaitingRelease()) {
             return Optional.empty();
         }
         return Optional.of(release(effect, effectNumber));
@@ -89,7 +89,7 @@ public final class TransactionProcessManager {
         List<ReleaseAccountHold> commands = new ArrayList<>();
         for (int effectNumber = 0; effectNumber < effects.size(); effectNumber++) {
             AccountEffect effect = effects.get(effectNumber);
-            if (effect.getState() == AccountEffectState.RELEASING) {
+            if (effect.isAwaitingRelease()) {
                 commands.add(release(effect, effectNumber));
             }
         }
@@ -111,7 +111,7 @@ public final class TransactionProcessManager {
         List<SettleAccountHold> commands = new ArrayList<>();
         for (int effectNumber = 0; effectNumber < effects.size(); effectNumber++) {
             AccountEffect effect = effects.get(effectNumber);
-            if (effect.getState() == AccountEffectState.SETTLING) {
+            if (effect.isAwaitingSettlement()) {
                 commands.add(new SettleAccountHold(
                         effect.getAccountId(), transactionId(), effectNumber,
                         effect.getSide(), effect.getLedgerAmount()));

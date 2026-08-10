@@ -4,16 +4,15 @@ import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
 
-import lombok.AllArgsConstructor;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter(AccessLevel.PACKAGE)
 @NoArgsConstructor
-@AllArgsConstructor
 public class AccountEffect {
     private long accountId;
     private AccountNumber accountNumber;
@@ -22,25 +21,82 @@ public class AccountEffect {
     @Setter(AccessLevel.NONE)
     private AccountEffectState state;
 
-    void hold() {
-        state = switch (state) {
-            case PENDING -> AccountEffectState.HELD;
-            case null, default -> throw invalidTransition("hold");
+    public AccountEffect(
+            long accountId,
+            @NonNull AccountNumber accountNumber,
+            @NonNull DebitCredit side,
+            @NonNull Money ledgerAmount,
+            @NonNull AccountEffectState state) {
+        if (accountId < 1) {
+            throw new IllegalArgumentException("accountId must be positive");
+        }
+        if (ledgerAmount.minor() <= 0) {
+            throw new IllegalArgumentException("ledgerAmount must be positive");
+        }
+        this.accountId = accountId;
+        this.accountNumber = accountNumber;
+        this.side = side;
+        this.ledgerAmount = ledgerAmount;
+        this.state = state;
+    }
+
+    static AccountEffect pending(
+            long accountId,
+            @NonNull AccountNumber accountNumber,
+            @NonNull Money netChange) {
+        if (netChange.minor() == 0) {
+            throw new IllegalArgumentException("netChange must not be zero");
+        }
+        boolean debit = netChange.minor() > 0;
+        return new AccountEffect(
+                accountId,
+                accountNumber,
+                debit ? DebitCredit.DEBIT : DebitCredit.CREDIT,
+                new Money(
+                        debit
+                                ? netChange.minor()
+                                : Math.negateExact(netChange.minor()),
+                        netChange.currency()),
+                AccountEffectState.PENDING);
+    }
+
+    boolean hold() {
+        return switch (state) {
+            case PENDING -> {
+                state = AccountEffectState.HELD;
+                yield true;
+            }
+            case HELD -> true;
+            case RELEASING, RELEASED, SETTLING, SETTLED -> false;
+            case DECLINED -> throw new IllegalStateException(
+                    "Account hold cannot be both placed and declined");
+            case null -> throw invalidTransition("hold");
         };
     }
 
-    void decline() {
-        state = switch (state) {
-            case PENDING -> AccountEffectState.DECLINED;
-            case null, default -> throw invalidTransition("decline");
+    boolean decline() {
+        return switch (state) {
+            case PENDING -> {
+                state = AccountEffectState.DECLINED;
+                yield true;
+            }
+            case DECLINED -> false;
+            case null, default -> throw new IllegalStateException(
+                    "Account hold cannot be both declined and " + stateName());
         };
     }
 
     void beginRelease() {
         state = switch (state) {
-            case PENDING, HELD, RELEASING -> AccountEffectState.RELEASING;
+            case HELD, RELEASING -> AccountEffectState.RELEASING;
             case null, default -> throw invalidTransition("begin release");
         };
+    }
+
+    void beginReleaseIfHeld() {
+        if (isHeld()) {
+            beginRelease();
+        }
     }
 
     void release() {
@@ -64,15 +120,45 @@ public class AccountEffect {
         };
     }
 
-    boolean releaseFinished() {
+    boolean isAwaitingHold() {
+        return state == AccountEffectState.PENDING;
+    }
+
+    boolean isHeld() {
+        return state == AccountEffectState.HELD;
+    }
+
+    boolean isAwaitingRelease() {
+        return state == AccountEffectState.RELEASING;
+    }
+
+    boolean isAwaitingSettlement() {
+        return state == AccountEffectState.SETTLING;
+    }
+
+    boolean isSettled() {
+        return state == AccountEffectState.SETTLED;
+    }
+
+    boolean isReleaseFinished() {
         return switch (state) {
             case DECLINED, RELEASED -> true;
             case null, default -> false;
         };
     }
 
+    void requireAccount(long expectedAccountId) {
+        if (accountId != expectedAccountId) {
+            throw new IllegalArgumentException("Account does not match transaction effect");
+        }
+    }
+
     private IllegalStateException invalidTransition(String transition) {
         return new IllegalStateException(
                 "Cannot " + transition + " account effect in " + state + " state");
+    }
+
+    private String stateName() {
+        return state == null ? "null" : state.name().toLowerCase();
     }
 }

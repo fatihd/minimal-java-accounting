@@ -83,10 +83,13 @@ dependencies. See [STATE-TRANSITIONS.md](STATE-TRANSITIONS.md) for the generated
 
 ## Business and workflow boundaries
 
-Aggregate roots validate and mutate their own business state. `Account` owns
-hold placement, release, and settlement. `Transaction` owns its state and
-`AccountEffect` children; callers request operations such as `placeEffect` or
-`settleEffect` rather than assigning child state.
+Aggregate roots validate and mutate their own business state. They coordinate
+rules spanning the root and its children, while each owned lifecycle entity
+owns its local identity, invariants, transitions, and retry behavior. `Account`
+invokes business operations on `AccountHold`; `Transaction` does the same for
+`AccountEffect`. Neither root assigns or interprets a child's lifecycle enum,
+and callers still enter through root operations such as `placeHold`,
+`placeEffect`, or `settleEffect`.
 
 A command handler loads one target aggregate, invokes its matching operation,
 persists it, and emits the resulting event. An event handler loads the aggregate
