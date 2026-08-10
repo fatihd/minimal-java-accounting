@@ -12,6 +12,5 @@ record DurableModules(
         AccountingDestinations destinations,
         PostgresqlModuleFactory postgresql,
         PostgresqlPersistenceModuleFactory persistence,
-        PostgresqlMessagingModuleFactory outbox,
-        ArtemisMessagingModuleFactory broker) implements RuntimeModules {
+        OutboxMessagingModuleFactory messaging) implements RuntimeModules {
 }

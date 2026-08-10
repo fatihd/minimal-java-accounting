@@ -3,7 +3,7 @@ package dev.minimalaccounting.app;
 import dev.minimalaccounting.model.account.AccountIdentifier;
 import dev.minimalaccounting.model.account.Account;
 import dev.minimalaccounting.shared.ports.Repository;
-import dev.minimalaccounting.adapters.messaging.artemis.ArtemisConnection;
+import dev.minimalaccounting.adapters.messaging.outbox.ArtemisConnection;
 import dev.minimalaccounting.infrastructure.MetricsRegistry;
 import dev.minimalaccounting.model.transaction.SubmitTransaction;
 import dev.minimalaccounting.shared.ports.Handler;

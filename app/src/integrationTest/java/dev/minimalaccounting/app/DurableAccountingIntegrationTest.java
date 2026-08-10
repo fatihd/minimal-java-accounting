@@ -2,7 +2,7 @@ package dev.minimalaccounting.app;
 
 import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
 import dev.minimalaccounting.adapters.api.http.HttpTransactionServer;
-import dev.minimalaccounting.adapters.messaging.artemis.ArtemisConfiguration;
+import dev.minimalaccounting.adapters.messaging.outbox.ArtemisConfiguration;
 import dev.minimalaccounting.shared.adapters.postgresql.JdbcTransactions;
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlAccountRepository;
 import dev.minimalaccounting.shared.adapters.postgresql.PostgresqlConfiguration;

@@ -258,3 +258,16 @@ context, failure translation, and migration coordination into
 same transaction context independently from composition instead of one adapter
 importing the other. A shared migration runner makes their schemas idempotent
 and independent of initialization order.
+
+## 2026-08-10 — Implement durable messaging as one outbox adapter
+
+Combined PostgreSQL message staging and Artemis delivery in
+`adapters.messaging.outbox`, the single durable implementation of the logical
+messaging port selected by composition. Its queue and topic types stage sends in
+the shared JDBC transaction context, while receivers consume from Artemis and a
+dedicated publisher relays committed outbox rows to the broker.
+
+Removed the feature-adapter dependency between messaging and persistence. Both
+adapters now depend independently on shared PostgreSQL support, and combined
+integration tests cover transactional staging, queue acknowledgement and retry,
+topic fan-out, and the durable application composition.

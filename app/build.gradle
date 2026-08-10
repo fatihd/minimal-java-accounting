@@ -12,8 +12,7 @@ dependencies {
     implementation project(':adapters.persistence.in-memory')
     implementation project(':adapters.persistence.postgresql')
     implementation project(':adapters.messaging.in-memory')
-    implementation project(':adapters.messaging.postgresql')
-    implementation project(':adapters.messaging.artemis')
+    implementation project(':adapters.messaging.outbox')
     implementation project(':infrastructure')
 
     testImplementation 'org.testcontainers:testcontainers:2.0.5'
