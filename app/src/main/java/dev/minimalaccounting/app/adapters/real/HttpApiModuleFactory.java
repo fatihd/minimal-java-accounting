@@ -1,4 +1,4 @@
-package dev.minimalaccounting.app;
+package dev.minimalaccounting.app.adapters.real;
 
 import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
 import dev.minimalaccounting.adapters.api.http.HttpTransactionServer;
@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 
 @RequiredArgsConstructor
-final class HttpApiModuleFactory {
+public final class HttpApiModuleFactory {
     private final HttpConfiguration configuration;
     private final Handler<SubmitTransaction> transactions;
 

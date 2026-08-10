@@ -1,4 +1,4 @@
-package dev.minimalaccounting.app;
+package dev.minimalaccounting.app.adapters.fake;
 
 import dev.minimalaccounting.adapters.api.console.ConsoleTransactionAdapter;
 import dev.minimalaccounting.model.transaction.SubmitTransaction;
@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-final class ConsoleApiModuleFactory {
+public final class ConsoleApiModuleFactory {
     private final Handler<SubmitTransaction> transactions;
 
     @Getter(lazy = true)

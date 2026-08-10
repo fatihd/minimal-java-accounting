@@ -52,12 +52,17 @@ The modules have intentionally narrow responsibilities:
 
 `shared.ports` provides the generic boundary vocabulary spoken by the
 implementation. Composition is separate: `app` has one small factory context
-for each runtime-contributing module. Each
-context memoizes its objects independently, so an integration test can supply
-only the dependencies used by the graph branch it requests. Module contexts
-expose raw objects; the overall `ApplicationFactory` joins modules and applies
-the current logging, metrics, JDBC transaction, polling, and outbox wrappers.
-This keeps adapter modules generic and makes cross-module wiring visible.
+for each runtime-contributing module. Factories selecting production-facing
+HTTP, PostgreSQL, and outbox adapters live under `app.adapters.real`; console
+and in-memory test/demo adapters live under `app.adapters.fake`. Each context
+memoizes its objects independently, so an integration test can supply only the
+dependencies used by the graph branch it requests.
+
+Both families expose the same app-local persistence and messaging component
+contracts. `ApplicationFactory` consumes those contracts without switching on
+the selected implementation. Runtime-specific transaction, polling, outbox,
+destination, and lifecycle behavior stays behind `RuntimeModules`. This keeps
+adapter modules generic and makes cross-module wiring visible.
 
 Feature adapters do not depend on one another. Composition supplies shared
 technical support to each adapter independently: the PostgreSQL persistence

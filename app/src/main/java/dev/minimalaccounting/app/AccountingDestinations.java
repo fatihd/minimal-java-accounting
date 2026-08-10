@@ -2,7 +2,7 @@ package dev.minimalaccounting.app;
 
 import lombok.NonNull;
 
-record AccountingDestinations(
+public record AccountingDestinations(
         @NonNull String placeAccountHold,
         @NonNull String releaseAccountHold,
         @NonNull String journalizeTransaction,

@@ -1,15 +1,13 @@
 package dev.minimalaccounting.app;
 
-import dev.minimalaccounting.model.journal.JournalIdentifier;
-import dev.minimalaccounting.model.journal.JournalEntry;
-import dev.minimalaccounting.model.transaction.TransactionIdentifier;
-import dev.minimalaccounting.model.transaction.Transaction;
-import dev.minimalaccounting.model.account.AccountIdentifier;
-import dev.minimalaccounting.model.account.Account;
-import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.app.adapters.fake.InMemoryMessagingModuleFactory;
+import dev.minimalaccounting.app.adapters.fake.InMemoryPersistenceModuleFactory;
+import dev.minimalaccounting.app.adapters.fake.ConsoleApiModuleFactory;
+import dev.minimalaccounting.app.adapters.real.HttpApiModuleFactory;
+import dev.minimalaccounting.app.adapters.real.OutboxMessagingModuleFactory;
+import dev.minimalaccounting.app.adapters.real.PostgresqlModuleFactory;
+import dev.minimalaccounting.app.adapters.real.PostgresqlPersistenceModuleFactory;
 import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
-import dev.minimalaccounting.adapters.messaging.outbox.OutboxPoller;
-import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryPoller;
 import dev.minimalaccounting.model.account.AccountHoldDeclined;
 import dev.minimalaccounting.model.account.AccountHoldPlaced;
 import dev.minimalaccounting.model.account.AccountHoldReleased;
@@ -46,51 +44,56 @@ final class ApplicationFactory {
 
     @Getter(lazy = true)
     private final Sender<PlaceAccountHold> placeAccountHolds = getDecorators().sender(
-            "send.place-account-hold", rawPlaceAccountHolds());
+            "send.place-account-hold", modules.messaging().getPlaceAccountHolds());
 
     @Getter(lazy = true)
     private final Sender<ReleaseAccountHold> releaseAccountHolds = getDecorators().sender(
-            "send.release-account-hold", rawReleaseAccountHolds());
+            "send.release-account-hold", modules.messaging().getReleaseAccountHolds());
 
     @Getter(lazy = true)
     private final Sender<JournalizeTransaction> journalizeTransactions =
             getDecorators().sender(
-                    "send.journalize-transaction", rawJournalizeTransactions());
+                    "send.journalize-transaction",
+                    modules.messaging().getJournalizeTransactions());
 
     @Getter(lazy = true)
     private final Sender<SettleAccountHold> settleAccountHolds = getDecorators().sender(
-            "send.settle-account-hold", rawSettleAccountHolds());
+            "send.settle-account-hold", modules.messaging().getSettleAccountHolds());
 
     @Getter(lazy = true)
     private final Sender<AccountHoldPlaced> accountHoldsPlaced = getDecorators().sender(
-            "publish.account-hold-placed", rawAccountHoldsPlaced());
+            "publish.account-hold-placed", modules.messaging().getAccountHoldsPlaced());
 
     @Getter(lazy = true)
     private final Sender<AccountHoldDeclined> accountHoldsDeclined =
             getDecorators().sender(
-                    "publish.account-hold-declined", rawAccountHoldsDeclined());
+                    "publish.account-hold-declined",
+                    modules.messaging().getAccountHoldsDeclined());
 
     @Getter(lazy = true)
     private final Sender<AccountHoldReleased> accountHoldsReleased =
             getDecorators().sender(
-                    "publish.account-hold-released", rawAccountHoldsReleased());
+                    "publish.account-hold-released",
+                    modules.messaging().getAccountHoldsReleased());
 
     @Getter(lazy = true)
     private final Sender<TransactionJournalized> transactionsJournalized =
             getDecorators().sender(
-                    "publish.transaction-journalized", rawTransactionsJournalized());
+                    "publish.transaction-journalized",
+                    modules.messaging().getTransactionsJournalized());
 
     @Getter(lazy = true)
     private final Sender<AccountHoldSettled> accountHoldsSettled =
             getDecorators().sender(
-                    "publish.account-hold-settled", rawAccountHoldsSettled());
+                    "publish.account-hold-settled",
+                    modules.messaging().getAccountHoldsSettled());
 
     @Getter(lazy = true)
     private final ApplicationModuleFactory applicationModule =
             new ApplicationModuleFactory(
-                    accountRepository(),
-                    transactionRepository(),
-                    journalRepository(),
+                    modules.persistence().getAccountRepository(),
+                    modules.persistence().getTransactionRepository(),
+                    modules.persistence().getJournalRepository(),
                     getPlaceAccountHolds(),
                     getReleaseAccountHolds(),
                     getJournalizeTransactions(),
@@ -204,31 +207,31 @@ final class ApplicationFactory {
     private final Receiver<PlaceAccountHold> placeAccountHoldReceiver =
             getDecorators().receiver(
                     receiveName("place-account-hold", destinations().placeAccountHold()),
-                    rawPlaceAccountHoldReceiver());
+                    modules.messaging().getPlaceAccountHoldReceiver());
 
     @Getter(lazy = true)
     private final Receiver<AccountHoldPlaced> accountHoldPlacedReceiver =
             getDecorators().receiver(
                     receiveName("account-hold-placed", destinations().accountHoldPlaced()),
-                    rawAccountHoldPlacedReceiver());
+                    modules.messaging().getAccountHoldPlacedWorkflow());
 
     @Getter(lazy = true)
     private final Receiver<AccountHoldDeclined> accountHoldDeclinedReceiver =
             getDecorators().receiver(
                     receiveName("account-hold-declined", destinations().accountHoldDeclined()),
-                    rawAccountHoldDeclinedReceiver());
+                    modules.messaging().getAccountHoldDeclinedWorkflow());
 
     @Getter(lazy = true)
     private final Receiver<ReleaseAccountHold> releaseAccountHoldReceiver =
             getDecorators().receiver(
                     receiveName("release-account-hold", destinations().releaseAccountHold()),
-                    rawReleaseAccountHoldReceiver());
+                    modules.messaging().getReleaseAccountHoldReceiver());
 
     @Getter(lazy = true)
     private final Receiver<AccountHoldReleased> accountHoldReleasedReceiver =
             getDecorators().receiver(
                     receiveName("account-hold-released", destinations().accountHoldReleased()),
-                    rawAccountHoldReleasedReceiver());
+                    modules.messaging().getAccountHoldReleasedWorkflow());
 
     @Getter(lazy = true)
     private final Receiver<JournalizeTransaction> journalizeTransactionReceiver =
@@ -236,7 +239,7 @@ final class ApplicationFactory {
                     receiveName(
                             "journalize-transaction",
                             destinations().journalizeTransaction()),
-                    rawJournalizeTransactionReceiver());
+                    modules.messaging().getJournalizeTransactionReceiver());
 
     @Getter(lazy = true)
     private final Receiver<TransactionJournalized> transactionJournalizedReceiver =
@@ -244,19 +247,19 @@ final class ApplicationFactory {
                     receiveName(
                             "transaction-journalized",
                             destinations().transactionJournalized()),
-                    rawTransactionJournalizedReceiver());
+                    modules.messaging().getTransactionJournalizedWorkflow());
 
     @Getter(lazy = true)
     private final Receiver<SettleAccountHold> settleAccountHoldReceiver =
             getDecorators().receiver(
                     receiveName("settle-account-hold", destinations().settleAccountHold()),
-                    rawSettleAccountHoldReceiver());
+                    modules.messaging().getSettleAccountHoldReceiver());
 
     @Getter(lazy = true)
     private final Receiver<AccountHoldSettled> accountHoldSettledReceiver =
             getDecorators().receiver(
                     receiveName("account-hold-settled", destinations().accountHoldSettled()),
-                    rawAccountHoldSettledReceiver());
+                    modules.messaging().getAccountHoldSettledWorkflow());
 
     @Getter(lazy = true)
     private final IntSupplier placeAccountHoldPoller = poller(
@@ -305,9 +308,10 @@ final class ApplicationFactory {
             new ConsoleApiModuleFactory(getTransactions());
 
     static ApplicationFactory inMemory(Clock clock) {
+        var destinations = AccountingDestinations.prefixed("memory");
         var persistence = new InMemoryPersistenceModuleFactory();
         var messaging = new InMemoryMessagingModuleFactory();
-        var runtimeModules = new InMemoryModules(persistence, messaging);
+        var runtimeModules = new InMemoryModules(destinations, persistence, messaging);
         var infrastructure = new InfrastructureModuleFactory(clock);
         return new ApplicationFactory(clock, runtimeModules, infrastructure);
     }
@@ -339,189 +343,20 @@ final class ApplicationFactory {
         throw new IllegalStateException("only in-memory messaging can be drained");
     }
 
-    private Repository<AccountIdentifier, Account> accountRepository() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.persistence().getAccountRepository();
-            case DurableModules durable -> durable.persistence().getAccountRepository();
-        };
-    }
-
-    private Repository<TransactionIdentifier, Transaction> transactionRepository() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.persistence().getTransactionRepository();
-            case DurableModules durable -> durable.persistence().getTransactionRepository();
-        };
-    }
-
-    private Repository<JournalIdentifier, JournalEntry> journalRepository() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.persistence().getJournalRepository();
-            case DurableModules durable -> durable.persistence().getJournalRepository();
-        };
-    }
-
-    private Sender<PlaceAccountHold> rawPlaceAccountHolds() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getPlaceAccountHolds();
-            case DurableModules durable -> durable.messaging().getPlaceAccountHolds();
-        };
-    }
-
-    private Sender<ReleaseAccountHold> rawReleaseAccountHolds() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getReleaseAccountHolds();
-            case DurableModules durable -> durable.messaging().getReleaseAccountHolds();
-        };
-    }
-
-    private Sender<JournalizeTransaction> rawJournalizeTransactions() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getJournalizeTransactions();
-            case DurableModules durable -> durable.messaging().getJournalizeTransactions();
-        };
-    }
-
-    private Sender<SettleAccountHold> rawSettleAccountHolds() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getSettleAccountHolds();
-            case DurableModules durable -> durable.messaging().getSettleAccountHolds();
-        };
-    }
-
-    private Sender<AccountHoldPlaced> rawAccountHoldsPlaced() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getAccountHoldsPlaced();
-            case DurableModules durable -> durable.messaging().getAccountHoldsPlaced();
-        };
-    }
-
-    private Sender<AccountHoldDeclined> rawAccountHoldsDeclined() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getAccountHoldsDeclined();
-            case DurableModules durable -> durable.messaging().getAccountHoldsDeclined();
-        };
-    }
-
-    private Sender<AccountHoldReleased> rawAccountHoldsReleased() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getAccountHoldsReleased();
-            case DurableModules durable -> durable.messaging().getAccountHoldsReleased();
-        };
-    }
-
-    private Sender<TransactionJournalized> rawTransactionsJournalized() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getTransactionsJournalized();
-            case DurableModules durable -> durable.messaging().getTransactionsJournalized();
-        };
-    }
-
-    private Sender<AccountHoldSettled> rawAccountHoldsSettled() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getAccountHoldsSettled();
-            case DurableModules durable -> durable.messaging().getAccountHoldsSettled();
-        };
-    }
-
-    private Receiver<PlaceAccountHold> rawPlaceAccountHoldReceiver() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getPlaceAccountHolds();
-            case DurableModules durable -> durable.messaging().getPlaceAccountHolds();
-        };
-    }
-
-    private Receiver<AccountHoldPlaced> rawAccountHoldPlacedReceiver() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getAccountHoldPlacedWorkflow();
-            case DurableModules durable -> durable.messaging().getAccountHoldPlacedWorkflow();
-        };
-    }
-
-    private Receiver<AccountHoldDeclined> rawAccountHoldDeclinedReceiver() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getAccountHoldDeclinedWorkflow();
-            case DurableModules durable -> durable.messaging().getAccountHoldDeclinedWorkflow();
-        };
-    }
-
-    private Receiver<ReleaseAccountHold> rawReleaseAccountHoldReceiver() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getReleaseAccountHolds();
-            case DurableModules durable -> durable.messaging().getReleaseAccountHolds();
-        };
-    }
-
-    private Receiver<AccountHoldReleased> rawAccountHoldReleasedReceiver() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getAccountHoldReleasedWorkflow();
-            case DurableModules durable -> durable.messaging().getAccountHoldReleasedWorkflow();
-        };
-    }
-
-    private Receiver<JournalizeTransaction> rawJournalizeTransactionReceiver() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getJournalizeTransactions();
-            case DurableModules durable -> durable.messaging().getJournalizeTransactions();
-        };
-    }
-
-    private Receiver<TransactionJournalized> rawTransactionJournalizedReceiver() {
-        return switch (modules) {
-            case InMemoryModules memory ->
-                    memory.messaging().getTransactionJournalizedWorkflow();
-            case DurableModules durable ->
-                    durable.messaging().getTransactionJournalizedWorkflow();
-        };
-    }
-
-    private Receiver<SettleAccountHold> rawSettleAccountHoldReceiver() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getSettleAccountHolds();
-            case DurableModules durable -> durable.messaging().getSettleAccountHolds();
-        };
-    }
-
-    private Receiver<AccountHoldSettled> rawAccountHoldSettledReceiver() {
-        return switch (modules) {
-            case InMemoryModules memory -> memory.messaging().getAccountHoldSettledWorkflow();
-            case DurableModules durable -> durable.messaging().getAccountHoldSettledWorkflow();
-        };
-    }
-
     private <T> Handler<T> transactional(Handler<T> handler) {
-        if (modules instanceof DurableModules durable) {
-            return message -> durable.postgresql().getTransactions()
-                    .inTransaction(() -> handler.handle(message));
-        }
-        return handler;
+        return modules.transactional(handler);
     }
 
     private String receiveName(String memoryName, String durableName) {
-        String name = modules instanceof DurableModules ? durableName : memoryName;
-        return "receive." + name;
+        return modules.receiveName(memoryName, durableName);
     }
 
     private AccountingDestinations destinations() {
-        if (modules instanceof DurableModules durable) {
-            return durable.destinations();
-        }
-        return AccountingDestinations.prefixed("memory");
-    }
-
-    private DurableModules durable() {
-        if (modules instanceof DurableModules durable) {
-            return durable;
-        }
-        throw new IllegalStateException("durable component requested from memory runtime");
+        return modules.destinations();
     }
 
     private <T> IntSupplier poller(Receiver<T> receiver, Handler<T> handler) {
-        if (modules instanceof InMemoryModules) {
-            var poller = new InMemoryPoller<>(receiver, handler, BATCH_SIZE);
-            return poller::pollOnce;
-        }
-        var poller = new OutboxPoller<>(receiver, handler, BATCH_SIZE);
-        return poller::pollOnce;
+        return modules.poller(receiver, handler, BATCH_SIZE);
     }
 
     private List<IntSupplier> createPollers() {
@@ -535,37 +370,14 @@ final class ApplicationFactory {
                 getTransactionJournalizedPoller(),
                 getSettleAccountHoldPoller(),
                 getAccountHoldSettledPoller());
-        if (modules instanceof InMemoryModules) {
-            return workflowPollers;
-        }
-        var pollers = new java.util.ArrayList<IntSupplier>();
-        pollers.add(durable().messaging().getPublisher()::publishOnce);
-        pollers.addAll(workflowPollers);
-        return List.copyOf(pollers);
+        return modules.pollers(workflowPollers);
     }
 
     private AccountingRuntime createRuntime() {
-        if (modules instanceof InMemoryModules memory) {
-            return new InMemoryAccounting(
-                    accountRepository(),
-                    getTransactions(),
-                    infrastructure.getMetricsRegistry(),
-                    memory.messaging().getQueues(),
-                    getPollers());
-        }
-
-        DurableModules durable = durable();
-        var broker = durable.messaging().getConnection();
-        try {
-            return new DurableAccounting(
-                    accountRepository(),
-                    getTransactions(),
-                    infrastructure.getMetricsRegistry(),
-                    getPollers(),
-                    broker);
-        } catch (RuntimeException failure) {
-            broker.close();
-            throw failure;
-        }
+        return modules.runtime(
+                modules.persistence().getAccountRepository(),
+                getTransactions(),
+                infrastructure.getMetricsRegistry(),
+                getPollers());
     }
 }

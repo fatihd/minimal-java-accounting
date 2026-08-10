@@ -298,3 +298,16 @@ Moved the model-use arrow from the concrete PostgreSQL repository adapter to
 the logical persistence port. Concrete adapters acquire that model relationship
 by implementing the port, so repeating it on each implementation obscures the
 capability boundary.
+
+## 2026-08-10 — Separate real and fake adapter composition
+
+Grouped app-local factories selecting HTTP, PostgreSQL, and outbox adapters
+under `app.adapters.real`, and console plus in-memory adapters under
+`app.adapters.fake`. Added common persistence and messaging component contracts
+so the overall factory consumes typed ports without repeating a real/fake
+switch for every repository, sender, and receiver.
+
+Localized transaction wrapping, poller selection, outbox publication,
+destination naming, and runtime construction in the runtime variants. This is
+an internal package and composition change only; Gradle module dependencies and
+the generated module diagram remain unchanged.

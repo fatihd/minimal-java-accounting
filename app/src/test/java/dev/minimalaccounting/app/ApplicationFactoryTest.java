@@ -1,5 +1,8 @@
 package dev.minimalaccounting.app;
 
+import dev.minimalaccounting.app.adapters.fake.InMemoryMessagingModuleFactory;
+import dev.minimalaccounting.app.adapters.fake.InMemoryPersistenceModuleFactory;
+import dev.minimalaccounting.app.adapters.real.HttpApiModuleFactory;
 import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
 import dev.minimalaccounting.adapters.messaging.outbox.ArtemisConfiguration;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryTopic;
@@ -25,7 +28,8 @@ class ApplicationFactoryTest {
         var infrastructure = new InfrastructureModuleFactory(clock);
         var application = new ApplicationFactory(
                 clock,
-                new InMemoryModules(persistence, messaging),
+                new InMemoryModules(
+                        AccountingDestinations.prefixed("test"), persistence, messaging),
                 infrastructure);
 
         assertSame(

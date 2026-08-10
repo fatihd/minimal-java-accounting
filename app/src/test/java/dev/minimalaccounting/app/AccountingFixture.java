@@ -1,5 +1,7 @@
 package dev.minimalaccounting.app;
 
+import dev.minimalaccounting.app.adapters.fake.InMemoryMessagingModuleFactory;
+import dev.minimalaccounting.app.adapters.fake.InMemoryPersistenceModuleFactory;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentJournalRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentTransactionRepository;
@@ -25,7 +27,8 @@ final class AccountingFixture {
     AccountingFixture(Clock clock) {
         var persistence = new InMemoryPersistenceModuleFactory();
         messaging = new InMemoryMessagingModuleFactory();
-        var modules = new InMemoryModules(persistence, messaging);
+        var modules = new InMemoryModules(
+                AccountingDestinations.prefixed("test"), persistence, messaging);
         var infrastructure = new InfrastructureModuleFactory(clock);
         application = new ApplicationFactory(clock, modules, infrastructure);
 

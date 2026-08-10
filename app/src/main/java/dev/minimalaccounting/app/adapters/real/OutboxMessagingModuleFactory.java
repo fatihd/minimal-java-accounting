@@ -1,4 +1,4 @@
-package dev.minimalaccounting.app;
+package dev.minimalaccounting.app.adapters.real;
 
 import dev.minimalaccounting.adapters.messaging.outbox.ArtemisConfiguration;
 import dev.minimalaccounting.adapters.messaging.outbox.ArtemisConnection;
@@ -6,6 +6,8 @@ import dev.minimalaccounting.adapters.messaging.outbox.OutboxPublisher;
 import dev.minimalaccounting.adapters.messaging.outbox.OutboxQueue;
 import dev.minimalaccounting.adapters.messaging.outbox.OutboxSchema;
 import dev.minimalaccounting.adapters.messaging.outbox.OutboxTopic;
+import dev.minimalaccounting.app.AccountingDestinations;
+import dev.minimalaccounting.app.adapters.MessagingComponents;
 import dev.minimalaccounting.model.account.AccountHoldDeclined;
 import dev.minimalaccounting.model.account.AccountHoldPlaced;
 import dev.minimalaccounting.model.account.AccountHoldReleased;
@@ -23,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 @RequiredArgsConstructor
-final class OutboxMessagingModuleFactory {
+public final class OutboxMessagingModuleFactory implements MessagingComponents {
     private final PostgresqlModuleFactory postgresql;
     private final ArtemisConfiguration configuration;
     private final AccountingDestinations destinations;
@@ -121,5 +123,25 @@ final class OutboxMessagingModuleFactory {
         JdbcTransactions transactions = postgresql.getTransactions();
         OutboxSchema.install(transactions);
         return transactions;
+    }
+
+    @Override
+    public Receiver<PlaceAccountHold> getPlaceAccountHoldReceiver() {
+        return getPlaceAccountHolds();
+    }
+
+    @Override
+    public Receiver<ReleaseAccountHold> getReleaseAccountHoldReceiver() {
+        return getReleaseAccountHolds();
+    }
+
+    @Override
+    public Receiver<JournalizeTransaction> getJournalizeTransactionReceiver() {
+        return getJournalizeTransactions();
+    }
+
+    @Override
+    public Receiver<SettleAccountHold> getSettleAccountHoldReceiver() {
+        return getSettleAccountHolds();
     }
 }

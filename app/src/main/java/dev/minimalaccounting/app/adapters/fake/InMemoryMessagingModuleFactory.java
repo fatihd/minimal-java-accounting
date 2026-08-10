@@ -1,7 +1,8 @@
-package dev.minimalaccounting.app;
+package dev.minimalaccounting.app.adapters.fake;
 
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryQueue;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryTopic;
+import dev.minimalaccounting.app.adapters.MessagingComponents;
 import dev.minimalaccounting.model.account.AccountHoldDeclined;
 import dev.minimalaccounting.model.account.AccountHoldPlaced;
 import dev.minimalaccounting.model.account.AccountHoldReleased;
@@ -16,8 +17,10 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+import dev.minimalaccounting.shared.ports.Receiver;
+
 @RequiredArgsConstructor
-final class InMemoryMessagingModuleFactory {
+public final class InMemoryMessagingModuleFactory implements MessagingComponents {
     @Getter(lazy = true)
     private final InMemoryQueue<PlaceAccountHold> placeAccountHolds =
             new InMemoryQueue<>();
@@ -85,4 +88,24 @@ final class InMemoryMessagingModuleFactory {
             getAccountHoldReleasedWorkflow(),
             getTransactionJournalizedWorkflow(),
             getAccountHoldSettledWorkflow());
+
+    @Override
+    public Receiver<PlaceAccountHold> getPlaceAccountHoldReceiver() {
+        return getPlaceAccountHolds();
+    }
+
+    @Override
+    public Receiver<ReleaseAccountHold> getReleaseAccountHoldReceiver() {
+        return getReleaseAccountHolds();
+    }
+
+    @Override
+    public Receiver<JournalizeTransaction> getJournalizeTransactionReceiver() {
+        return getJournalizeTransactions();
+    }
+
+    @Override
+    public Receiver<SettleAccountHold> getSettleAccountHoldReceiver() {
+        return getSettleAccountHolds();
+    }
 }

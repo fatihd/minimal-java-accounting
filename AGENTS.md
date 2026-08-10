@@ -158,6 +158,15 @@
   factory. Keep these factories app-local when their typed object graph uses
   accounting messages; generic adapter modules must not acquire model
   dependencies merely to simplify composition.
+- Group app-local factories for production-facing HTTP, database, broker, and
+  outbox adapters under `app.adapters.real`. Group console and in-memory
+  test/demo adapter factories under `app.adapters.fake`. These packages classify
+  composition choices; they do not redefine the adapter modules themselves.
+- Expose common app-local persistence and messaging component contracts from
+  `app.adapters`. The overall composition consumes those contracts instead of
+  switching repeatedly on real and fake implementations. Keep remaining
+  runtime-specific transaction, polling, outbox, naming, and lifecycle behavior
+  behind one runtime-composition abstraction.
 - Use `@RequiredArgsConstructor` for module-factory dependencies and
   `@Getter(lazy = true)` on each produced object. A factory getter memoizes one
   shared instance. Leave unused dependencies nullable so integration tests can

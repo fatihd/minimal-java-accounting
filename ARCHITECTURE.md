@@ -33,6 +33,12 @@ depends on the other. The shared module remains visible without its ordinary
 dependency arrows to reduce noise. Filled arrows from both adapters to the
 PostgreSQL cylinder show their direct JDBC use.
 
+Inside the `app` module, app-local adapter factories are grouped as
+`app.adapters.real` or `app.adapters.fake`. These are composition packages, not
+additional modules or adapter implementations. Both expose common component
+contracts to the overall factory, so choosing a runtime does not introduce
+implementation switches throughout the object graph.
+
 Regenerate the checked-in image with:
 
 ```shell

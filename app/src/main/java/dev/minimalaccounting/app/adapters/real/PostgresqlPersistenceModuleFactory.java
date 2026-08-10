@@ -1,15 +1,16 @@
-package dev.minimalaccounting.app;
+package dev.minimalaccounting.app.adapters.real;
 
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlAccountRepository;
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlJournalRepository;
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlSchema;
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlTransactionRepository;
+import dev.minimalaccounting.app.adapters.PersistenceComponents;
 import dev.minimalaccounting.shared.adapters.postgresql.JdbcTransactions;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-final class PostgresqlPersistenceModuleFactory {
+public final class PostgresqlPersistenceModuleFactory implements PersistenceComponents {
     private final PostgresqlModuleFactory postgresql;
 
     @Getter(lazy = true)

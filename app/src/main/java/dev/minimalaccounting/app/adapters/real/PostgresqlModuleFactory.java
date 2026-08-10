@@ -1,4 +1,4 @@
-package dev.minimalaccounting.app;
+package dev.minimalaccounting.app.adapters.real;
 
 import dev.minimalaccounting.shared.adapters.postgresql.JdbcTransactions;
 import dev.minimalaccounting.shared.adapters.postgresql.PostgresqlConfiguration;
@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import javax.sql.DataSource;
 
 @RequiredArgsConstructor
-final class PostgresqlModuleFactory {
+public final class PostgresqlModuleFactory {
     private final PostgresqlConfiguration configuration;
 
     @Getter(lazy = true)
