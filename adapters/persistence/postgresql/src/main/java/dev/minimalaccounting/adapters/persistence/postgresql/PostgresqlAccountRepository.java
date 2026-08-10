@@ -30,7 +30,7 @@ public final class PostgresqlAccountRepository implements Repository<AccountIden
     }
 
     @Override
-    public long add(Account value) {
+    public AccountIdentifier add(Account value) {
         return transactions.inTransaction(() -> transactions.withConnection(connection -> {
             try (var statement = connection.prepareStatement("""
                     INSERT INTO account(
@@ -49,7 +49,7 @@ public final class PostgresqlAccountRepository implements Repository<AccountIden
                 insertHolds(connection, id, value);
                 value.setId(id);
                 value.setRevision(0L);
-                return id;
+                return AccountIdentifier.id(id);
             }
         }));
     }

@@ -28,7 +28,7 @@ public final class PostgresqlJournalRepository implements Repository<JournalIden
     }
 
     @Override
-    public long add(JournalEntry value) {
+    public JournalIdentifier add(JournalEntry value) {
         return transactions.inTransaction(() -> transactions.withConnection(connection -> {
             try (var statement = connection.prepareStatement("""
                     INSERT INTO journal_entry(
@@ -42,7 +42,7 @@ public final class PostgresqlJournalRepository implements Repository<JournalIden
                 insertLines(connection, id, value);
                 value.setId(id);
                 value.setRevision(0L);
-                return id;
+                return JournalIdentifier.id(id);
             }
         }));
     }

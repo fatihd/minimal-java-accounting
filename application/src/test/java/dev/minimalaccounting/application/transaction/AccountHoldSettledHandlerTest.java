@@ -39,7 +39,7 @@ class AccountHoldSettledHandlerTest {
                 new ConcurrentTransactionRepository();
         long transactionId = transactions.add(transaction(
                 TransactionState.HELD,
-                effect(1, AccountEffectState.HELD)));
+                effect(1, AccountEffectState.HELD))).id();
         AccountHoldSettledHandler handler = new AccountHoldSettledHandler(transactions);
 
         assertThrows(
@@ -61,7 +61,7 @@ class AccountHoldSettledHandlerTest {
         long transactionId = transactions.add(transaction(
                 TransactionState.SETTLING,
                 effect(1, AccountEffectState.SETTLED),
-                effect(2, AccountEffectState.SETTLING)));
+                effect(2, AccountEffectState.SETTLING))).id();
         AccountHoldSettledHandler handler = new AccountHoldSettledHandler(transactions);
 
         handler.handle(new AccountHoldSettled(1, transactionId, 0));

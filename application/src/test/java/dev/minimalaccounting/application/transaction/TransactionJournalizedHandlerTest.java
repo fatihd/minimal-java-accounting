@@ -44,8 +44,8 @@ class TransactionJournalizedHandlerTest {
 
         @BeforeEach
         void handleEvent() {
-            transactionId = transactions.add(transaction("request"));
-            long journalEntryId = journals.add(journal("request"));
+            transactionId = transactions.add(transaction("request")).id();
+            long journalEntryId = journals.add(journal("request")).id();
             TransactionJournalizedHandler handler = new TransactionJournalizedHandler(
                     transactions, journals, settlements::add);
 
@@ -81,8 +81,8 @@ class TransactionJournalizedHandlerTest {
 
         @BeforeEach
         void handleEvent() {
-            transactionId = transactions.add(transactionWithoutEffects("request"));
-            long journalEntryId = journals.add(journal("request"));
+            transactionId = transactions.add(transactionWithoutEffects("request")).id();
+            long journalEntryId = journals.add(journal("request")).id();
             TransactionJournalizedHandler handler = new TransactionJournalizedHandler(
                     transactions, journals, settlements::add);
 
@@ -105,8 +105,8 @@ class TransactionJournalizedHandlerTest {
     void rejectsJournalEntryForAnotherTransaction() {
         ConcurrentTransactionRepository transactions = new ConcurrentTransactionRepository();
         ConcurrentJournalRepository journals = new ConcurrentJournalRepository();
-        long transactionId = transactions.add(transaction("transaction-request"));
-        long journalEntryId = journals.add(journal("other-request"));
+        long transactionId = transactions.add(transaction("transaction-request")).id();
+        long journalEntryId = journals.add(journal("other-request")).id();
         TransactionJournalizedHandler handler = new TransactionJournalizedHandler(
                 transactions, journals, ignored -> { });
 
@@ -130,7 +130,7 @@ class TransactionJournalizedHandlerTest {
     @Test
     void journalThatIsNotYetAvailableNacksForRetry() {
         ConcurrentTransactionRepository transactions = new ConcurrentTransactionRepository();
-        long transactionId = transactions.add(transaction("request"));
+        long transactionId = transactions.add(transaction("request")).id();
         TransactionJournalizedHandler handler = new TransactionJournalizedHandler(
                 transactions,
                 new ConcurrentJournalRepository(),
@@ -150,8 +150,8 @@ class TransactionJournalizedHandlerTest {
     void retryAfterPartialSendReissuesUnconfirmedSettlementCommands() {
         ConcurrentTransactionRepository transactions = new ConcurrentTransactionRepository();
         ConcurrentJournalRepository journals = new ConcurrentJournalRepository();
-        long transactionId = transactions.add(transactionWithTwoEffects("request"));
-        long journalEntryId = journals.add(journal("request"));
+        long transactionId = transactions.add(transactionWithTwoEffects("request")).id();
+        long journalEntryId = journals.add(journal("request")).id();
         List<SettleAccountHold> settlements = new ArrayList<>();
         AtomicInteger sends = new AtomicInteger();
         TransactionJournalizedHandler handler = new TransactionJournalizedHandler(

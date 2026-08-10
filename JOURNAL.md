@@ -342,3 +342,13 @@ projected balance and limits, and the actual balance mutation. Release and
 settlement no longer return child state that production callers ignored. These
 changes make lifecycle rules directly testable without changing the existing
 state machines or exposing child mutation outside the aggregate root.
+
+## 2026-08-10 — Return aggregate identifiers from repository add
+
+Changed the generic repository contract so `add` returns its identifier type
+rather than assuming every aggregate has a generated `long` identity. Made the
+reusable in-memory snapshot store generic over its key and supplied key
+creation and assignment from each aggregate repository. Transaction, journal,
+and account repositories still use their existing identifier variants in this
+step, preserving behavior while preparing accounts to use their natural number
+as the sole identity.

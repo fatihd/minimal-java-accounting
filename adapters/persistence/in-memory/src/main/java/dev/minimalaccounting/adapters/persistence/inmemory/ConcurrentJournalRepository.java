@@ -8,9 +8,12 @@ import dev.minimalaccounting.model.journal.JournalIdentifier;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class ConcurrentJournalRepository implements Repository<JournalIdentifier, JournalEntry> {
-    private final InMemoryRepository<JournalEntry> values = new InMemoryRepository<>(
+    private final AtomicLong ids = new AtomicLong();
+    private final InMemoryRepository<Long, JournalEntry> values = new InMemoryRepository<>(
+            ignored -> ids.incrementAndGet(),
             JournalEntry::getId,
             JournalEntry::setId,
             JournalEntry::getRevision,
@@ -25,13 +28,13 @@ public final class ConcurrentJournalRepository implements Repository<JournalIden
     }
 
     @Override
-    public synchronized long add(JournalEntry value) {
+    public synchronized JournalIdentifier add(JournalEntry value) {
         if (requests.containsKey(value.getRequestId())) {
             throw new IllegalStateException("Journal entry already exists: " + value.getRequestId());
         }
         long id = values.add(value);
         requests.put(value.getRequestId(), id);
-        return id;
+        return JournalIdentifier.id(id);
     }
 
     @Override

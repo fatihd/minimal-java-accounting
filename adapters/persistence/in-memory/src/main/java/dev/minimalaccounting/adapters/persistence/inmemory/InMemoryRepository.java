@@ -6,19 +6,19 @@ import lombok.RequiredArgsConstructor;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 @RequiredArgsConstructor
-public final class InMemoryRepository<T> {
-    private final AtomicLong ids = new AtomicLong();
-    private final ConcurrentHashMap<Long, T> values = new ConcurrentHashMap<>();
+public final class InMemoryRepository<I, T> {
+    private final ConcurrentHashMap<I, T> values = new ConcurrentHashMap<>();
     @NonNull
-    private final Function<T, Long> id;
+    private final Function<T, I> newIdentifier;
     @NonNull
-    private final BiConsumer<T, Long> assignId;
+    private final Function<T, I> identifier;
+    @NonNull
+    private final BiConsumer<T, I> assignIdentifier;
     @NonNull
     private final Function<T, Long> revision;
     @NonNull
@@ -26,36 +26,40 @@ public final class InMemoryRepository<T> {
     @NonNull
     private final UnaryOperator<T> copy;
 
-    public synchronized Optional<T> get(long id) {
-        return Optional.ofNullable(values.get(id)).map(copy);
+    public synchronized Optional<T> get(I identifier) {
+        return Optional.ofNullable(values.get(identifier)).map(copy);
     }
 
-    public synchronized long add(@NonNull T value) {
-        long assignedId = ids.incrementAndGet();
+    public synchronized I add(@NonNull T value) {
+        I assignedIdentifier = Objects.requireNonNull(
+                newIdentifier.apply(value), "identifier");
+        if (values.containsKey(assignedIdentifier)) {
+            throw new IllegalStateException("Value already exists: " + assignedIdentifier);
+        }
         T snapshot = copy.apply(value);
-        assignId.accept(snapshot, assignedId);
+        assignIdentifier.accept(snapshot, assignedIdentifier);
         assignRevision.accept(snapshot, 0L);
-        values.put(assignedId, snapshot);
-        assignId.accept(value, assignedId);
+        values.put(assignedIdentifier, snapshot);
+        assignIdentifier.accept(value, assignedIdentifier);
         assignRevision.accept(value, 0L);
-        return assignedId;
+        return assignedIdentifier;
     }
 
     public synchronized void update(@NonNull T value) {
-        Long valueId = Objects.requireNonNull(id.apply(value), "id");
-        T current = values.get(valueId);
+        I valueIdentifier = Objects.requireNonNull(identifier.apply(value), "identifier");
+        T current = values.get(valueIdentifier);
         if (current == null || !revision.apply(current).equals(revision.apply(value))) {
-            throw new IllegalStateException("Stale or missing value: " + valueId);
+            throw new IllegalStateException("Stale or missing value: " + valueIdentifier);
         }
         long nextRevision = revision.apply(value) + 1;
         T snapshot = copy.apply(value);
-        assignId.accept(snapshot, valueId);
+        assignIdentifier.accept(snapshot, valueIdentifier);
         assignRevision.accept(snapshot, nextRevision);
-        values.put(valueId, snapshot);
+        values.put(valueIdentifier, snapshot);
         assignRevision.accept(value, nextRevision);
     }
 
-    public synchronized Optional<T> remove(long id) {
-        return Optional.ofNullable(values.remove(id)).map(copy);
+    public synchronized Optional<T> remove(I identifier) {
+        return Optional.ofNullable(values.remove(identifier)).map(copy);
     }
 }

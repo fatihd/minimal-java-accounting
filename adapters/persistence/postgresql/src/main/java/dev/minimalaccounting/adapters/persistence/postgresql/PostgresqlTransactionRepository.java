@@ -32,7 +32,7 @@ public final class PostgresqlTransactionRepository implements Repository<Transac
     }
 
     @Override
-    public long add(Transaction value) {
+    public TransactionIdentifier add(Transaction value) {
         return transactions.inTransaction(() -> transactions.withConnection(connection -> {
             try (var statement = connection.prepareStatement("""
                     INSERT INTO accounting_transaction(
@@ -47,7 +47,7 @@ public final class PostgresqlTransactionRepository implements Repository<Transac
                 insertEffects(connection, id, value);
                 value.setId(id);
                 value.setRevision(0L);
-                return id;
+                return TransactionIdentifier.id(id);
             }
         }));
     }

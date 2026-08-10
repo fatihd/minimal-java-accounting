@@ -39,7 +39,7 @@ class AccountHoldReleasedHandlerTest {
                 new ConcurrentTransactionRepository();
         long transactionId = transactions.add(transaction(
                 TransactionState.PLACING_HOLDS,
-                effect(AccountEffectState.HELD)));
+                effect(AccountEffectState.HELD))).id();
         AccountHoldReleasedHandler handler = new AccountHoldReleasedHandler(transactions);
 
         assertThrows(
@@ -60,7 +60,7 @@ class AccountHoldReleasedHandlerTest {
                 new ConcurrentTransactionRepository();
         long transactionId = transactions.add(transaction(
                 TransactionState.RELEASING_HOLDS,
-                effect(AccountEffectState.RELEASING)));
+                effect(AccountEffectState.RELEASING))).id();
         AccountHoldReleasedHandler handler = new AccountHoldReleasedHandler(transactions);
         AccountHoldReleased event = new AccountHoldReleased(1, transactionId, 0);
 

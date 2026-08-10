@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PostgresqlTransactionRepositoryTest
-        extends ExplicitUpdateRepositoryContract<Transaction> {
+        extends ExplicitUpdateRepositoryContract<TransactionIdentifier, Transaction> {
     private static final Money AMOUNT =
             new Money(100, Currency.getInstance("USD"));
 
@@ -54,13 +54,13 @@ class PostgresqlTransactionRepositoryTest
     }
 
     @Override
-    protected long add(Transaction value) {
+    protected TransactionIdentifier add(Transaction value) {
         return repository.add(value);
     }
 
     @Override
-    protected Optional<Transaction> get(long id) {
-        return repository.get(TransactionIdentifier.id(id));
+    protected Optional<Transaction> get(TransactionIdentifier identifier) {
+        return repository.get(identifier);
     }
 
     @Override

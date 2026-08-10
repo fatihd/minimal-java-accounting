@@ -30,7 +30,7 @@ class AccountHoldDeclinedHandlerTest {
     void retryAfterReleaseSendFailureReissuesOutstandingCommands() {
         ConcurrentTransactionRepository transactions =
                 new ConcurrentTransactionRepository();
-        long transactionId = transactions.add(transaction());
+        long transactionId = transactions.add(transaction()).id();
         List<ReleaseAccountHold> releases = new ArrayList<>();
         AtomicInteger attempts = new AtomicInteger();
         AccountHoldDeclinedHandler handler = new AccountHoldDeclinedHandler(

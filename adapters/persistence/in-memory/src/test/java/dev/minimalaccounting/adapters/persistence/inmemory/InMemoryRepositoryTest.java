@@ -3,17 +3,21 @@ package dev.minimalaccounting.adapters.persistence.inmemory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InMemoryRepositoryTest {
-    private InMemoryRepository<Value> repository;
+    private InMemoryRepository<Long, Value> repository;
 
     @BeforeEach
     void createRepository() {
+        AtomicLong identifiers = new AtomicLong();
         repository = new InMemoryRepository<>(
+                ignored -> identifiers.incrementAndGet(),
                 Value::id,
                 Value::setId,
                 Value::revision,

@@ -31,9 +31,9 @@ class ConcurrentJournalRepositoryTest {
     @Test
     void returnsDetachedEntriesAndLines() {
         JournalEntry entry = entry();
-        long id = repository.add(entry);
+        JournalIdentifier identifier = repository.add(entry);
 
-        JournalEntry first = repository.get(JournalIdentifier.id(id)).orElseThrow();
+        JournalEntry first = repository.get(identifier).orElseThrow();
         first.setRevision(99L);
         JournalEntry second = repository.get(JournalIdentifier.request("request"))
                 .orElseThrow();

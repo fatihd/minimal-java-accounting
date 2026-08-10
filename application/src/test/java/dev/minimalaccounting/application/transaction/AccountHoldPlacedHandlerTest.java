@@ -32,7 +32,7 @@ class AccountHoldPlacedHandlerTest {
     void retryAfterJournalizationSendFailureReissuesTheCommand() {
         ConcurrentTransactionRepository transactions =
                 new ConcurrentTransactionRepository();
-        long transactionId = transactions.add(transaction());
+        long transactionId = transactions.add(transaction()).id();
         List<JournalizeTransaction> journalizations = new ArrayList<>();
         AtomicInteger attempts = new AtomicInteger();
         AccountHoldPlacedHandler handler = new AccountHoldPlacedHandler(

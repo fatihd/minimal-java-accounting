@@ -7,9 +7,12 @@ import dev.minimalaccounting.model.account.AccountIdentifier;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class ConcurrentAccountRepository implements Repository<AccountIdentifier, Account> {
-    private final InMemoryRepository<Account> values = new InMemoryRepository<>(
+    private final AtomicLong ids = new AtomicLong();
+    private final InMemoryRepository<Long, Account> values = new InMemoryRepository<>(
+            ignored -> ids.incrementAndGet(),
             Account::getId,
             Account::setId,
             Account::getRevision,
@@ -24,13 +27,13 @@ public final class ConcurrentAccountRepository implements Repository<AccountIden
     }
 
     @Override
-    public synchronized long add(Account value) {
+    public synchronized AccountIdentifier add(Account value) {
         if (numbers.containsKey(value.getAccountNumber().value())) {
             throw new IllegalStateException("Account already exists");
         }
         long id = values.add(value);
         numbers.put(value.getAccountNumber().value(), id);
-        return id;
+        return AccountIdentifier.id(id);
     }
 
     @Override

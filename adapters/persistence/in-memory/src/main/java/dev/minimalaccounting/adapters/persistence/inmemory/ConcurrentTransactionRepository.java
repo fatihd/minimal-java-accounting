@@ -9,9 +9,12 @@ import dev.minimalaccounting.model.transaction.TransactionIdentifier;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class ConcurrentTransactionRepository implements Repository<TransactionIdentifier, Transaction> {
-    private final InMemoryRepository<Transaction> values = new InMemoryRepository<>(
+    private final AtomicLong ids = new AtomicLong();
+    private final InMemoryRepository<Long, Transaction> values = new InMemoryRepository<>(
+            ignored -> ids.incrementAndGet(),
             Transaction::getId,
             Transaction::setId,
             Transaction::getRevision,
@@ -26,13 +29,13 @@ public final class ConcurrentTransactionRepository implements Repository<Transac
     }
 
     @Override
-    public synchronized long add(Transaction value) {
+    public synchronized TransactionIdentifier add(Transaction value) {
         if (requests.containsKey(value.getRequestId())) {
             throw new IllegalStateException("Transaction already exists: " + value.getRequestId());
         }
         long id = values.add(value);
         requests.put(value.getRequestId(), id);
-        return id;
+        return TransactionIdentifier.id(id);
     }
 
     @Override

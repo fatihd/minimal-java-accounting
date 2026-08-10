@@ -38,7 +38,8 @@ The modules have intentionally narrow responsibilities:
   into `SubmitTransaction` and invoke its shared `Handler` port.
 - `adapters.persistence.in-memory` and `adapters.persistence.postgresql`
   implement `Repository<Identifier, Aggregate>`. The shared test fixture
-  exports their detached explicit-update contract.
+  exports their detached explicit-update contract, and `add` returns the
+  aggregate-specific identifier rather than assuming a numeric key.
 - `adapters.messaging.in-memory` implements local queues, topics, and polling.
 - `adapters.messaging.outbox` is the selected durable messaging adapter. It
   stages sends in PostgreSQL and delivers queues, topics, subscriptions, and

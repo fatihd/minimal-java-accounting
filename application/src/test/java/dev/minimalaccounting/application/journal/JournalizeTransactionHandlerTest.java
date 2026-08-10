@@ -111,7 +111,7 @@ class JournalizeTransactionHandlerTest {
         }
         ConcurrentTransactionRepository transactions =
                 new ConcurrentTransactionRepository();
-        long transactionId = transactions.add(transaction());
+        long transactionId = transactions.add(transaction()).id();
         return new Fixture(
                 accounts,
                 transactions,

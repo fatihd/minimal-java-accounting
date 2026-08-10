@@ -16,7 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class ConcurrentAccountRepositoryTest extends ExplicitUpdateRepositoryContract<Account> {
+class ConcurrentAccountRepositoryTest
+        extends ExplicitUpdateRepositoryContract<AccountIdentifier, Account> {
     private static final Currency USD = Currency.getInstance("USD");
     private static final AccountNumber NUMBER = new AccountNumber("ACCOUNT01");
     private static final Money HOLD = new Money(10, USD);
@@ -34,13 +35,13 @@ class ConcurrentAccountRepositoryTest extends ExplicitUpdateRepositoryContract<A
     }
 
     @Override
-    protected long add(Account value) {
+    protected AccountIdentifier add(Account value) {
         return repository.add(value);
     }
 
     @Override
-    protected Optional<Account> get(long id) {
-        return repository.get(AccountIdentifier.id(id));
+    protected Optional<Account> get(AccountIdentifier identifier) {
+        return repository.get(identifier);
     }
 
     @Override

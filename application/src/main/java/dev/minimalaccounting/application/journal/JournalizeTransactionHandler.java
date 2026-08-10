@@ -54,7 +54,7 @@ public final class JournalizeTransactionHandler implements Handler<JournalizeTra
                                     + number.value())));
         }
         var entry = service.journalize(transaction, values, clock.instant());
-        long id = journals.add(entry);
+        long id = journals.add(entry).id();
         journalized.send(new TransactionJournalized(transaction.getId(), id));
     }
 }

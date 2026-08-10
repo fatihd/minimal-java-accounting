@@ -196,7 +196,8 @@
   not in extra repository methods. Use the generic
   `Repository<Identifier, Aggregate>` contract from `shared.ports` directly
   unless a repository genuinely adds another operation. Name compound keys
-  `*Identifier`, not `*Reference`.
+  `*Identifier`, not `*Reference`. `add` returns the aggregate's canonical
+  identifier; do not assume every aggregate uses a generated numeric identity.
 - Keep persistence coordination out of entities and business services. The
   in-memory repositories use defensive copies and concurrent JDK collections;
   the PostgreSQL repositories use plain JDBC and reconstruct equally detached
