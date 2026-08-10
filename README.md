@@ -48,6 +48,14 @@ The modules have intentionally narrow responsibilities:
   concurrent counters, latency histograms, immutable snapshots, and JMX.
 - `app` is the only composition root. Nothing depends on it.
 
+Composition is explicit and lazy rather than container-managed. The `app`
+module has one small factory context for each runtime-contributing module. Each
+context memoizes its objects independently, so an integration test can supply
+only the dependencies used by the graph branch it requests. Module contexts
+expose raw objects; the overall `ApplicationFactory` joins modules and applies
+the current logging, metrics, JDBC transaction, polling, and outbox wrappers.
+This keeps adapter modules generic and makes cross-module wiring visible.
+
 See [ARCHITECTURE.md](ARCHITECTURE.md) for exact production module
 dependencies. See [STATE-TRANSITIONS.md](STATE-TRANSITIONS.md) for the generated
 `Transaction`, `AccountEffect`, and `AccountHold` lifecycle diagrams.

@@ -42,7 +42,8 @@ final class AccountingApplication {
             return 2;
         }
 
-        InMemoryAccounting accounting = InMemoryAccountingFactory.create(Clock.systemUTC());
+        ApplicationFactory factory = ApplicationFactory.inMemory(Clock.systemUTC());
+        AccountingRuntime accounting = factory.getRuntime();
         try {
             AccountFile.load(parsed.accounts(), accounting.accounts());
         } catch (IOException | RuntimeException failure) {
@@ -51,13 +52,13 @@ final class AccountingApplication {
         }
 
         ConsoleTransactionAdapter console =
-                new ConsoleTransactionAdapter(accounting.transactions());
+                factory.getConsoleApiModule().getTransactionAdapter();
         int status = console.run(parsed.consoleArguments(), out, error);
         if (status != 0) {
             return status;
         }
         try {
-            accounting.processUntilIdle();
+            factory.processUntilIdle();
             return 0;
         } catch (RuntimeException failure) {
             error.println("Workflow failed: " + message(failure));

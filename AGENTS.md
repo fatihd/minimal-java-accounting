@@ -13,7 +13,9 @@
   nested or reconstructed aggregate state that no boundary annotation covers.
   The root `lombok.config` uses the JDK non-null check form so generated guards
   do not add artificial coverage branches. Do not add tests whose only purpose
-  is exercising generated or handwritten null guards.
+  is exercising generated or handwritten null guards. Composition-factory
+  dependencies are the exception: leave them unannotated so a test may provide
+  only the dependencies needed by the lazy graph branch it requests.
 - After changing module boundaries or the architecture layout, run
   `./gradlew renderArchitecture` and keep `ARCHITECTURE.svg` synchronized with
   `tools/render-architecture.mjs`.
@@ -137,6 +139,22 @@
 - Keep `app` as the outer composition root. It may select concrete adapters,
   bootstrap configured startup data, and control worker lifecycle. Nothing may
   depend on `app`.
+- Represent each runtime-contributing Gradle module with an app-local module
+  factory. Keep these factories app-local when their typed object graph uses
+  accounting messages; generic adapter modules must not acquire core
+  dependencies merely to simplify composition.
+- Use `@RequiredArgsConstructor` for module-factory dependencies and
+  `@Getter(lazy = true)` on each produced object. A factory getter memoizes one
+  shared instance. Leave unused dependencies nullable so integration tests can
+  construct only the graph branch they exercise.
+- Keep lazy factory fields in topological order. When one produced field depends
+  on another, call its getter; avoid nested object construction in field
+  initializers. Prefer independent fields where the graph permits it.
+- Module factories expose undecorated objects owned by their represented
+  module. The overall `ApplicationFactory` currently owns cross-module joins,
+  boundary decorators, transaction wrappers, pollers, outbox routes, and
+  runtime assembly. Do not generalize cross-cutting-concern injection until a
+  later design explicitly introduces it.
 
 ## Persistence and messaging
 

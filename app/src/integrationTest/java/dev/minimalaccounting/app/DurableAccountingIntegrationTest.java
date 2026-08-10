@@ -2,7 +2,6 @@ package dev.minimalaccounting.app;
 
 import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
 import dev.minimalaccounting.adapters.api.http.HttpTransactionServer;
-import dev.minimalaccounting.adapters.api.http.HttpTransactionServerFactory;
 import dev.minimalaccounting.adapters.messaging.artemis.ArtemisConfiguration;
 import dev.minimalaccounting.adapters.persistence.postgresql.JdbcTransactions;
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlAccountRepository;
@@ -84,10 +83,11 @@ class DurableAccountingIntegrationTest {
             throws Exception {
         DurableRuntimeConfiguration configuration = configuration();
 
-        try (DurableAccounting first = DurableAccountingFactory.create(
-                configuration, Clock.systemUTC())) {
+        ApplicationFactory firstFactory =
+                ApplicationFactory.durable(configuration, Clock.systemUTC());
+        try (AccountingRuntime first = firstFactory.getRuntime()) {
             addAccounts(first);
-            try (HttpTransactionServer server = server(first)) {
+            try (HttpTransactionServer server = server(firstFactory)) {
                 assertEquals(202, submit(server).statusCode());
             }
         }
@@ -99,10 +99,11 @@ class DurableAccountingIntegrationTest {
                         .getState());
         assertEquals(2, unpublishedMessages());
 
-        try (DurableAccounting restarted = DurableAccountingFactory.create(
-                configuration, Clock.systemUTC());
+        ApplicationFactory restartedFactory =
+                ApplicationFactory.durable(configuration, Clock.systemUTC());
+        try (AccountingRuntime restarted = restartedFactory.getRuntime();
              WorkerGroup workers = restarted.startWorkers();
-             HttpTransactionServer server = server(restarted)) {
+             HttpTransactionServer server = server(restartedFactory)) {
             await(this::completed);
 
             var transactions = new PostgresqlTransactionRepository(jdbc);
@@ -141,7 +142,7 @@ class DurableAccountingIntegrationTest {
                 "integration." + UUID.randomUUID());
     }
 
-    private static void addAccounts(DurableAccounting accounting) {
+    private static void addAccounts(AccountingRuntime accounting) {
         Currency usd = Currency.getInstance("USD");
         accounting.accounts().add(Account.create(
                 new AccountNumber("DEBIT001"),
@@ -157,12 +158,11 @@ class DurableAccountingIntegrationTest {
                 null));
     }
 
-    private static HttpTransactionServer server(DurableAccounting accounting)
-            throws Exception {
-        HttpTransactionServer server = HttpTransactionServerFactory.create(
-                new HttpConfiguration(
-                        new InetSocketAddress("127.0.0.1", 0), 0, 1_000_000),
-                accounting.transactions());
+    private static HttpTransactionServer server(ApplicationFactory factory) {
+        HttpConfiguration configuration = new HttpConfiguration(
+                new InetSocketAddress("127.0.0.1", 0), 0, 1_000_000);
+        HttpTransactionServer server = factory.httpApiModule(configuration)
+                .getTransactionServer();
         server.start();
         return server;
     }

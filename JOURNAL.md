@@ -220,3 +220,18 @@ to `infrastructure` and its public composition entry point to
 `BoundaryDecorators`; logging, metrics, snapshots, and JMX behavior remain
 unchanged. The architecture now distinguishes this neutral technical module
 from core and application logic without presenting it as a port or adapter.
+
+## 2026-08-10 — Make composition lazy and module-scoped
+
+Replaced the eager memory and durable graph builders with app-local factory
+contexts representing each runtime-contributing module and one overall
+`ApplicationFactory`. Produced objects use per-field Lombok lazy getters, so
+each factory memoizes shared instances and tests can request a partial graph.
+Factory dependencies intentionally omit null guards; an absent dependency is
+observed only if a getter needing it is called.
+
+Module factories expose undecorated module-owned objects. The overall factory
+currently owns sender, receiver, handler, and transaction wrappers together
+with pollers, outbox routes, runtime selection, and lifecycle assembly. This
+keeps generic adapters independent of accounting message types and leaves the
+cost of cross-module wiring visible for a later wiring-factory experiment.

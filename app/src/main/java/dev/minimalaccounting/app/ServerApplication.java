@@ -1,7 +1,6 @@
 package dev.minimalaccounting.app;
 
 import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
-import dev.minimalaccounting.adapters.api.http.HttpTransactionServerFactory;
 import dev.minimalaccounting.infrastructure.JmxMetrics;
 import lombok.NonNull;
 
@@ -65,11 +64,13 @@ final class ServerApplication {
             }
         }
 
+        ApplicationFactory factory;
         AccountingRuntime accounting;
         try {
-            accounting = durable == null
-                    ? InMemoryAccountingFactory.create(clock)
-                    : DurableAccountingFactory.create(durable, clock);
+            factory = durable == null
+                    ? ApplicationFactory.inMemory(clock)
+                    : ApplicationFactory.durable(durable, clock);
+            accounting = factory.getRuntime();
             AccountFile.load(configuration.accounts(), accounting.accounts());
         } catch (IOException | RuntimeException failure) {
             error.println("Cannot initialize accounting: " + message(failure));
@@ -82,13 +83,11 @@ final class ServerApplication {
         try (accounting;
              var metrics = JmxMetrics.register(accounting.metrics());
              var workers = accounting.startWorkers();
-             var server = HttpTransactionServerFactory.create(
-                     new HttpConfiguration(
-                             new InetSocketAddress(
-                                     configuration.host(), configuration.port()),
-                             0,
-                             MAXIMUM_BODY_BYTES),
-                     accounting.transactions())) {
+             var server = factory.httpApiModule(new HttpConfiguration(
+                     new InetSocketAddress(
+                             configuration.host(), configuration.port()),
+                     0,
+                     MAXIMUM_BODY_BYTES)).getTransactionServer()) {
             server.start();
             out.println("Listening on http://" + configuration.host() + ":"
                     + server.address().getPort() + "/transactions");
@@ -98,7 +97,7 @@ final class ServerApplication {
             Thread.currentThread().interrupt();
             error.println("Server interrupted");
             return 1;
-        } catch (IOException | RuntimeException failure) {
+        } catch (RuntimeException failure) {
             error.println("Cannot run server: " + message(failure));
             return 1;
         } finally {
