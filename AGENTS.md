@@ -79,7 +79,11 @@
   `AccountNumber`. Account number, not list position or an effect ordinal, is
   the effect identity carried by workflow messages. The sort order is a
   canonical deterministic order, not business sequencing. Keep transaction
-  lines ordered separately because journal line order is meaningful.
+  lines ordered separately because journal line order is meaningful. Keep map
+  mechanics, net-effect derivation, lookup, collection predicates, and bulk
+  child transitions in the aggregate-owned, package-private `AccountEffects`
+  collection. It is not an aggregate root; `Transaction` alone changes the
+  transaction lifecycle and remains the public child-mutation boundary.
 - Resolve referenced aggregate identities in the application before creating
   internal transaction lines. `Transaction.start(receivedAt)` derives its own
   `AccountEffect` children; no lifecycle service or application code constructs

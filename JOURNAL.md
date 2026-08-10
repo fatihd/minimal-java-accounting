@@ -382,3 +382,15 @@ which matches the invariant that a transaction has one net effect per account.
 Terminal hold retention and side/amount conflict checks continue to protect
 duplicate and contradictory delivery. Docker-free and durable integration
 tests pass with the revised schema and message shapes.
+
+## 2026-08-10 — Encapsulate the account-effect collection
+
+Introduced a package-private, transaction-owned `AccountEffects` collection for
+canonical map storage, net-effect derivation, required lookup, cross-effect
+predicates, and bulk child transitions. `Transaction` retains all root-state
+decisions and remains the only public child-mutation boundary; persistence still
+hydrates and snapshots the same sorted map shape.
+
+The extraction reduced `Transaction` from 302 to 266 physical lines while
+adding one 79-line cohesive type. Existing aggregate behavior tests cover every
+line and branch of both classes, so no decomposition-specific tests were added.

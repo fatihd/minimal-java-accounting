@@ -97,8 +97,12 @@ and callers still enter through root operations such as `placeHold`,
 Each transaction stores its net account effects in a read-only sorted map keyed
 by `AccountNumber`. The key is the effect identity used by workflow messages;
 there is no positional effect number. Sorting provides deterministic command
-and persistence order only. Transaction lines remain an ordered list because
-their order is preserved in the journal.
+and persistence order only. A package-private, aggregate-owned `AccountEffects`
+collection encapsulates netting, lookup, collection predicates, and bulk child
+transitions. It is not another aggregate root: `Transaction` still owns every
+transaction-state decision and remains the public mutation boundary.
+Transaction lines remain an ordered list because their order is preserved in
+the journal.
 
 A command handler loads one target aggregate, invokes its matching operation,
 persists it, and emits the resulting event. An event handler loads the aggregate
