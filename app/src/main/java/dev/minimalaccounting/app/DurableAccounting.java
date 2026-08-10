@@ -1,8 +1,8 @@
 package dev.minimalaccounting.app;
 
 import dev.minimalaccounting.adapters.messaging.artemis.ArtemisConnection;
-import dev.minimalaccounting.observability.MetricsRegistry;
-import dev.minimalaccounting.ports.api.TransactionProcessor;
+import dev.minimalaccounting.infrastructure.MetricsRegistry;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import dev.minimalaccounting.ports.persistence.AccountRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ final class DurableAccounting implements AccountingRuntime {
     @NonNull
     private final AccountRepository accounts;
     @NonNull
-    private final TransactionProcessor transactions;
+    private final SubmitTransactionHandler transactions;
     @NonNull
     private final MetricsRegistry metrics;
     @NonNull
@@ -30,7 +30,7 @@ final class DurableAccounting implements AccountingRuntime {
     }
 
     @Override
-    public TransactionProcessor transactions() {
+    public SubmitTransactionHandler transactions() {
         return transactions;
     }
 

@@ -1,6 +1,6 @@
 package dev.minimalaccounting.adapters.api.console;
 
-import dev.minimalaccounting.ports.api.Transaction;
+import dev.minimalaccounting.ports.api.SubmitTransaction;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConsoleTransactionAdapterTest {
     @Test
     void translatesSubmitCommandIntoTransaction() {
-        AtomicReference<Transaction> submitted = new AtomicReference<>();
+        AtomicReference<SubmitTransaction> submitted = new AtomicReference<>();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ConsoleTransactionAdapter adapter = new ConsoleTransactionAdapter(submitted::set);
 
@@ -29,7 +29,7 @@ class ConsoleTransactionAdapterTest {
 
     @Test
     void reportsInvalidSyntaxWithoutCallingApi() {
-        AtomicReference<Transaction> submitted = new AtomicReference<>();
+        AtomicReference<SubmitTransaction> submitted = new AtomicReference<>();
         ByteArrayOutputStream error = new ByteArrayOutputStream();
         ConsoleTransactionAdapter adapter = new ConsoleTransactionAdapter(submitted::set);
 
@@ -54,7 +54,7 @@ class ConsoleTransactionAdapterTest {
 
         assertEquals(1, status);
         assertEquals(
-                "Transaction rejected: account is closed\n",
+                "SubmitTransaction rejected: account is closed\n",
                 error.toString(StandardCharsets.UTF_8));
     }
 

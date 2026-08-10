@@ -3,7 +3,7 @@ package dev.minimalaccounting.app;
 import dev.minimalaccounting.shared.AccountNumber;
 import dev.minimalaccounting.shared.DebitCredit;
 import dev.minimalaccounting.shared.Money;
-import dev.minimalaccounting.ports.api.Transaction;
+import dev.minimalaccounting.ports.api.SubmitTransaction;
 import dev.minimalaccounting.core.account.Account;
 import dev.minimalaccounting.core.account.AccountReference;
 import dev.minimalaccounting.core.journal.JournalReference;
@@ -34,7 +34,7 @@ class AccountingFlowTest {
             accounting = new AccountingFixture(CLOCK);
             accounting.addAccount("DEBIT001", 1000, USD);
             accounting.addAccount("CREDIT01", 1000, USD);
-            accounting.processor.submit(transaction());
+            accounting.submitTransaction.handle(transaction());
             accounting.processUntilIdle();
         }
 
@@ -61,7 +61,7 @@ class AccountingFlowTest {
 
         @Test
         void completedTransactionCanBeSubmittedAgainWithoutSettlingAgain() {
-            accounting.processor.submit(transaction());
+            accounting.submitTransaction.handle(transaction());
             accounting.processUntilIdle();
 
             assertEquals(1100, balance("DEBIT001"));
@@ -75,7 +75,7 @@ class AccountingFlowTest {
             accounting = new AccountingFixture(CLOCK);
             accounting.addAccount("DEBIT001", 1000, USD, null, 1050L);
             accounting.addAccount("CREDIT01", 1000, USD);
-            accounting.processor.submit(transaction());
+            accounting.submitTransaction.handle(transaction());
             accounting.processUntilIdle();
         }
 
@@ -121,7 +121,7 @@ class AccountingFlowTest {
         void setUp() {
             accounting = new AccountingFixture(CLOCK);
             accounting.addAccount("ACCOUNT1", 1000, USD);
-            accounting.processor.submit(transactionWithoutAccountEffects());
+            accounting.submitTransaction.handle(transactionWithoutAccountEffects());
             accounting.processUntilIdle();
         }
 
@@ -156,42 +156,42 @@ class AccountingFlowTest {
                 .orElseThrow();
     }
 
-    private static Transaction transaction() {
+    private static SubmitTransaction transaction() {
         Money amount = new Money(100, USD);
-        return new Transaction(
+        return new SubmitTransaction(
                 "request-1",
                 "TRANSFER",
                 "DOC-1",
                 "demo",
                 Instant.EPOCH,
                 List.of(
-                        new Transaction.Line(
+                        new SubmitTransaction.Line(
                                 new AccountNumber("DEBIT001"),
                                 DebitCredit.DEBIT,
                                 amount,
                                 amount),
-                        new Transaction.Line(
+                        new SubmitTransaction.Line(
                                 new AccountNumber("CREDIT01"),
                                 DebitCredit.CREDIT,
                                 amount,
                                 amount)));
     }
 
-    private static Transaction transactionWithoutAccountEffects() {
+    private static SubmitTransaction transactionWithoutAccountEffects() {
         Money amount = new Money(100, USD);
-        return new Transaction(
+        return new SubmitTransaction(
                 "request-without-effects",
                 "TRANSFER",
                 "DOC-2",
                 "net zero",
                 Instant.EPOCH,
                 List.of(
-                        new Transaction.Line(
+                        new SubmitTransaction.Line(
                                 new AccountNumber("ACCOUNT1"),
                                 DebitCredit.DEBIT,
                                 amount,
                                 amount),
-                        new Transaction.Line(
+                        new SubmitTransaction.Line(
                                 new AccountNumber("ACCOUNT1"),
                                 DebitCredit.CREDIT,
                                 amount,

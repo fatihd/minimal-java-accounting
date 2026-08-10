@@ -3,8 +3,8 @@
 Minimal Java Accounting is a small double-entry posting workflow built to make
 ports, adapters, aggregate boundaries, retries, and durability visible. The
 business model has no ORM, broker, HTTP, JSON, logging, metrics, or dependency
-injection dependency. Those choices stay in independently replaceable adapter
-and composition modules.
+injection dependency. Those choices stay in outer infrastructure, adapter, and
+composition modules.
 
 The repository includes two complete runtimes:
 
@@ -13,10 +13,10 @@ The repository includes two complete runtimes:
 - `durable` uses plain JDBC PostgreSQL repositories, a transactional PostgreSQL
   outbox, and Apache Artemis Core queues and topics.
 
-Both expose the same `TransactionProcessor.submit(Transaction)` API through a
-console adapter or the JDK HTTP server. This is a reference implementation of
-the architectural boundaries and workflow rules, not a production accounting
-product or a claim of exactly-once delivery.
+Both expose the same `SubmitTransactionHandler.handle(SubmitTransaction)` API
+through a console adapter or the JDK HTTP server. This is a reference
+implementation of the architectural boundaries and workflow rules, not a
+production accounting product or a claim of exactly-once delivery.
 
 ## Architecture
 
@@ -44,9 +44,8 @@ The modules have intentionally narrow responsibilities:
 - `adapters.messaging.postgresql` implements the transactional outbox.
 - `adapters.messaging.artemis` implements durable queues, topics,
   subscriptions, and polling with the Artemis Core client.
-- `observability` adapts business ports through JDK functional interfaces and
-  decorates them with JDK logging, concurrent counters, latency histograms,
-  immutable snapshots, and JMX.
+- `infrastructure` provides boundary decorators backed by JDK logging,
+  concurrent counters, latency histograms, immutable snapshots, and JMX.
 - `app` is the only composition root. Nothing depends on it.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for exact production module
@@ -188,8 +187,9 @@ The project’s long-term target is a compact, executable example showing that:
   APIs;
 - push handlers and pull receivers can share minimal messaging ports;
 - durable retries can be explicit without embedding workflow logic in tables;
-- logging and metrics can be composed once around JDK functions, then adapted
-  to business ports without annotations or framework-managed proxies; and
+- boundary decoration can add logging and metrics around JDK functions, then
+  adapt them to business ports without annotations or framework-managed
+  proxies; and
 - new HTTP, database, broker, LocalStack, or test adapters can be added as new
   modules rather than edits to core rules.
 

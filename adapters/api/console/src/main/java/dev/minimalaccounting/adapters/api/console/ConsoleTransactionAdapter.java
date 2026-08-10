@@ -3,8 +3,8 @@ package dev.minimalaccounting.adapters.api.console;
 import dev.minimalaccounting.shared.AccountNumber;
 import dev.minimalaccounting.shared.DebitCredit;
 import dev.minimalaccounting.shared.Money;
-import dev.minimalaccounting.ports.api.Transaction;
-import dev.minimalaccounting.ports.api.TransactionProcessor;
+import dev.minimalaccounting.ports.api.SubmitTransaction;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -32,7 +32,7 @@ public final class ConsoleTransactionAdapter {
             """;
 
     @NonNull
-    private final TransactionProcessor transactions;
+    private final SubmitTransactionHandler transactions;
 
     public int run(
             @NonNull String[] arguments,
@@ -43,7 +43,7 @@ public final class ConsoleTransactionAdapter {
             return 0;
         }
 
-        Transaction transaction;
+        SubmitTransaction transaction;
         try {
             transaction = parse(arguments);
         } catch (RuntimeException invalid) {
@@ -53,11 +53,11 @@ public final class ConsoleTransactionAdapter {
         }
 
         try {
-            transactions.submit(transaction);
+            transactions.handle(transaction);
             out.println("accepted " + transaction.requestId());
             return 0;
         } catch (RuntimeException rejected) {
-            error.println("Transaction rejected: " + message(rejected));
+            error.println("SubmitTransaction rejected: " + message(rejected));
             return 1;
         }
     }
@@ -66,7 +66,7 @@ public final class ConsoleTransactionAdapter {
         output.print(USAGE);
     }
 
-    private static Transaction parse(String[] arguments) {
+    private static SubmitTransaction parse(String[] arguments) {
         if (arguments.length == 0 || !"submit".equals(arguments[0])) {
             throw new IllegalArgumentException("expected submit");
         }
@@ -76,7 +76,7 @@ public final class ConsoleTransactionAdapter {
         String description = "";
         boolean descriptionSet = false;
         Instant occurredAt = null;
-        List<Transaction.Line> lines = new ArrayList<>();
+        List<SubmitTransaction.Line> lines = new ArrayList<>();
 
         for (int index = 1; index < arguments.length; index++) {
             String option = arguments[index];
@@ -115,7 +115,7 @@ public final class ConsoleTransactionAdapter {
             }
         }
 
-        return new Transaction(
+        return new SubmitTransaction(
                 requiredText(requestId, "--request-id"),
                 requiredText(documentType, "--document-type"),
                 requiredText(documentNumber, "--document-number"),
@@ -124,9 +124,9 @@ public final class ConsoleTransactionAdapter {
                 lines);
     }
 
-    private static Transaction.Line line(String[] arguments, int offset) {
+    private static SubmitTransaction.Line line(String[] arguments, int offset) {
         try {
-            return new Transaction.Line(
+            return new SubmitTransaction.Line(
                     new AccountNumber(arguments[offset]),
                     DebitCredit.valueOf(arguments[offset + 1].toUpperCase(Locale.ROOT)),
                     new Money(

@@ -1,7 +1,7 @@
-package dev.minimalaccounting.observability;
+package dev.minimalaccounting.infrastructure;
 
-import dev.minimalaccounting.ports.api.Transaction;
-import dev.minimalaccounting.ports.api.TransactionProcessor;
+import dev.minimalaccounting.ports.api.SubmitTransaction;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import dev.minimalaccounting.ports.messaging.Handler;
 import dev.minimalaccounting.ports.messaging.Received;
 import dev.minimalaccounting.ports.messaging.Receiver;
@@ -14,25 +14,25 @@ import java.util.function.Consumer;
 import java.util.function.IntFunction;
 
 @RequiredArgsConstructor
-public final class Observability {
+public final class BoundaryDecorators {
     @NonNull
     private final MetricsRegistry metrics;
 
-    public TransactionProcessor processor(
+    public SubmitTransactionHandler handler(
             @NonNull String name,
-            @NonNull TransactionProcessor processor) {
-        Consumer<Transaction> observed = observer(name).consumer(name, processor::submit);
-        return observed::accept;
+            @NonNull SubmitTransactionHandler handler) {
+        Consumer<SubmitTransaction> decorated = observer(name).consumer(name, handler::handle);
+        return decorated::accept;
     }
 
     public <T> Handler<T> handler(@NonNull String name, @NonNull Handler<T> handler) {
-        Consumer<T> observed = observer(name).consumer(name, handler::handle);
-        return observed::accept;
+        Consumer<T> decorated = observer(name).consumer(name, handler::handle);
+        return decorated::accept;
     }
 
     public <T> Sender<T> sender(@NonNull String name, @NonNull Sender<T> sender) {
-        Consumer<T> observed = observer(name).consumer(name, sender::send);
-        return observed::accept;
+        Consumer<T> decorated = observer(name).consumer(name, sender::send);
+        return decorated::accept;
     }
 
     public <T> Receiver<T> receiver(@NonNull String name, @NonNull Receiver<T> receiver) {

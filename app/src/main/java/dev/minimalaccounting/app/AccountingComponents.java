@@ -9,12 +9,12 @@ import dev.minimalaccounting.core.account.ReleaseAccountHold;
 import dev.minimalaccounting.core.account.SettleAccountHold;
 import dev.minimalaccounting.core.journal.JournalizeTransaction;
 import dev.minimalaccounting.core.journal.TransactionJournalized;
-import dev.minimalaccounting.ports.api.TransactionProcessor;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import dev.minimalaccounting.ports.messaging.Handler;
 import lombok.NonNull;
 
 record AccountingComponents(
-        @NonNull TransactionProcessor transactions,
+        @NonNull SubmitTransactionHandler transactions,
         @NonNull Handler<PlaceAccountHold> placeAccountHold,
         @NonNull Handler<AccountHoldPlaced> accountHoldPlaced,
         @NonNull Handler<AccountHoldDeclined> accountHoldDeclined,

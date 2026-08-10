@@ -1,13 +1,13 @@
 package dev.minimalaccounting.app;
 
-import dev.minimalaccounting.observability.MetricsRegistry;
-import dev.minimalaccounting.ports.api.TransactionProcessor;
+import dev.minimalaccounting.infrastructure.MetricsRegistry;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import dev.minimalaccounting.ports.persistence.AccountRepository;
 
 interface AccountingRuntime extends AutoCloseable {
     AccountRepository accounts();
 
-    TransactionProcessor transactions();
+    SubmitTransactionHandler transactions();
 
     MetricsRegistry metrics();
 

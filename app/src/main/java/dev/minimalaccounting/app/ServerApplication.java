@@ -2,7 +2,7 @@ package dev.minimalaccounting.app;
 
 import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
 import dev.minimalaccounting.adapters.api.http.HttpTransactionServerFactory;
-import dev.minimalaccounting.observability.JmxMetrics;
+import dev.minimalaccounting.infrastructure.JmxMetrics;
 import lombok.NonNull;
 
 import java.io.IOException;

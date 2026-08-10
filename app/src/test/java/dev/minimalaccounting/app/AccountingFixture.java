@@ -8,7 +8,7 @@ import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentTransaction
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryPoller;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryQueue;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryTopic;
-import dev.minimalaccounting.ports.api.TransactionProcessor;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import dev.minimalaccounting.core.account.Account;
 import dev.minimalaccounting.core.account.AccountHoldDeclined;
 import dev.minimalaccounting.core.account.AccountHoldPlaced;
@@ -62,7 +62,7 @@ final class AccountingFixture {
     final InMemoryQueue<AccountHoldSettled> settledWorkflow =
             accountHoldSettled.subscribe("transaction-settlement");
 
-    final TransactionProcessor processor;
+    final SubmitTransactionHandler submitTransaction;
     private final List<InMemoryQueue<?>> queues = List.of(
             placeAccountHolds,
             releaseAccountHolds,
@@ -119,7 +119,7 @@ final class AccountingFixture {
                         settledWorkflow,
                         new AccountHoldSettledHandler(transactions),
                         20));
-        processor = new TransactionIntake(
+        submitTransaction = new TransactionIntake(
                 accounts, transactions, journals,
                 placeAccountHolds, journalizeTransactions, clock);
     }

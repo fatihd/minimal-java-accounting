@@ -1,4 +1,4 @@
-package dev.minimalaccounting.observability;
+package dev.minimalaccounting.infrastructure;
 
 import org.junit.jupiter.api.Test;
 

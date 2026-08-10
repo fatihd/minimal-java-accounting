@@ -10,7 +10,7 @@ import dev.minimalaccounting.application.transaction.AccountHoldReleasedHandler;
 import dev.minimalaccounting.application.transaction.AccountHoldSettledHandler;
 import dev.minimalaccounting.application.transaction.TransactionIntake;
 import dev.minimalaccounting.application.transaction.TransactionJournalizedHandler;
-import dev.minimalaccounting.observability.Observability;
+import dev.minimalaccounting.infrastructure.BoundaryDecorators;
 import lombok.NonNull;
 
 import java.time.Clock;
@@ -23,86 +23,86 @@ final class AccountingComponentsFactory {
             @NonNull AccountingRepositories repositories,
             @NonNull AccountingSenders senders,
             @NonNull Clock clock,
-            @NonNull Observability observability) {
-        var observed = observed(senders, observability);
+            @NonNull BoundaryDecorators decorators) {
+        var decorated = decorated(senders, decorators);
         var components = new AccountingComponents(
                 new TransactionIntake(
                         repositories.accounts(),
                         repositories.transactions(),
                         repositories.journals(),
-                        observed.placeAccountHolds(),
-                        observed.journalizeTransactions(),
+                        decorated.placeAccountHolds(),
+                        decorated.journalizeTransactions(),
                         clock),
                 new PlaceAccountHoldHandler(
                         repositories.accounts(),
-                        observed.accountHoldsPlaced(),
-                        observed.accountHoldsDeclined()),
+                        decorated.accountHoldsPlaced(),
+                        decorated.accountHoldsDeclined()),
                 new AccountHoldPlacedHandler(
                         repositories.transactions(),
-                        observed.releaseAccountHolds(),
-                        observed.journalizeTransactions(),
+                        decorated.releaseAccountHolds(),
+                        decorated.journalizeTransactions(),
                         clock),
                 new AccountHoldDeclinedHandler(
-                        repositories.transactions(), observed.releaseAccountHolds()),
+                        repositories.transactions(), decorated.releaseAccountHolds()),
                 new ReleaseAccountHoldHandler(
-                        repositories.accounts(), observed.accountHoldsReleased()),
+                        repositories.accounts(), decorated.accountHoldsReleased()),
                 new AccountHoldReleasedHandler(repositories.transactions()),
                 new JournalizeTransactionHandler(
                         repositories.accounts(),
                         repositories.transactions(),
                         repositories.journals(),
-                        observed.transactionsJournalized(),
+                        decorated.transactionsJournalized(),
                         clock),
                 new TransactionJournalizedHandler(
                         repositories.transactions(),
                         repositories.journals(),
-                        observed.settleAccountHolds()),
+                        decorated.settleAccountHolds()),
                 new SettleAccountHoldHandler(
-                        repositories.accounts(), observed.accountHoldsSettled()),
+                        repositories.accounts(), decorated.accountHoldsSettled()),
                 new AccountHoldSettledHandler(repositories.transactions()));
         return new AccountingComponents(
-                observability.processor("transaction.submit", components.transactions()),
-                observability.handler(
+                decorators.handler("transaction.submit", components.transactions()),
+                decorators.handler(
                         "command.place-account-hold", components.placeAccountHold()),
-                observability.handler(
+                decorators.handler(
                         "event.account-hold-placed", components.accountHoldPlaced()),
-                observability.handler(
+                decorators.handler(
                         "event.account-hold-declined", components.accountHoldDeclined()),
-                observability.handler(
+                decorators.handler(
                         "command.release-account-hold", components.releaseAccountHold()),
-                observability.handler(
+                decorators.handler(
                         "event.account-hold-released", components.accountHoldReleased()),
-                observability.handler(
+                decorators.handler(
                         "command.journalize-transaction", components.journalizeTransaction()),
-                observability.handler(
+                decorators.handler(
                         "event.transaction-journalized", components.transactionJournalized()),
-                observability.handler(
+                decorators.handler(
                         "command.settle-account-hold", components.settleAccountHold()),
-                observability.handler(
+                decorators.handler(
                         "event.account-hold-settled", components.accountHoldSettled()));
     }
 
-    private static AccountingSenders observed(
+    private static AccountingSenders decorated(
             AccountingSenders senders,
-            Observability observability) {
+            BoundaryDecorators decorators) {
         return new AccountingSenders(
-                observability.sender(
+                decorators.sender(
                         "send.place-account-hold", senders.placeAccountHolds()),
-                observability.sender(
+                decorators.sender(
                         "send.release-account-hold", senders.releaseAccountHolds()),
-                observability.sender(
+                decorators.sender(
                         "send.journalize-transaction", senders.journalizeTransactions()),
-                observability.sender(
+                decorators.sender(
                         "send.settle-account-hold", senders.settleAccountHolds()),
-                observability.sender(
+                decorators.sender(
                         "publish.account-hold-placed", senders.accountHoldsPlaced()),
-                observability.sender(
+                decorators.sender(
                         "publish.account-hold-declined", senders.accountHoldsDeclined()),
-                observability.sender(
+                decorators.sender(
                         "publish.account-hold-released", senders.accountHoldsReleased()),
-                observability.sender(
+                decorators.sender(
                         "publish.transaction-journalized", senders.transactionsJournalized()),
-                observability.sender(
+                decorators.sender(
                         "publish.account-hold-settled", senders.accountHoldsSettled()));
     }
 }

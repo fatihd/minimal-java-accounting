@@ -38,7 +38,7 @@
   workflow state, test probes, or technical names such as `Dto`, `Info`, or
   `Manager`.
 - The production API currently has one operation:
-  `TransactionProcessor.submit(Transaction)`.
+  `SubmitTransactionHandler.handle(SubmitTransaction)`.
 - Keep entities, internal messages, state transitions, and pure business rules in
   the single `core` module. Core must not depend on persistence, messaging,
   protocols, frameworks, or adapters.
@@ -83,8 +83,12 @@
   workflow defaults. Full-state constructors remain available for adapter
   reconstruction; they are not application creation APIs.
 - Put implementations of application services and workflow coordination in
-  `application`. Application code may depend on API, core, and infrastructure
-  ports, but not concrete adapters.
+  `application`. Application code may depend on API, core, persistence ports,
+  and messaging ports, but not concrete adapters or the technical
+  `infrastructure` module.
+- Keep `infrastructure` outside core and application. It owns dependency-light
+  technical boundary decoration, logging, metrics, snapshots, and JMX; only
+  the outer `app` composition selects it.
 - Organize application handlers by the aggregate whose state they load and
   change. A command handler belongs with its target aggregate; an event handler
   belongs with the aggregate or application responsibility it advances, not

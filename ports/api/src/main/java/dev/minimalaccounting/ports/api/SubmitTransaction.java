@@ -8,14 +8,14 @@ import lombok.NonNull;
 import java.time.Instant;
 import java.util.List;
 
-public record Transaction(
+public record SubmitTransaction(
         @NonNull String requestId,
         @NonNull String documentType,
         @NonNull String documentNumber,
         String description,
         @NonNull Instant occurredAt,
         @NonNull List<Line> lines) {
-    public Transaction {
+    public SubmitTransaction {
         lines = List.copyOf(lines);
     }
 

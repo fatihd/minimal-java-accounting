@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import dev.minimalaccounting.ports.api.Transaction;
-import dev.minimalaccounting.ports.api.TransactionProcessor;
+import dev.minimalaccounting.ports.api.SubmitTransaction;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import dev.minimalaccounting.shared.AccountNumber;
 import dev.minimalaccounting.shared.DebitCredit;
 import dev.minimalaccounting.shared.Money;
@@ -28,7 +28,7 @@ final class TransactionHttpHandler implements HttpHandler {
             System.getLogger(TransactionHttpHandler.class.getName());
 
     @NonNull
-    private final TransactionProcessor transactions;
+    private final SubmitTransactionHandler transactions;
     @NonNull
     private final ObjectMapper json;
     private final int maximumBodyBytes;
@@ -50,7 +50,7 @@ final class TransactionHttpHandler implements HttpHandler {
                 return;
             }
 
-            Transaction submitted;
+            SubmitTransaction submitted;
             try {
                 submitted = parse(readBody(exchange));
             } catch (BodyTooLargeException tooLarge) {
@@ -65,12 +65,12 @@ final class TransactionHttpHandler implements HttpHandler {
             }
 
             try {
-                transactions.submit(submitted);
+                transactions.handle(submitted);
                 respond(exchange, 202, null);
             } catch (PostingRejectedException | IllegalArgumentException rejected) {
                 respond(exchange, 422, message(rejected));
             } catch (RuntimeException failure) {
-                LOGGER.log(System.Logger.Level.ERROR, "Transaction submission failed");
+                LOGGER.log(System.Logger.Level.ERROR, "SubmitTransaction submission failed");
                 respond(exchange, 500, "Internal server error");
             }
         } finally {
@@ -90,7 +90,7 @@ final class TransactionHttpHandler implements HttpHandler {
         return body;
     }
 
-    private Transaction parse(byte[] body) throws JsonProcessingException {
+    private SubmitTransaction parse(byte[] body) throws JsonProcessingException {
         JsonNode root = json.readTree(new String(body, StandardCharsets.UTF_8));
         if (root == null || !root.isObject()) {
             throw invalid("request body must be a JSON object");
@@ -99,18 +99,18 @@ final class TransactionHttpHandler implements HttpHandler {
         if (!linesNode.isArray()) {
             throw invalid("lines must be an array");
         }
-        var lines = new ArrayList<Transaction.Line>();
+        var lines = new ArrayList<SubmitTransaction.Line>();
         for (JsonNode line : linesNode) {
             if (!line.isObject()) {
                 throw invalid("each line must be an object");
             }
-            lines.add(new Transaction.Line(
+            lines.add(new SubmitTransaction.Line(
                     new AccountNumber(text(line, "accountNumber")),
                     DebitCredit.valueOf(text(line, "side").toUpperCase(Locale.ROOT)),
                     money(required(line, "transactionAmount"), "transactionAmount"),
                     money(required(line, "ledgerAmount"), "ledgerAmount")));
         }
-        return new Transaction(
+        return new SubmitTransaction(
                 text(root, "requestId"),
                 text(root, "documentType"),
                 text(root, "documentNumber"),

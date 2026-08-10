@@ -1,7 +1,7 @@
 package dev.minimalaccounting.adapters.api.http;
 
-import dev.minimalaccounting.ports.api.Transaction;
-import dev.minimalaccounting.ports.api.TransactionProcessor;
+import dev.minimalaccounting.ports.api.SubmitTransaction;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import dev.minimalaccounting.shared.PostingRejectedException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -56,7 +56,7 @@ class HttpTransactionServerTest {
 
     @Test
     void submitsAJsonTransactionAndReturnsAcceptedWithoutABody() throws Exception {
-        var submitted = new AtomicReference<Transaction>();
+        var submitted = new AtomicReference<SubmitTransaction>();
         start(submitted::set, 1_000_000);
 
         var response = send("POST", "application/json; charset=utf-8", VALID_TRANSACTION);
@@ -72,7 +72,7 @@ class HttpTransactionServerTest {
 
     @Test
     void rejectsMalformedJsonWithoutCallingTheProcessor() throws Exception {
-        var submitted = new AtomicReference<Transaction>();
+        var submitted = new AtomicReference<SubmitTransaction>();
         start(submitted::set, 1_000_000);
 
         var response = send("POST", "application/json", "{");
@@ -133,11 +133,13 @@ class HttpTransactionServerTest {
                 () -> new HttpConfiguration(address, 0, 0));
     }
 
-    private void start(TransactionProcessor processor, int maximumBodyBytes) throws Exception {
+    private void start(
+            SubmitTransactionHandler submitTransaction,
+            int maximumBodyBytes) throws Exception {
         server = HttpTransactionServerFactory.create(
                 new HttpConfiguration(
                         new InetSocketAddress("127.0.0.1", 0), 0, maximumBodyBytes),
-                processor);
+                submitTransaction);
         server.start();
     }
 

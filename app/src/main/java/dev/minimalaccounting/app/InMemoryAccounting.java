@@ -2,8 +2,8 @@ package dev.minimalaccounting.app;
 
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryPoller;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryQueue;
-import dev.minimalaccounting.ports.api.TransactionProcessor;
-import dev.minimalaccounting.observability.MetricsRegistry;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
+import dev.minimalaccounting.infrastructure.MetricsRegistry;
 import dev.minimalaccounting.ports.persistence.AccountRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ final class InMemoryAccounting implements AccountingRuntime {
     @NonNull
     private final AccountRepository accounts;
     @NonNull
-    private final TransactionProcessor transactions;
+    private final SubmitTransactionHandler transactions;
     @NonNull
     private final MetricsRegistry metrics;
     @NonNull
@@ -33,7 +33,7 @@ final class InMemoryAccounting implements AccountingRuntime {
     }
 
     @Override
-    public TransactionProcessor transactions() {
+    public SubmitTransactionHandler transactions() {
         return transactions;
     }
 

@@ -6,7 +6,7 @@ import dev.minimalaccounting.shared.Money;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentJournalRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentTransactionRepository;
-import dev.minimalaccounting.ports.api.Transaction;
+import dev.minimalaccounting.ports.api.SubmitTransaction;
 import dev.minimalaccounting.core.transaction.TransactionReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,13 +38,13 @@ class TransactionIntakeTest {
 
     @Test
     void rejectsMissingAccount() {
-        assertThrows(IllegalArgumentException.class, () -> intake.submit(transaction()));
+        assertThrows(IllegalArgumentException.class, () -> intake.handle(transaction()));
     }
 
     @Test
     void doesNotPersistTransactionWithMissingAccount() {
         try {
-            intake.submit(transaction());
+            intake.handle(transaction());
         } catch (IllegalArgumentException ignored) {
             // Expected; persistence is asserted independently.
         }
@@ -52,15 +52,15 @@ class TransactionIntakeTest {
         assertTrue(transactions.get(TransactionReference.request("request")).isEmpty());
     }
 
-    private static Transaction transaction() {
+    private static SubmitTransaction transaction() {
         Money amount = new Money(100, Currency.getInstance("USD"));
-        return new Transaction(
+        return new SubmitTransaction(
                 "request",
                 "TRANSFER",
                 "document",
                 "description",
                 Instant.EPOCH,
-                List.of(new Transaction.Line(
+                List.of(new SubmitTransaction.Line(
                         new AccountNumber("MISSING1"),
                         DebitCredit.DEBIT,
                         amount,

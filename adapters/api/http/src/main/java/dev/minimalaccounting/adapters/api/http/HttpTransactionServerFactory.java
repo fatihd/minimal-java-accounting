@@ -2,7 +2,7 @@ package dev.minimalaccounting.adapters.api.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
-import dev.minimalaccounting.ports.api.TransactionProcessor;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import lombok.NonNull;
 
 import java.io.IOException;
@@ -14,7 +14,7 @@ public final class HttpTransactionServerFactory {
 
     public static HttpTransactionServer create(
             @NonNull HttpConfiguration configuration,
-            @NonNull TransactionProcessor transactions) throws IOException {
+            @NonNull SubmitTransactionHandler transactions) throws IOException {
         HttpServer server = HttpServer.create(
                 configuration.address(), configuration.backlog());
         var executor = Executors.newVirtualThreadPerTaskExecutor();

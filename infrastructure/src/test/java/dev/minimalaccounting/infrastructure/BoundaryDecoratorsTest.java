@@ -1,5 +1,6 @@
-package dev.minimalaccounting.observability;
+package dev.minimalaccounting.infrastructure;
 
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import dev.minimalaccounting.ports.messaging.Received;
 import dev.minimalaccounting.ports.messaging.Receiver;
 import org.junit.jupiter.api.Test;
@@ -13,19 +14,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class ObservabilityTest {
+class BoundaryDecoratorsTest {
     @Test
-    void adaptsSingleArgumentPortsThroughObservedConsumers() {
+    void adaptsSingleArgumentPortsThroughDecoratedConsumers() {
         var metrics = new MetricsRegistry(Clock.systemUTC());
-        var observability = new Observability(metrics);
+        var decorators = new BoundaryDecorators(metrics);
         var submissions = new AtomicInteger();
         var handled = new AtomicReference<String>();
         var sent = new AtomicReference<String>();
+        SubmitTransactionHandler submission = ignored -> submissions.incrementAndGet();
 
-        observability.processor("transaction.submit", ignored -> submissions.incrementAndGet())
-                .submit(null);
-        observability.handler("command.handle", handled::set).handle("command");
-        observability.sender("event.send", sent::set).send("event");
+        decorators.handler("transaction.submit", submission)
+                .handle(null);
+        decorators.handler("command.handle", handled::set).handle("command");
+        decorators.sender("event.send", sent::set).send("event");
 
         assertEquals(1, submissions.get());
         assertEquals("command", handled.get());
@@ -40,7 +42,7 @@ class ObservabilityTest {
     void receiverAdaptsPollingAndBothDispositions() {
         var metrics = new MetricsRegistry(Clock.systemUTC());
         var delegate = new RecordingReceiver();
-        var receiver = new Observability(metrics).receiver("queue", delegate);
+        var receiver = new BoundaryDecorators(metrics).receiver("queue", delegate);
 
         assertEquals(2, receiver.receive(2).size());
         receiver.ack("1");
@@ -65,7 +67,7 @@ class ObservabilityTest {
                 throw expected;
             }
         };
-        var receiver = new Observability(metrics).receiver("queue", delegate);
+        var receiver = new BoundaryDecorators(metrics).receiver("queue", delegate);
 
         var thrown = assertThrows(IllegalArgumentException.class,
                 () -> receiver.ack("missing"));

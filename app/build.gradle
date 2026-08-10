@@ -15,7 +15,7 @@ dependencies {
     implementation project(':adapters.messaging.in-memory')
     implementation project(':adapters.messaging.postgresql')
     implementation project(':adapters.messaging.artemis')
-    implementation project(':observability')
+    implementation project(':infrastructure')
 
     testImplementation 'org.testcontainers:testcontainers:2.0.5'
     testImplementation 'org.testcontainers:testcontainers-postgresql:2.0.5'

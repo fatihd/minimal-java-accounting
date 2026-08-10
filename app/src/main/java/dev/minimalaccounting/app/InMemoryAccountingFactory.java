@@ -15,8 +15,8 @@ import dev.minimalaccounting.core.account.ReleaseAccountHold;
 import dev.minimalaccounting.core.account.SettleAccountHold;
 import dev.minimalaccounting.core.journal.JournalizeTransaction;
 import dev.minimalaccounting.core.journal.TransactionJournalized;
-import dev.minimalaccounting.observability.MetricsRegistry;
-import dev.minimalaccounting.observability.Observability;
+import dev.minimalaccounting.infrastructure.MetricsRegistry;
+import dev.minimalaccounting.infrastructure.BoundaryDecorators;
 import dev.minimalaccounting.ports.messaging.Handler;
 import dev.minimalaccounting.ports.messaging.Receiver;
 import lombok.NonNull;
@@ -54,7 +54,7 @@ final class InMemoryAccountingFactory {
                 transactionsJournalized.subscribe("transaction-settlement");
         var settledWorkflow = accountHoldsSettled.subscribe("transaction-settlement");
         var metrics = new MetricsRegistry(clock);
-        var observability = new Observability(metrics);
+        var decorators = new BoundaryDecorators(metrics);
 
         var components = AccountingComponentsFactory.create(
                 new AccountingRepositories(accounts, transactions, journals),
@@ -69,26 +69,26 @@ final class InMemoryAccountingFactory {
                         transactionsJournalized,
                         accountHoldsSettled),
                 clock,
-                observability);
+                decorators);
 
         List<IntSupplier> pollers = List.of(
-                poller(observability, "place-account-hold", placeAccountHolds,
+                poller(decorators, "place-account-hold", placeAccountHolds,
                         components.placeAccountHold())::pollOnce,
-                poller(observability, "account-hold-placed", placedWorkflow,
+                poller(decorators, "account-hold-placed", placedWorkflow,
                         components.accountHoldPlaced())::pollOnce,
-                poller(observability, "account-hold-declined", declinedWorkflow,
+                poller(decorators, "account-hold-declined", declinedWorkflow,
                         components.accountHoldDeclined())::pollOnce,
-                poller(observability, "release-account-hold", releaseAccountHolds,
+                poller(decorators, "release-account-hold", releaseAccountHolds,
                         components.releaseAccountHold())::pollOnce,
-                poller(observability, "account-hold-released", releasedWorkflow,
+                poller(decorators, "account-hold-released", releasedWorkflow,
                         components.accountHoldReleased())::pollOnce,
-                poller(observability, "journalize-transaction", journalizeTransactions,
+                poller(decorators, "journalize-transaction", journalizeTransactions,
                         components.journalizeTransaction())::pollOnce,
-                poller(observability, "transaction-journalized", journalizedWorkflow,
+                poller(decorators, "transaction-journalized", journalizedWorkflow,
                         components.transactionJournalized())::pollOnce,
-                poller(observability, "settle-account-hold", settleAccountHolds,
+                poller(decorators, "settle-account-hold", settleAccountHolds,
                         components.settleAccountHold())::pollOnce,
-                poller(observability, "account-hold-settled", settledWorkflow,
+                poller(decorators, "account-hold-settled", settledWorkflow,
                         components.accountHoldSettled())::pollOnce);
 
         return new InMemoryAccounting(
@@ -109,12 +109,12 @@ final class InMemoryAccountingFactory {
     }
 
     private static <T> InMemoryPoller<T> poller(
-            Observability observability,
+            BoundaryDecorators decorators,
             String name,
             Receiver<T> receiver,
             Handler<T> handler) {
         return new InMemoryPoller<>(
-                observability.receiver("receive." + name, receiver),
+                decorators.receiver("receive." + name, receiver),
                 handler,
                 BATCH_SIZE);
     }

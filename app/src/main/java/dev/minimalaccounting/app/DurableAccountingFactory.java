@@ -24,8 +24,8 @@ import dev.minimalaccounting.core.account.ReleaseAccountHold;
 import dev.minimalaccounting.core.account.SettleAccountHold;
 import dev.minimalaccounting.core.journal.JournalizeTransaction;
 import dev.minimalaccounting.core.journal.TransactionJournalized;
-import dev.minimalaccounting.observability.MetricsRegistry;
-import dev.minimalaccounting.observability.Observability;
+import dev.minimalaccounting.infrastructure.MetricsRegistry;
+import dev.minimalaccounting.infrastructure.BoundaryDecorators;
 import dev.minimalaccounting.ports.messaging.Handler;
 import dev.minimalaccounting.ports.messaging.Receiver;
 import dev.minimalaccounting.ports.messaging.Sender;
@@ -120,61 +120,61 @@ final class DurableAccountingFactory {
                 outbox(jdbc, journalizedName),
                 outbox(jdbc, settledName));
         var metrics = new MetricsRegistry(clock);
-        var observability = new Observability(metrics);
+        var decorators = new BoundaryDecorators(metrics);
         AccountingComponents components = AccountingComponentsFactory.create(
                 new AccountingRepositories(accounts, transactions, journals),
                 outboxSenders,
                 clock,
-                observability);
+                decorators);
 
         var publisher = new PostgresqlOutboxPublisher(
                 jdbc,
                 List.of(
                         route(placeName, PlaceAccountHold.class,
-                                observed(observability, placeName, placeQueue)),
+                                decorated(decorators, placeName, placeQueue)),
                         route(releaseName, ReleaseAccountHold.class,
-                                observed(observability, releaseName, releaseQueue)),
+                                decorated(decorators, releaseName, releaseQueue)),
                         route(journalizeName, JournalizeTransaction.class,
-                                observed(observability, journalizeName, journalizeQueue)),
+                                decorated(decorators, journalizeName, journalizeQueue)),
                         route(settleName, SettleAccountHold.class,
-                                observed(observability, settleName, settleQueue)),
+                                decorated(decorators, settleName, settleQueue)),
                         route(placedName, AccountHoldPlaced.class,
-                                observed(observability, placedName, placedTopic)),
+                                decorated(decorators, placedName, placedTopic)),
                         route(declinedName, AccountHoldDeclined.class,
-                                observed(observability, declinedName, declinedTopic)),
+                                decorated(decorators, declinedName, declinedTopic)),
                         route(releasedName, AccountHoldReleased.class,
-                                observed(observability, releasedName, releasedTopic)),
+                                decorated(decorators, releasedName, releasedTopic)),
                         route(journalizedName, TransactionJournalized.class,
-                                observed(observability, journalizedName, journalizedTopic)),
+                                decorated(decorators, journalizedName, journalizedTopic)),
                         route(settledName, AccountHoldSettled.class,
-                                observed(observability, settledName, settledTopic))),
+                                decorated(decorators, settledName, settledTopic))),
                 BATCH_SIZE);
 
         List<IntSupplier> pollers = List.of(
                 publisher::publishOnce,
-                poller(observability, placeName, placeQueue,
+                poller(decorators, placeName, placeQueue,
                         transactional(jdbc, components.placeAccountHold())),
-                poller(observability, placedName, placedWorkflow,
+                poller(decorators, placedName, placedWorkflow,
                         transactional(jdbc, components.accountHoldPlaced())),
-                poller(observability, declinedName, declinedWorkflow,
+                poller(decorators, declinedName, declinedWorkflow,
                         transactional(jdbc, components.accountHoldDeclined())),
-                poller(observability, releaseName, releaseQueue,
+                poller(decorators, releaseName, releaseQueue,
                         transactional(jdbc, components.releaseAccountHold())),
-                poller(observability, releasedName, releasedWorkflow,
+                poller(decorators, releasedName, releasedWorkflow,
                         transactional(jdbc, components.accountHoldReleased())),
-                poller(observability, journalizeName, journalizeQueue,
+                poller(decorators, journalizeName, journalizeQueue,
                         transactional(jdbc, components.journalizeTransaction())),
-                poller(observability, journalizedName, journalizedWorkflow,
+                poller(decorators, journalizedName, journalizedWorkflow,
                         transactional(jdbc, components.transactionJournalized())),
-                poller(observability, settleName, settleQueue,
+                poller(decorators, settleName, settleQueue,
                         transactional(jdbc, components.settleAccountHold())),
-                poller(observability, settledName, settledWorkflow,
+                poller(decorators, settledName, settledWorkflow,
                         transactional(jdbc, components.accountHoldSettled())));
 
         return new DurableAccounting(
                 accounts,
                 submitted -> jdbc.inTransaction(
-                        () -> components.transactions().submit(submitted)),
+                        () -> components.transactions().handle(submitted)),
                 metrics,
                 pollers,
                 broker);
@@ -195,11 +195,11 @@ final class DurableAccountingFactory {
         return new OutboxRoute<>(destination, type, sender);
     }
 
-    private static <T> Sender<T> observed(
-            Observability observability,
+    private static <T> Sender<T> decorated(
+            BoundaryDecorators decorators,
             String name,
             Sender<T> sender) {
-        return observability.sender("broker." + name, sender);
+        return decorators.sender("broker." + name, sender);
     }
 
     private static <T> Handler<T> transactional(
@@ -209,12 +209,12 @@ final class DurableAccountingFactory {
     }
 
     private static <T> IntSupplier poller(
-            Observability observability,
+            BoundaryDecorators decorators,
             String name,
             Receiver<T> receiver,
             Handler<T> handler) {
         var poller = new ArtemisPoller<>(
-                observability.receiver("receive." + name, receiver),
+                decorators.receiver("receive." + name, receiver),
                 handler,
                 BATCH_SIZE);
         return poller::pollOnce;

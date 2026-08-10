@@ -210,3 +210,13 @@ operation observer over JDK `Consumer`, `IntFunction`, `Supplier`, and
 by method reference; the ports retain their business vocabulary and do not
 inherit generic JDK function names. Receiver successes now use the same debug
 logging path as submission, handling, and sending.
+
+## 2026-08-10 — Name submission and technical infrastructure explicitly
+
+Renamed the external request and operation to `SubmitTransaction` and
+`SubmitTransactionHandler.handle` so the API represents an imperative command
+without inheriting a generic JDK function. Renamed the `observability` module
+to `infrastructure` and its public composition entry point to
+`BoundaryDecorators`; logging, metrics, snapshots, and JMX behavior remain
+unchanged. The architecture now distinguishes this neutral technical module
+from core and application logic without presenting it as a port or adapter.

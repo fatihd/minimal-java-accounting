@@ -1,6 +1,6 @@
 package dev.minimalaccounting.application.transaction;
 
-import dev.minimalaccounting.ports.api.TransactionProcessor;
+import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import dev.minimalaccounting.core.account.Account;
 import dev.minimalaccounting.core.account.AccountReference;
 import dev.minimalaccounting.core.account.PlaceAccountHold;
@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
-public final class TransactionIntake implements TransactionProcessor {
+public final class TransactionIntake implements SubmitTransactionHandler {
     @NonNull
     private final AccountRepository accounts;
     @NonNull
@@ -37,8 +37,8 @@ public final class TransactionIntake implements TransactionProcessor {
     private final Clock clock;
 
     @Override
-    public synchronized void submit(
-            @NonNull dev.minimalaccounting.ports.api.Transaction submitted) {
+    public synchronized void handle(
+            @NonNull dev.minimalaccounting.ports.api.SubmitTransaction submitted) {
         if (transactions.get(TransactionReference.request(submitted.requestId())).isPresent()
                 || journals.get(JournalReference.request(submitted.requestId())).isPresent()) {
             return;
