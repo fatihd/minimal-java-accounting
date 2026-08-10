@@ -22,10 +22,9 @@ public final class ReleaseAccountHoldHandler implements Handler<ReleaseAccountHo
     public void handle(ReleaseAccountHold command) {
         var account = accounts.get(command.accountNumber()).orElseThrow();
         account.releaseHold(
-                command.transactionId(), command.effectNumber(),
-                command.side(), command.amount());
+                command.transactionId(), command.side(), command.amount());
         accounts.update(account);
         released.send(new AccountHoldReleased(
-                command.accountNumber(), command.transactionId(), command.effectNumber()));
+                command.accountNumber(), command.transactionId()));
     }
 }

@@ -8,6 +8,7 @@ import lombok.NonNull;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public final class TransactionFactory {
     private TransactionFactory() {
@@ -44,7 +45,7 @@ public final class TransactionFactory {
                 null,
                 null,
                 transactionLines,
-                List.of());
+                Map.of());
     }
 
     public record Line(

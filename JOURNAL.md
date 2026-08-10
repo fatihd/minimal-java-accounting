@@ -366,3 +366,19 @@ Kept transaction and journal generated identities because their workflow
 messages and persistence lifecycle still require them. Account effects retain
 their existing ordinal only for this isolated change; replacing that ordinal
 with account-number map keys is the next separately validated design step.
+
+## 2026-08-10 — Key account effects by account number
+
+Replaced the transaction's positional account-effect list with a read-only
+sorted map keyed by `AccountNumber`. Commands, events, process-manager methods,
+in-memory snapshots, and PostgreSQL rows now use that natural key and no longer
+carry or persist an effect ordinal. Lexicographic ordering provides canonical
+command and persistence output; it is deliberately not a business sequence,
+while transaction and journal lines remain ordered lists.
+
+Removed the redundant account number from each `AccountEffect` value. Within
+the target account aggregate, a hold is now identified by transaction ID alone,
+which matches the invariant that a transaction has one net effect per account.
+Terminal hold retention and side/amount conflict checks continue to protect
+duplicate and contradictory delivery. Docker-free and durable integration
+tests pass with the revised schema and message shapes.

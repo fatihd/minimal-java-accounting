@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -31,15 +33,15 @@ class TransactionProcessManagerTest {
     void pendingEffectsBecomeAccountHoldCommands() {
         var process = process(
                 TransactionState.PLACING_HOLDS,
-                effect(1, AccountEffectState.PENDING),
-                effect(2, AccountEffectState.PENDING));
+                effect(2, AccountEffectState.PENDING),
+                effect(1, AccountEffectState.PENDING));
 
         assertEquals(
                 List.of(
                         new PlaceAccountHold(
-                                account(1), 10, 0, DebitCredit.DEBIT, AMOUNT),
+                                account(1), 10, DebitCredit.DEBIT, AMOUNT),
                         new PlaceAccountHold(
-                                account(2), 10, 1, DebitCredit.DEBIT, AMOUNT)),
+                                account(2), 10, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToPlace());
     }
 
@@ -52,7 +54,7 @@ class TransactionProcessManagerTest {
 
         assertEquals(
                 List.of(new PlaceAccountHold(
-                        account(2), 10, 1, DebitCredit.DEBIT, AMOUNT)),
+                        account(2), 10, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToPlace());
     }
 
@@ -80,7 +82,7 @@ class TransactionProcessManagerTest {
                 effect(2, AccountEffectState.PENDING));
 
         process.accountHoldPlaced(
-                new AccountHoldPlaced(account(2), 10, 1), Instant.EPOCH);
+                new AccountHoldPlaced(account(2), 10), Instant.EPOCH);
 
         assertTrue(process.transactionToJournalize().isPresent());
     }
@@ -92,7 +94,7 @@ class TransactionProcessManagerTest {
                 effect(1, AccountEffectState.HELD));
 
         process.accountHoldPlaced(
-                new AccountHoldPlaced(account(1), 10, 0), Instant.EPOCH);
+                new AccountHoldPlaced(account(1), 10), Instant.EPOCH);
 
         assertEquals(
                 new JournalizeTransaction(10),
@@ -107,12 +109,12 @@ class TransactionProcessManagerTest {
                 effect(2, AccountEffectState.PENDING));
 
         process.accountHoldPlaced(
-                new AccountHoldPlaced(account(2), 10, 1), Instant.EPOCH);
+                new AccountHoldPlaced(account(2), 10), Instant.EPOCH);
 
         assertEquals(
                 new ReleaseAccountHold(
-                        account(2), 10, 1, DebitCredit.DEBIT, AMOUNT),
-                process.accountHoldToRelease(1).orElseThrow());
+                        account(2), 10, DebitCredit.DEBIT, AMOUNT),
+                process.accountHoldToRelease(account(2)).orElseThrow());
     }
 
     @Test
@@ -121,7 +123,7 @@ class TransactionProcessManagerTest {
                 TransactionState.RELEASING_HOLDS,
                 effect(1, AccountEffectState.RELEASED));
 
-        assertTrue(process.accountHoldToRelease(0).isEmpty());
+        assertTrue(process.accountHoldToRelease(account(1)).isEmpty());
     }
 
     @Test
@@ -134,17 +136,14 @@ class TransactionProcessManagerTest {
     }
 
     @Test
-    void individualReleaseLookupRejectsUnknownEffectNumbers() {
+    void individualReleaseLookupRejectsUnknownAccounts() {
         var process = process(
                 TransactionState.RELEASING_HOLDS,
                 effect(1, AccountEffectState.RELEASING));
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> process.accountHoldToRelease(-1));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> process.accountHoldToRelease(1));
+                () -> process.accountHoldToRelease(account(2)));
     }
 
     @Test
@@ -155,11 +154,11 @@ class TransactionProcessManagerTest {
                 effect(2, AccountEffectState.HELD));
 
         process.accountHoldDeclined(new AccountHoldDeclined(
-                account(1), 10, 0, "limit exceeded"));
+                account(1), 10, "limit exceeded"));
 
         assertEquals(
                 List.of(new ReleaseAccountHold(
-                        account(2), 10, 1, DebitCredit.DEBIT, AMOUNT)),
+                        account(2), 10, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToRelease());
     }
 
@@ -171,11 +170,11 @@ class TransactionProcessManagerTest {
                 effect(2, AccountEffectState.RELEASING));
 
         process.accountHoldDeclined(new AccountHoldDeclined(
-                account(1), 10, 0, "limit exceeded"));
+                account(1), 10, "limit exceeded"));
 
         assertEquals(
                 List.of(new ReleaseAccountHold(
-                        account(2), 10, 1, DebitCredit.DEBIT, AMOUNT)),
+                        account(2), 10, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToRelease());
     }
 
@@ -190,7 +189,7 @@ class TransactionProcessManagerTest {
 
         assertEquals(
                 List.of(new SettleAccountHold(
-                        account(1), 10, 0, DebitCredit.DEBIT, AMOUNT)),
+                        account(1), 10, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToSettle());
     }
 
@@ -206,7 +205,7 @@ class TransactionProcessManagerTest {
 
         assertEquals(
                 List.of(new SettleAccountHold(
-                        account(2), 10, 1, DebitCredit.DEBIT, AMOUNT)),
+                        account(2), 10, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToSettle());
     }
 
@@ -217,9 +216,9 @@ class TransactionProcessManagerTest {
                 effect(1, AccountEffectState.SETTLING));
 
         process.accountHoldPlaced(
-                new AccountHoldPlaced(account(1), 10, 0), Instant.EPOCH);
+                new AccountHoldPlaced(account(1), 10), Instant.EPOCH);
 
-        assertTrue(process.accountHoldToRelease(0).isEmpty());
+        assertTrue(process.accountHoldToRelease(account(1)).isEmpty());
         assertTrue(process.transactionToJournalize().isEmpty());
         assertEquals(1, process.accountHoldsToSettle().size());
     }
@@ -236,11 +235,11 @@ class TransactionProcessManagerTest {
         assertThrows(
                 IllegalStateException.class,
                 () -> release.accountHoldReleased(
-                        new AccountHoldReleased(account(1), 10, 0)));
+                        new AccountHoldReleased(account(1), 10)));
         assertThrows(
                 IllegalStateException.class,
                 () -> settlement.accountHoldSettled(
-                        new AccountHoldSettled(account(1), 10, 0)));
+                        new AccountHoldSettled(account(1), 10)));
     }
 
     @Test
@@ -250,7 +249,7 @@ class TransactionProcessManagerTest {
                 effect(1, AccountEffectState.DECLINED),
                 effect(2, AccountEffectState.RELEASING));
 
-        process.accountHoldReleased(new AccountHoldReleased(account(2), 10, 1));
+        process.accountHoldReleased(new AccountHoldReleased(account(2), 10));
 
         assertFalse(process.completed());
         assertTrue(process.accountHoldsToRelease().isEmpty());
@@ -273,7 +272,7 @@ class TransactionProcessManagerTest {
                 effect(1, AccountEffectState.SETTLING),
                 effect(2, AccountEffectState.SETTLING));
 
-        process.accountHoldSettled(new AccountHoldSettled(account(1), 10, 0));
+        process.accountHoldSettled(new AccountHoldSettled(account(1), 10));
 
         assertFalse(process.completed());
     }
@@ -292,7 +291,7 @@ class TransactionProcessManagerTest {
                 effect(1, AccountEffectState.SETTLED),
                 effect(2, AccountEffectState.SETTLING));
 
-        process.accountHoldSettled(new AccountHoldSettled(account(2), 10, 1));
+        process.accountHoldSettled(new AccountHoldSettled(account(2), 10));
 
         assertTrue(process.completed());
     }
@@ -306,7 +305,7 @@ class TransactionProcessManagerTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> process.accountHoldPlaced(
-                        new AccountHoldPlaced(account(1), 11, 0), Instant.EPOCH));
+                        new AccountHoldPlaced(account(1), 11), Instant.EPOCH));
     }
 
     @Test
@@ -324,7 +323,7 @@ class TransactionProcessManagerTest {
                 Instant.EPOCH,
                 null,
                 List.of(),
-                List.of());
+                Map.of());
         var process = new TransactionProcessManager(transaction);
 
         assertThrows(
@@ -334,7 +333,11 @@ class TransactionProcessManagerTest {
 
     private static TransactionProcessManager process(
             TransactionState state,
-            AccountEffect... effects) {
+            Effect... effects) {
+        Map<AccountNumber, AccountEffect> effectMap = new TreeMap<>();
+        for (Effect effect : effects) {
+            effectMap.put(effect.accountNumber(), effect.value());
+        }
         return new TransactionProcessManager(new Transaction(
                 10L,
                 0L,
@@ -348,18 +351,19 @@ class TransactionProcessManagerTest {
                 state == TransactionState.HELD ? Instant.EPOCH : null,
                 null,
                 List.of(),
-                List.of(effects)));
+                effectMap));
     }
 
-    private static AccountEffect effect(long accountId, AccountEffectState state) {
-        return new AccountEffect(
+    private static Effect effect(long accountId, AccountEffectState state) {
+        return new Effect(
                 account(accountId),
-                DebitCredit.DEBIT,
-                AMOUNT,
-                state);
+                new AccountEffect(DebitCredit.DEBIT, AMOUNT, state));
     }
 
     private static AccountNumber account(long id) {
         return new AccountNumber("ACCOUNT0" + id);
+    }
+
+    private record Effect(AccountNumber accountNumber, AccountEffect value) {
     }
 }

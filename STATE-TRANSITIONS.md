@@ -27,7 +27,9 @@ is journalized.
 
 Every effect starts as `PENDING` when `Transaction.start` derives it. The child
 owns its local transition validation, while package-private visibility ensures
-only the `Transaction` aggregate root can invoke those transitions.
+only the `Transaction` aggregate root can invoke those transitions. The root
+owns effects in a sorted map keyed by account number; map order is deterministic
+and does not add sequencing to the lifecycle.
 
 ## Account hold
 
@@ -36,7 +38,7 @@ only the `Transaction` aggregate root can invoke those transitions.
 `Account.placeHold` creates the owned hold in `HELD` and may immediately decline
 it when account policy rejects the reservation. Existing hold identity makes
 placement, release, and settlement retries idempotent without reopening a
-terminal hold.
+terminal hold. Within one account, the transaction ID is the hold identity.
 
 ## Regeneration
 

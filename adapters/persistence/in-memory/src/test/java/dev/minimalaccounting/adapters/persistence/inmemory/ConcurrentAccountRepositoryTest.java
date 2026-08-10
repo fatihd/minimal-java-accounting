@@ -50,12 +50,12 @@ class ConcurrentAccountRepositoryTest
 
     @Override
     protected void firstChange(Account value) {
-        value.placeHold(10, 0, DebitCredit.DEBIT, HOLD);
+        value.placeHold(10, DebitCredit.DEBIT, HOLD);
     }
 
     @Override
     protected void secondChange(Account value) {
-        value.placeHold(11, 0, DebitCredit.DEBIT, HOLD);
+        value.placeHold(11, DebitCredit.DEBIT, HOLD);
     }
 
     @Override

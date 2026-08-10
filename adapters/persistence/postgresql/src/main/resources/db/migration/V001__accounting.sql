@@ -11,12 +11,11 @@ CREATE TABLE account (
 CREATE TABLE account_hold (
     account_number VARCHAR(100) NOT NULL REFERENCES account(account_number) ON DELETE CASCADE,
     transaction_id BIGINT NOT NULL,
-    effect_number INTEGER NOT NULL,
     side VARCHAR(10) NOT NULL,
     amount_minor BIGINT NOT NULL,
     state VARCHAR(20) NOT NULL,
     failure_reason TEXT,
-    PRIMARY KEY (account_number, transaction_id, effect_number)
+    PRIMARY KEY (account_number, transaction_id)
 );
 
 CREATE TABLE accounting_transaction (
@@ -47,13 +46,12 @@ CREATE TABLE transaction_line (
 
 CREATE TABLE account_effect (
     transaction_id BIGINT NOT NULL REFERENCES accounting_transaction(id) ON DELETE CASCADE,
-    effect_number INTEGER NOT NULL,
     account_number VARCHAR(100) NOT NULL,
     side VARCHAR(10) NOT NULL,
     ledger_amount_minor BIGINT NOT NULL,
     ledger_currency CHAR(3) NOT NULL,
     state VARCHAR(20) NOT NULL,
-    PRIMARY KEY (transaction_id, effect_number)
+    PRIMARY KEY (transaction_id, account_number)
 );
 
 CREATE TABLE journal_entry (

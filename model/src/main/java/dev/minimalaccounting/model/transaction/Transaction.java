@@ -13,13 +13,15 @@ import lombok.Setter;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Currency;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 
 @Getter
 @Setter(AccessLevel.PACKAGE)
@@ -41,7 +43,7 @@ public class Transaction {
     @Getter(AccessLevel.NONE)
     private List<TransactionLine> lines = new ArrayList<>();
     @Getter(AccessLevel.NONE)
-    private List<AccountEffect> effects = new ArrayList<>();
+    private NavigableMap<AccountNumber, AccountEffect> effects = new TreeMap<>();
 
     public Transaction(
             Long id,
@@ -56,7 +58,7 @@ public class Transaction {
             Instant heldAt,
             String failureReason,
             @NonNull List<TransactionLine> lines,
-            @NonNull List<AccountEffect> effects) {
+            @NonNull Map<AccountNumber, AccountEffect> effects) {
         this.id = id;
         this.revision = revision;
         this.state = state;
@@ -69,15 +71,15 @@ public class Transaction {
         this.heldAt = heldAt;
         this.failureReason = failureReason;
         this.lines = new ArrayList<>(lines);
-        this.effects = new ArrayList<>(effects);
+        this.effects = new TreeMap<>(effects);
     }
 
     public List<TransactionLine> getLines() {
         return List.copyOf(lines);
     }
 
-    public List<AccountEffect> getEffects() {
-        return List.copyOf(effects);
+    public NavigableMap<AccountNumber, AccountEffect> getEffects() {
+        return Collections.unmodifiableNavigableMap(new TreeMap<>(effects));
     }
 
     public Set<AccountNumber> accountNumbers() {
@@ -106,9 +108,8 @@ public class Transaction {
 
     public void placeEffect(
             @NonNull AccountNumber accountNumber,
-            int effectNumber,
             @NonNull Instant now) {
-        AccountEffect effect = effect(accountNumber, effectNumber);
+        AccountEffect effect = effect(accountNumber);
         if (effect.isAwaitingHold()
                 && state != TransactionState.PLACING_HOLDS
                 && state != TransactionState.RELEASING_HOLDS) {
@@ -137,9 +138,8 @@ public class Transaction {
 
     public void declineEffect(
             @NonNull AccountNumber accountNumber,
-            int effectNumber,
             String reason) {
-        AccountEffect effect = effect(accountNumber, effectNumber);
+        AccountEffect effect = effect(accountNumber);
         if (effect.isAwaitingHold()
                 && state != TransactionState.PLACING_HOLDS
                 && state != TransactionState.RELEASING_HOLDS) {
@@ -151,8 +151,8 @@ public class Transaction {
         beginRelease();
     }
 
-    public void releaseEffect(@NonNull AccountNumber accountNumber, int effectNumber) {
-        AccountEffect effect = effect(accountNumber, effectNumber);
+    public void releaseEffect(@NonNull AccountNumber accountNumber) {
+        AccountEffect effect = effect(accountNumber);
         effect.release();
         rejectIfFinished();
     }
@@ -178,8 +178,8 @@ public class Transaction {
         }
     }
 
-    public void settleEffect(@NonNull AccountNumber accountNumber, int effectNumber) {
-        AccountEffect effect = effect(accountNumber, effectNumber);
+    public void settleEffect(@NonNull AccountNumber accountNumber) {
+        AccountEffect effect = effect(accountNumber);
         effect.settle();
         if (allHoldsSettled()) {
             complete();
@@ -193,18 +193,17 @@ public class Transaction {
         }
     }
 
-    private List<AccountEffect> deriveAccountEffects() {
-        Map<AccountNumber, Long> changes = new LinkedHashMap<>();
+    private NavigableMap<AccountNumber, AccountEffect> deriveAccountEffects() {
+        NavigableMap<AccountNumber, Long> changes = new TreeMap<>();
         for (TransactionLine line : lines) {
             long signed = line.getSide().signed(line.getLedgerAmount().minor());
             changes.merge(line.getAccountNumber(), signed, Math::addExact);
         }
-        List<AccountEffect> derived = new ArrayList<>();
+        NavigableMap<AccountNumber, AccountEffect> derived = new TreeMap<>();
         Currency currency = lines.getFirst().getLedgerAmount().currency();
         for (Map.Entry<AccountNumber, Long> change : changes.entrySet()) {
             if (change.getValue() != 0) {
-                derived.add(AccountEffect.pending(
-                        change.getKey(),
+                derived.put(change.getKey(), AccountEffect.pending(
                         new Money(change.getValue(), currency)));
             }
         }
@@ -219,12 +218,12 @@ public class Transaction {
     }
 
     private boolean allHoldsPlaced() {
-        return effects.stream().allMatch(AccountEffect::isHeld);
+        return effects.values().stream().allMatch(AccountEffect::isHeld);
     }
 
     private void beginRelease() {
         state = TransactionState.RELEASING_HOLDS;
-        for (AccountEffect candidate : effects) {
+        for (AccountEffect candidate : effects.values()) {
             candidate.beginReleaseIfHeld();
         }
         rejectIfFinished();
@@ -232,25 +231,24 @@ public class Transaction {
 
     private void beginSettlement() {
         state = TransactionState.SETTLING;
-        for (AccountEffect effect : effects) {
+        for (AccountEffect effect : effects.values()) {
             effect.beginSettlement();
         }
     }
 
     private boolean allHoldsSettled() {
-        return effects.stream().allMatch(AccountEffect::isSettled);
+        return effects.values().stream().allMatch(AccountEffect::isSettled);
     }
 
     private void complete() {
         state = TransactionState.COMPLETED;
     }
 
-    private AccountEffect effect(AccountNumber accountNumber, int effectNumber) {
-        if (effectNumber < 0 || effectNumber >= effects.size()) {
+    private AccountEffect effect(AccountNumber accountNumber) {
+        AccountEffect effect = effects.get(accountNumber);
+        if (effect == null) {
             throw new IllegalArgumentException("Transaction effect does not exist");
         }
-        AccountEffect effect = effects.get(effectNumber);
-        effect.requireAccount(accountNumber);
         return effect;
     }
 
@@ -260,7 +258,7 @@ public class Transaction {
     }
 
     private void rejectIfFinished() {
-        boolean finished = effects.stream()
+        boolean finished = effects.values().stream()
                 .allMatch(AccountEffect::isReleaseFinished);
         if (finished) {
             state = TransactionState.REJECTED;

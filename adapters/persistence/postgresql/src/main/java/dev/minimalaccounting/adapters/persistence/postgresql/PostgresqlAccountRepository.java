@@ -116,18 +116,17 @@ public final class PostgresqlAccountRepository implements Repository<AccountNumb
             String currency) throws SQLException {
         var values = new ArrayList<AccountHold>();
         try (var statement = connection.prepareStatement("""
-                SELECT transaction_id, effect_number, side, amount_minor, state,
+                SELECT transaction_id, side, amount_minor, state,
                        failure_reason
                 FROM account_hold
                 WHERE account_number = ?
-                ORDER BY transaction_id, effect_number
+                ORDER BY transaction_id
                 """)) {
             statement.setString(1, accountNumber.value());
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
                     values.add(new AccountHold(
                             result.getLong("transaction_id"),
-                            result.getInt("effect_number"),
                             DebitCredit.valueOf(result.getString("side")),
                             JdbcValues.money(result.getLong("amount_minor"), currency),
                             AccountHoldState.valueOf(result.getString("state")),
@@ -153,18 +152,17 @@ public final class PostgresqlAccountRepository implements Repository<AccountNumb
             throws SQLException {
         try (var statement = connection.prepareStatement("""
                 INSERT INTO account_hold(
-                    account_number, transaction_id, effect_number, side,
+                    account_number, transaction_id, side,
                     amount_minor, state, failure_reason)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """)) {
             for (AccountHold hold : account.getHolds()) {
                 statement.setString(1, accountNumber.value());
                 statement.setLong(2, hold.getTransactionId());
-                statement.setInt(3, hold.getEffectNumber());
-                statement.setString(4, hold.getSide().name());
-                statement.setLong(5, hold.getAmount().minor());
-                statement.setString(6, hold.getState().name());
-                statement.setString(7, hold.getFailureReason());
+                statement.setString(3, hold.getSide().name());
+                statement.setLong(4, hold.getAmount().minor());
+                statement.setString(5, hold.getState().name());
+                statement.setString(6, hold.getFailureReason());
                 statement.addBatch();
             }
             statement.executeBatch();

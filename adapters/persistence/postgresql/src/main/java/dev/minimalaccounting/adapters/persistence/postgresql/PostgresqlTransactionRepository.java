@@ -19,7 +19,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
 
 @RequiredArgsConstructor
 public final class PostgresqlTransactionRepository implements Repository<TransactionIdentifier, Transaction> {
@@ -157,23 +159,25 @@ public final class PostgresqlTransactionRepository implements Repository<Transac
         return values;
     }
 
-    private static ArrayList<AccountEffect> effects(Connection connection, long id)
+    private static NavigableMap<AccountNumber, AccountEffect> effects(
+            Connection connection, long id)
             throws SQLException {
-        var values = new ArrayList<AccountEffect>();
+        var values = new TreeMap<AccountNumber, AccountEffect>();
         try (var statement = connection.prepareStatement("""
                 SELECT * FROM account_effect
-                WHERE transaction_id = ? ORDER BY effect_number
+                WHERE transaction_id = ? ORDER BY account_number
                 """)) {
             statement.setLong(1, id);
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
-                    values.add(new AccountEffect(
+                    values.put(
                             new AccountNumber(result.getString("account_number")),
-                            DebitCredit.valueOf(result.getString("side")),
-                            JdbcValues.money(
-                                    result.getLong("ledger_amount_minor"),
-                                    result.getString("ledger_currency")),
-                            AccountEffectState.valueOf(result.getString("state"))));
+                            new AccountEffect(
+                                    DebitCredit.valueOf(result.getString("side")),
+                                    JdbcValues.money(
+                                            result.getLong("ledger_amount_minor"),
+                                            result.getString("ledger_currency")),
+                                    AccountEffectState.valueOf(result.getString("state"))));
                 }
             }
         }
@@ -224,20 +228,19 @@ public final class PostgresqlTransactionRepository implements Repository<Transac
             throws SQLException {
         try (var statement = connection.prepareStatement("""
                 INSERT INTO account_effect(
-                    transaction_id, effect_number, account_number,
+                    transaction_id, account_number,
                     side, ledger_amount_minor, ledger_currency, state)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """)) {
-            int effectNumber = 0;
-            for (AccountEffect effect : value.getEffects()) {
+            for (var entry : value.getEffects().entrySet()) {
+                AccountEffect effect = entry.getValue();
                 statement.setLong(1, id);
-                statement.setInt(2, effectNumber++);
-                statement.setString(3, effect.getAccountNumber().value());
-                statement.setString(4, effect.getSide().name());
-                statement.setLong(5, effect.getLedgerAmount().minor());
-                statement.setString(6,
+                statement.setString(2, entry.getKey().value());
+                statement.setString(3, effect.getSide().name());
+                statement.setLong(4, effect.getLedgerAmount().minor());
+                statement.setString(5,
                         effect.getLedgerAmount().currency().getCurrencyCode());
-                statement.setString(7, effect.getState().name());
+                statement.setString(6, effect.getState().name());
                 statement.addBatch();
             }
             statement.executeBatch();

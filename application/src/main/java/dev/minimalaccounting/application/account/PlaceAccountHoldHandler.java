@@ -28,18 +28,17 @@ public final class PlaceAccountHoldHandler implements Handler<PlaceAccountHold> 
         var account = accounts.get(command.accountNumber()).orElseThrow();
         try {
             AccountHoldState state = account.placeHold(
-                    command.transactionId(), command.effectNumber(),
-                    command.side(), command.amount());
+                    command.transactionId(), command.side(), command.amount());
             if (state != AccountHoldState.HELD) {
                 return;
             }
             accounts.update(account);
             placed.send(new AccountHoldPlaced(
-                    command.accountNumber(), command.transactionId(), command.effectNumber()));
+                    command.accountNumber(), command.transactionId()));
         } catch (PostingRejectedException rejection) {
             accounts.update(account);
             declined.send(new AccountHoldDeclined(
-                    command.accountNumber(), command.transactionId(), command.effectNumber(),
+                    command.accountNumber(), command.transactionId(),
                     rejection.getMessage()));
         }
     }

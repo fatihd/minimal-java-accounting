@@ -22,10 +22,9 @@ public final class SettleAccountHoldHandler implements Handler<SettleAccountHold
     public void handle(SettleAccountHold command) {
         var account = accounts.get(command.accountNumber()).orElseThrow();
         account.settleHold(
-                command.transactionId(), command.effectNumber(),
-                command.side(), command.amount());
+                command.transactionId(), command.side(), command.amount());
         accounts.update(account);
         settled.send(new AccountHoldSettled(
-                command.accountNumber(), command.transactionId(), command.effectNumber()));
+                command.accountNumber(), command.transactionId()));
     }
 }

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -99,7 +100,7 @@ class PostingServiceTest {
                 Instant.EPOCH,
                 null,
                 List.of(lines),
-                List.of());
+                Map.of());
     }
 
     private static TransactionLine line(

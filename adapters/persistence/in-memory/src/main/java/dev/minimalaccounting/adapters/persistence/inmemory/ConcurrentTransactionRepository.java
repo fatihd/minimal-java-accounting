@@ -1,6 +1,7 @@
 package dev.minimalaccounting.adapters.persistence.inmemory;
 
 import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.transaction.AccountEffect;
 import dev.minimalaccounting.model.transaction.Transaction;
 import dev.minimalaccounting.model.transaction.TransactionLine;
@@ -8,6 +9,7 @@ import dev.minimalaccounting.model.transaction.TransactionIdentifier;
 
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -58,11 +60,11 @@ public final class ConcurrentTransactionRepository implements Repository<Transac
                     line.getAccountNumber(), line.getSide(),
                     line.getTransactionAmount(), line.getLedgerAmount()));
         }
-        ArrayList<AccountEffect> effects = new ArrayList<>();
-        for (AccountEffect effect : value.getEffects()) {
-            effects.add(new AccountEffect(
-                    effect.getAccountNumber(), effect.getSide(),
-                    effect.getLedgerAmount(), effect.getState()));
+        var effects = new TreeMap<AccountNumber, AccountEffect>();
+        for (var entry : value.getEffects().entrySet()) {
+            AccountEffect effect = entry.getValue();
+            effects.put(entry.getKey(), new AccountEffect(
+                    effect.getSide(), effect.getLedgerAmount(), effect.getState()));
         }
         return new Transaction(
                 value.getId(), value.getRevision(), value.getState(), value.getRequestId(),

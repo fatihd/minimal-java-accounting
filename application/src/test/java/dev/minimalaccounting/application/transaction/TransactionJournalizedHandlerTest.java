@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -65,7 +66,7 @@ class TransactionJournalizedHandlerTest {
         void requestsSettlementForEachAccountEffect() {
             assertEquals(
                     List.of(new SettleAccountHold(
-                            new AccountNumber("ACCOUNT01"), transactionId, 0,
+                            new AccountNumber("ACCOUNT01"), transactionId,
                             DebitCredit.DEBIT, AMOUNT)),
                     settlements);
         }
@@ -173,20 +174,19 @@ class TransactionJournalizedHandlerTest {
         assertEquals(
                 List.of(
                         new SettleAccountHold(
-                                new AccountNumber("ACCOUNT01"), transactionId, 0,
+                                new AccountNumber("ACCOUNT01"), transactionId,
                                 DebitCredit.DEBIT, AMOUNT),
                         new SettleAccountHold(
-                                new AccountNumber("ACCOUNT01"), transactionId, 0,
+                                new AccountNumber("ACCOUNT01"), transactionId,
                                 DebitCredit.DEBIT, AMOUNT),
                         new SettleAccountHold(
-                                new AccountNumber("ACCOUNT02"), transactionId, 1,
+                                new AccountNumber("ACCOUNT02"), transactionId,
                                 DebitCredit.CREDIT, AMOUNT)),
                 settlements);
     }
 
     private static Transaction transaction(String requestId) {
         AccountEffect effect = new AccountEffect(
-                new AccountNumber("ACCOUNT01"),
                 DebitCredit.DEBIT,
                 AMOUNT,
                 AccountEffectState.HELD);
@@ -203,7 +203,7 @@ class TransactionJournalizedHandlerTest {
                 Instant.EPOCH,
                 null,
                 List.of(),
-                List.of(effect));
+                Map.of(new AccountNumber("ACCOUNT01"), effect));
     }
 
     private static Transaction transactionWithoutEffects(String requestId) {
@@ -220,7 +220,7 @@ class TransactionJournalizedHandlerTest {
                 Instant.EPOCH,
                 null,
                 List.of(),
-                List.of());
+                Map.of());
     }
 
     private static Transaction transactionWithTwoEffects(String requestId) {
@@ -237,14 +237,12 @@ class TransactionJournalizedHandlerTest {
                 Instant.EPOCH,
                 null,
                 List.of(),
-                List.of(
-                        new AccountEffect(
-                                new AccountNumber("ACCOUNT01"),
+                Map.of(
+                        new AccountNumber("ACCOUNT01"), new AccountEffect(
                                 DebitCredit.DEBIT,
                                 AMOUNT,
                                 AccountEffectState.HELD),
-                        new AccountEffect(
-                                new AccountNumber("ACCOUNT02"),
+                        new AccountNumber("ACCOUNT02"), new AccountEffect(
                                 DebitCredit.CREDIT,
                                 AMOUNT,
                                 AccountEffectState.HELD)));

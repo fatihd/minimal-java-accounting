@@ -19,6 +19,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,7 +47,7 @@ class AccountHoldPlacedHandlerTest {
                 },
                 Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
         AccountHoldPlaced event = new AccountHoldPlaced(
-                new AccountNumber("ACCOUNT01"), transactionId, 0);
+                new AccountNumber("ACCOUNT01"), transactionId);
 
         assertThrows(IllegalStateException.class, () -> handler.handle(event));
         handler.handle(event);
@@ -73,8 +74,7 @@ class AccountHoldPlacedHandlerTest {
                 null,
                 null,
                 List.of(),
-                List.of(new AccountEffect(
-                        new AccountNumber("ACCOUNT01"),
+                Map.of(new AccountNumber("ACCOUNT01"), new AccountEffect(
                         DebitCredit.DEBIT,
                         AMOUNT,
                         AccountEffectState.PENDING)));

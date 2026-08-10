@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,7 +32,7 @@ class AccountHoldReleasedHandlerTest {
 
         assertDoesNotThrow(
                 () -> handler.handle(new AccountHoldReleased(
-                        new AccountNumber("ACCOUNT01"), 99, 0)));
+                        new AccountNumber("ACCOUNT01"), 99)));
     }
 
     @Test
@@ -40,19 +41,19 @@ class AccountHoldReleasedHandlerTest {
                 new ConcurrentTransactionRepository();
         long transactionId = transactions.add(transaction(
                 TransactionState.PLACING_HOLDS,
-                effect(AccountEffectState.HELD))).id();
+                Map.of(account(), effect(AccountEffectState.HELD)))).id();
         AccountHoldReleasedHandler handler = new AccountHoldReleasedHandler(transactions);
 
         assertThrows(
                 IllegalStateException.class,
                 () -> handler.handle(new AccountHoldReleased(
-                        new AccountNumber("ACCOUNT01"), transactionId, 0)));
+                        new AccountNumber("ACCOUNT01"), transactionId)));
         assertEquals(
                 AccountEffectState.HELD,
                 transactions.get(TransactionIdentifier.id(transactionId))
                         .orElseThrow()
                         .getEffects()
-                        .getFirst()
+                        .get(account())
                         .getState());
     }
 
@@ -62,10 +63,10 @@ class AccountHoldReleasedHandlerTest {
                 new ConcurrentTransactionRepository();
         long transactionId = transactions.add(transaction(
                 TransactionState.RELEASING_HOLDS,
-                effect(AccountEffectState.RELEASING))).id();
+                Map.of(account(), effect(AccountEffectState.RELEASING)))).id();
         AccountHoldReleasedHandler handler = new AccountHoldReleasedHandler(transactions);
         AccountHoldReleased event = new AccountHoldReleased(
-                new AccountNumber("ACCOUNT01"), transactionId, 0);
+                new AccountNumber("ACCOUNT01"), transactionId);
 
         handler.handle(event);
         handler.handle(event);
@@ -79,14 +80,18 @@ class AccountHoldReleasedHandlerTest {
 
     private static Transaction transaction(
             TransactionState state,
-            AccountEffect effect) {
+            Map<AccountNumber, AccountEffect> effects) {
         return new Transaction(
                 null, null, state, "request", "TRANSFER", "document", "description",
-                Instant.EPOCH, Instant.EPOCH, null, null, List.of(), List.of(effect));
+                Instant.EPOCH, Instant.EPOCH, null, null, List.of(), effects);
     }
 
     private static AccountEffect effect(AccountEffectState state) {
         return new AccountEffect(
-                new AccountNumber("ACCOUNT01"), DebitCredit.DEBIT, AMOUNT, state);
+                DebitCredit.DEBIT, AMOUNT, state);
+    }
+
+    private static AccountNumber account() {
+        return new AccountNumber("ACCOUNT01");
     }
 }

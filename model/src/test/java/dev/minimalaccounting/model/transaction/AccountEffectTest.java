@@ -1,6 +1,5 @@
 package dev.minimalaccounting.model.transaction;
 
-import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.Test;
@@ -125,12 +124,10 @@ class AccountEffectTest {
 
     @Test
     void netChangeCreatesAPendingEffectWithDirectionAndPositiveAmount() {
-        AccountNumber accountNumber = new AccountNumber("ACCOUNT01");
-
         AccountEffect debit = AccountEffect.pending(
-                accountNumber, new Money(100, Currency.getInstance("USD")));
+                new Money(100, Currency.getInstance("USD")));
         AccountEffect credit = AccountEffect.pending(
-                accountNumber, new Money(-100, Currency.getInstance("USD")));
+                new Money(-100, Currency.getInstance("USD")));
 
         assertAll(
                 () -> assertEquals(DebitCredit.DEBIT, debit.getSide()),
@@ -146,25 +143,13 @@ class AccountEffectTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> new AccountEffect(
-                        new AccountNumber("ACCOUNT01"),
                         DebitCredit.DEBIT,
                         Money.zero(Currency.getInstance("USD")),
                         AccountEffectState.PENDING));
         assertThrows(
                 IllegalArgumentException.class,
                 () -> AccountEffect.pending(
-                        new AccountNumber("ACCOUNT01"),
                         Money.zero(Currency.getInstance("USD"))));
-    }
-
-    @Test
-    void effectValidatesItsOwnAccountIdentity() {
-        AccountEffect effect = effect(AccountEffectState.PENDING);
-
-        effect.requireAccount(new AccountNumber("ACCOUNT01"));
-
-        assertThrows(IllegalArgumentException.class,
-                () -> effect.requireAccount(new AccountNumber("ACCOUNT02")));
     }
 
     @Test
@@ -180,7 +165,6 @@ class AccountEffectTest {
 
     private static AccountEffect effect(AccountEffectState state) {
         return new AccountEffect(
-                new AccountNumber("ACCOUNT01"),
                 DebitCredit.DEBIT,
                 AMOUNT,
                 state);

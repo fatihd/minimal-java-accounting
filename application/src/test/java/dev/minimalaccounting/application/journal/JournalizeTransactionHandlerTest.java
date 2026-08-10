@@ -21,6 +21,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -139,7 +140,7 @@ class JournalizeTransactionHandlerTest {
                         new TransactionLine(
                                 new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
                                 AMOUNT, AMOUNT)),
-                List.of());
+                Map.of());
     }
 
     private record Fixture(

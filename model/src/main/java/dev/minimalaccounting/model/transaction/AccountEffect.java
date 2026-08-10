@@ -1,6 +1,5 @@
 package dev.minimalaccounting.model.transaction;
 
-import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
 
@@ -14,35 +13,29 @@ import lombok.Setter;
 @Setter(AccessLevel.PACKAGE)
 @NoArgsConstructor
 public class AccountEffect {
-    private AccountNumber accountNumber;
     private DebitCredit side;
     private Money ledgerAmount;
     @Setter(AccessLevel.NONE)
     private AccountEffectState state;
 
     public AccountEffect(
-            @NonNull AccountNumber accountNumber,
             @NonNull DebitCredit side,
             @NonNull Money ledgerAmount,
             @NonNull AccountEffectState state) {
         if (ledgerAmount.minor() <= 0) {
             throw new IllegalArgumentException("ledgerAmount must be positive");
         }
-        this.accountNumber = accountNumber;
         this.side = side;
         this.ledgerAmount = ledgerAmount;
         this.state = state;
     }
 
-    static AccountEffect pending(
-            @NonNull AccountNumber accountNumber,
-            @NonNull Money netChange) {
+    static AccountEffect pending(@NonNull Money netChange) {
         if (netChange.minor() == 0) {
             throw new IllegalArgumentException("netChange must not be zero");
         }
         boolean debit = netChange.minor() > 0;
         return new AccountEffect(
-                accountNumber,
                 debit ? DebitCredit.DEBIT : DebitCredit.CREDIT,
                 new Money(
                         debit
@@ -137,12 +130,6 @@ public class AccountEffect {
             case DECLINED, RELEASED -> true;
             case null, default -> false;
         };
-    }
-
-    void requireAccount(AccountNumber expectedAccountNumber) {
-        if (!accountNumber.equals(expectedAccountNumber)) {
-            throw new IllegalArgumentException("Account does not match transaction effect");
-        }
     }
 
     private IllegalStateException invalidTransition(String transition) {

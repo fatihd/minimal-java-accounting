@@ -21,7 +21,6 @@ class ArtemisMessageTest {
             PlaceAccountHold expected = new PlaceAccountHold(
                     new AccountNumber("ACCOUNT41"),
                     73,
-                    2,
                     DebitCredit.DEBIT,
                     new Money(1250, Currency.getInstance("USD")));
 

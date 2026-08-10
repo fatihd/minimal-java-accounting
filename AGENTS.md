@@ -70,11 +70,16 @@
   from the resulting aggregate state.
 - Expose aggregate-owned collections as read-only views. Child-entity mutation
   stays behind its aggregate root even though the domain model remains mutable.
-- Account holds are account-owned lifecycle entities identified by transaction
-  ID and effect number. Retain terminal hold records so duplicate place,
+- Account holds are account-owned lifecycle entities identified within their
+  account by transaction ID. Retain terminal hold records so duplicate place,
   release, and settle commands cannot apply monetary state twice. Conflicting
   reuse of a hold identity is an invariant failure; a terminal hold must never
   be reopened by a late command.
+- Store transaction account effects in a read-only sorted map keyed by
+  `AccountNumber`. Account number, not list position or an effect ordinal, is
+  the effect identity carried by workflow messages. The sort order is a
+  canonical deterministic order, not business sequencing. Keep transaction
+  lines ordered separately because journal line order is meaningful.
 - Resolve referenced aggregate identities in the application before creating
   internal transaction lines. `Transaction.start(receivedAt)` derives its own
   `AccountEffect` children; no lifecycle service or application code constructs

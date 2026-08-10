@@ -70,15 +70,13 @@ public class Account {
 
     public AccountHoldState placeHold(
             long transactionId,
-            int effectNumber,
             DebitCredit side,
             Money amount) {
-        AccountHold existing = hold(transactionId, effectNumber);
+        AccountHold existing = hold(transactionId);
         if (existing != null) {
             return existing.confirmPlacement(side, amount);
         }
-        AccountHold accountHold = AccountHold.placed(
-                transactionId, effectNumber, side, amount);
+        AccountHold accountHold = AccountHold.placed(transactionId, side, amount);
         try {
             requireCurrency(amount);
             Money projected = side.applyTo(projectedBalance(), amount);
@@ -94,20 +92,18 @@ public class Account {
 
     public void releaseHold(
             long transactionId,
-            int effectNumber,
             DebitCredit side,
             Money amount) {
-        AccountHold accountHold = requireHold(transactionId, effectNumber);
+        AccountHold accountHold = requireHold(transactionId);
         accountHold.requireMatches(side, amount);
         accountHold.release();
     }
 
     public void settleHold(
             long transactionId,
-            int effectNumber,
             DebitCredit side,
             Money amount) {
-        AccountHold accountHold = requireHold(transactionId, effectNumber);
+        AccountHold accountHold = requireHold(transactionId);
         accountHold.requireMatches(side, amount);
         if (!accountHold.requiresSettlement()) {
             return;
@@ -156,27 +152,27 @@ public class Account {
     }
 
     private void validateHolds() {
-        Set<AccountHold.Identifier> identities = new HashSet<>();
+        Set<Long> identities = new HashSet<>();
         for (AccountHold accountHold : holds) {
             accountHold.validate();
             requireCurrency(accountHold.getAmount(), balance, "hold amount");
-            if (!identities.add(accountHold.identifier())) {
+            if (!identities.add(accountHold.getTransactionId())) {
                 throw new IllegalArgumentException("Account hold identity must be unique");
             }
         }
     }
 
-    private AccountHold requireHold(long transactionId, int effectNumber) {
-        AccountHold accountHold = hold(transactionId, effectNumber);
+    private AccountHold requireHold(long transactionId) {
+        AccountHold accountHold = hold(transactionId);
         if (accountHold == null) {
             throw new IllegalStateException("Account hold does not exist");
         }
         return accountHold;
     }
 
-    private AccountHold hold(long transactionId, int effectNumber) {
+    private AccountHold hold(long transactionId) {
         for (AccountHold candidate : holds) {
-            if (candidate.hasIdentity(transactionId, effectNumber)) {
+            if (candidate.hasIdentity(transactionId)) {
                 return candidate;
             }
         }

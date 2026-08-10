@@ -4,6 +4,5 @@ import dev.minimalaccounting.model.AccountNumber;
 
 public record AccountHoldReleased(
         AccountNumber accountNumber,
-        long transactionId,
-        int effectNumber) {
+        long transactionId) {
 }

@@ -31,7 +31,7 @@ class PlaceAccountHoldHandlerTest {
         handler.handle(command());
 
         assertEquals(List.of(new AccountHoldPlaced(
-                new AccountNumber("ACCOUNT01"), 10, 0)), placed);
+                new AccountNumber("ACCOUNT01"), 10)), placed);
     }
 
     @Test
@@ -83,7 +83,7 @@ class PlaceAccountHoldHandlerTest {
         handler.handle(command());
 
         assertEquals(List.of(new AccountHoldPlaced(
-                new AccountNumber("ACCOUNT01"), 10, 0)), placed);
+                new AccountNumber("ACCOUNT01"), 10)), placed);
         assertEquals(
                 100,
                 accounts.get(new AccountNumber("ACCOUNT01"))
@@ -98,8 +98,8 @@ class PlaceAccountHoldHandlerTest {
         Account account = Account.create(
                 new AccountNumber("ACCOUNT01"), "account",
                 new Money(1000, USD), null, null);
-        account.placeHold(10, 0, DebitCredit.DEBIT, new Money(100, USD));
-        account.releaseHold(10, 0, DebitCredit.DEBIT, new Money(100, USD));
+        account.placeHold(10, DebitCredit.DEBIT, new Money(100, USD));
+        account.releaseHold(10, DebitCredit.DEBIT, new Money(100, USD));
         accounts.add(account);
         List<AccountHoldPlaced> placed = new ArrayList<>();
         PlaceAccountHoldHandler handler = new PlaceAccountHoldHandler(
@@ -132,7 +132,6 @@ class PlaceAccountHoldHandlerTest {
         return new PlaceAccountHold(
                 new AccountNumber("ACCOUNT01"),
                 10,
-                0,
                 DebitCredit.DEBIT,
                 new Money(100, USD));
     }

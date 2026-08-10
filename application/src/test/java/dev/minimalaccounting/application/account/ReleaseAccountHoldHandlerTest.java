@@ -26,21 +26,21 @@ class ReleaseAccountHoldHandlerTest {
         Account account = Account.create(
                 new AccountNumber("ACCOUNT01"), "account",
                 new Money(1000, USD), null, null);
-        account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.placeHold(10, DebitCredit.DEBIT, AMOUNT);
         accounts.add(account);
         List<AccountHoldReleased> events = new ArrayList<>();
         ReleaseAccountHoldHandler handler = new ReleaseAccountHoldHandler(
                 accounts, events::add);
         ReleaseAccountHold command = new ReleaseAccountHold(
-                new AccountNumber("ACCOUNT01"), 10, 0, DebitCredit.DEBIT, AMOUNT);
+                new AccountNumber("ACCOUNT01"), 10, DebitCredit.DEBIT, AMOUNT);
 
         handler.handle(command);
         handler.handle(command);
 
         assertEquals(
                 List.of(
-                        new AccountHoldReleased(new AccountNumber("ACCOUNT01"), 10, 0),
-                        new AccountHoldReleased(new AccountNumber("ACCOUNT01"), 10, 0)),
+                        new AccountHoldReleased(new AccountNumber("ACCOUNT01"), 10),
+                        new AccountHoldReleased(new AccountNumber("ACCOUNT01"), 10)),
                 events);
         assertEquals(
                 0,
@@ -60,7 +60,7 @@ class ReleaseAccountHoldHandlerTest {
         assertThrows(
                 IllegalStateException.class,
                 () -> handler.handle(new ReleaseAccountHold(
-                        new AccountNumber("ACCOUNT01"), 10, 0,
+                        new AccountNumber("ACCOUNT01"), 10,
                         DebitCredit.DEBIT, AMOUNT)));
     }
 }

@@ -1,5 +1,6 @@
 package dev.minimalaccounting.model.transaction;
 
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.account.AccountHoldDeclined;
 import dev.minimalaccounting.model.account.AccountHoldPlaced;
 import dev.minimalaccounting.model.account.AccountHoldReleased;
@@ -26,19 +27,17 @@ public final class TransactionProcessManager {
             @NonNull AccountHoldPlaced event,
             Instant occurredAt) {
         requireTransaction(event.transactionId());
-        transaction.placeEffect(
-                event.accountNumber(), event.effectNumber(), occurredAt);
+        transaction.placeEffect(event.accountNumber(), occurredAt);
     }
 
     public void accountHoldDeclined(@NonNull AccountHoldDeclined event) {
         requireTransaction(event.transactionId());
-        transaction.declineEffect(
-                event.accountNumber(), event.effectNumber(), event.reason());
+        transaction.declineEffect(event.accountNumber(), event.reason());
     }
 
     public void accountHoldReleased(@NonNull AccountHoldReleased event) {
         requireTransaction(event.transactionId());
-        transaction.releaseEffect(event.accountNumber(), event.effectNumber());
+        transaction.releaseEffect(event.accountNumber());
     }
 
     public void transactionJournalized(
@@ -50,47 +49,46 @@ public final class TransactionProcessManager {
 
     public void accountHoldSettled(@NonNull AccountHoldSettled event) {
         requireTransaction(event.transactionId());
-        transaction.settleEffect(event.accountNumber(), event.effectNumber());
+        transaction.settleEffect(event.accountNumber());
     }
 
     public List<PlaceAccountHold> accountHoldsToPlace() {
         if (transaction.getState() != TransactionState.PLACING_HOLDS) {
             return List.of();
         }
-        List<AccountEffect> effects = transaction.getEffects();
         List<PlaceAccountHold> commands = new ArrayList<>();
-        for (int effectNumber = 0; effectNumber < effects.size(); effectNumber++) {
-            AccountEffect effect = effects.get(effectNumber);
+        for (var entry : transaction.getEffects().entrySet()) {
+            AccountEffect effect = entry.getValue();
             if (effect.isAwaitingHold()) {
                 commands.add(new PlaceAccountHold(
-                        effect.getAccountNumber(), transactionId(), effectNumber,
+                        entry.getKey(), transactionId(),
                         effect.getSide(), effect.getLedgerAmount()));
             }
         }
         return List.copyOf(commands);
     }
 
-    public Optional<ReleaseAccountHold> accountHoldToRelease(int effectNumber) {
+    public Optional<ReleaseAccountHold> accountHoldToRelease(
+            @NonNull AccountNumber accountNumber) {
         if (transaction.getState() != TransactionState.RELEASING_HOLDS) {
             return Optional.empty();
         }
-        AccountEffect effect = effect(effectNumber);
+        AccountEffect effect = effect(accountNumber);
         if (!effect.isAwaitingRelease()) {
             return Optional.empty();
         }
-        return Optional.of(release(effect, effectNumber));
+        return Optional.of(release(accountNumber, effect));
     }
 
     public List<ReleaseAccountHold> accountHoldsToRelease() {
         if (transaction.getState() != TransactionState.RELEASING_HOLDS) {
             return List.of();
         }
-        List<AccountEffect> effects = transaction.getEffects();
         List<ReleaseAccountHold> commands = new ArrayList<>();
-        for (int effectNumber = 0; effectNumber < effects.size(); effectNumber++) {
-            AccountEffect effect = effects.get(effectNumber);
+        for (var entry : transaction.getEffects().entrySet()) {
+            AccountEffect effect = entry.getValue();
             if (effect.isAwaitingRelease()) {
-                commands.add(release(effect, effectNumber));
+                commands.add(release(entry.getKey(), effect));
             }
         }
         return List.copyOf(commands);
@@ -107,13 +105,12 @@ public final class TransactionProcessManager {
         if (transaction.getState() != TransactionState.SETTLING) {
             return List.of();
         }
-        List<AccountEffect> effects = transaction.getEffects();
         List<SettleAccountHold> commands = new ArrayList<>();
-        for (int effectNumber = 0; effectNumber < effects.size(); effectNumber++) {
-            AccountEffect effect = effects.get(effectNumber);
+        for (var entry : transaction.getEffects().entrySet()) {
+            AccountEffect effect = entry.getValue();
             if (effect.isAwaitingSettlement()) {
                 commands.add(new SettleAccountHold(
-                        effect.getAccountNumber(), transactionId(), effectNumber,
+                        entry.getKey(), transactionId(),
                         effect.getSide(), effect.getLedgerAmount()));
             }
         }
@@ -124,17 +121,17 @@ public final class TransactionProcessManager {
         return transaction.getState() == TransactionState.COMPLETED;
     }
 
-    private AccountEffect effect(int effectNumber) {
-        List<AccountEffect> effects = transaction.getEffects();
-        if (effectNumber < 0 || effectNumber >= effects.size()) {
+    private AccountEffect effect(AccountNumber accountNumber) {
+        AccountEffect effect = transaction.getEffects().get(accountNumber);
+        if (effect == null) {
             throw new IllegalArgumentException("Transaction effect does not exist");
         }
-        return effects.get(effectNumber);
+        return effect;
     }
 
-    private ReleaseAccountHold release(AccountEffect effect, int effectNumber) {
+    private ReleaseAccountHold release(AccountNumber accountNumber, AccountEffect effect) {
         return new ReleaseAccountHold(
-                effect.getAccountNumber(), transactionId(), effectNumber,
+                accountNumber, transactionId(),
                 effect.getSide(), effect.getLedgerAmount());
     }
 

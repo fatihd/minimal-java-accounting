@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AccountNumberTest {
     @Test
@@ -15,5 +16,11 @@ class AccountNumberTest {
     void rejectsTextOutsideItsBusinessFormat() {
         assertThrows(IllegalArgumentException.class, () -> new AccountNumber("short"));
         assertThrows(IllegalArgumentException.class, () -> new AccountNumber("lowercase1"));
+    }
+
+    @Test
+    void ordersLexicographicallyByItsValue() {
+        assertTrue(new AccountNumber("ACCOUNT01").compareTo(
+                new AccountNumber("ACCOUNT02")) < 0);
     }
 }

@@ -20,7 +20,7 @@ class AccountTest {
     void placesDebitHold() {
         Account account = account();
 
-        account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.placeHold(10, DebitCredit.DEBIT, AMOUNT);
 
         assertEquals(100, account.getDebitsHeld().minor());
     }
@@ -28,9 +28,9 @@ class AccountTest {
     @Test
     void releasesCreditHold() {
         Account account = account();
-        account.placeHold(10, 0, DebitCredit.CREDIT, AMOUNT);
+        account.placeHold(10, DebitCredit.CREDIT, AMOUNT);
 
-        account.releaseHold(10, 0, DebitCredit.CREDIT, AMOUNT);
+        account.releaseHold(10, DebitCredit.CREDIT, AMOUNT);
 
         assertEquals(0, account.getCreditsHeld().minor());
     }
@@ -38,9 +38,9 @@ class AccountTest {
     @Test
     void settlesDebitHoldIntoBalance() {
         Account account = account();
-        account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.placeHold(10, DebitCredit.DEBIT, AMOUNT);
 
-        account.settleHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.settleHold(10, DebitCredit.DEBIT, AMOUNT);
 
         assertEquals(1100, account.getBalance().minor());
         assertEquals(0, account.getDebitsHeld().minor());
@@ -49,10 +49,10 @@ class AccountTest {
     @Test
     void duplicatePlacementDoesNotIncreaseTheHold() {
         Account account = account();
-        account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.placeHold(10, DebitCredit.DEBIT, AMOUNT);
 
         AccountHoldState state = account.placeHold(
-                10, 0, DebitCredit.DEBIT, AMOUNT);
+                10, DebitCredit.DEBIT, AMOUNT);
 
         assertEquals(AccountHoldState.HELD, state);
         assertEquals(100, account.getDebitsHeld().minor());
@@ -61,10 +61,10 @@ class AccountTest {
     @Test
     void duplicateReleaseConfirmsTheReleasedState() {
         Account account = account();
-        account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
-        account.releaseHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.placeHold(10, DebitCredit.DEBIT, AMOUNT);
+        account.releaseHold(10, DebitCredit.DEBIT, AMOUNT);
 
-        account.releaseHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.releaseHold(10, DebitCredit.DEBIT, AMOUNT);
 
         assertEquals(AccountHoldState.RELEASED, account.getHolds().getFirst().getState());
         assertEquals(0, account.getDebitsHeld().minor());
@@ -73,10 +73,10 @@ class AccountTest {
     @Test
     void duplicateSettlementDoesNotPostTheBalanceTwice() {
         Account account = account();
-        account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
-        account.settleHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.placeHold(10, DebitCredit.DEBIT, AMOUNT);
+        account.settleHold(10, DebitCredit.DEBIT, AMOUNT);
 
-        account.settleHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.settleHold(10, DebitCredit.DEBIT, AMOUNT);
 
         assertEquals(AccountHoldState.SETTLED, account.getHolds().getFirst().getState());
         assertEquals(1100, account.getBalance().minor());
@@ -85,18 +85,18 @@ class AccountTest {
     @Test
     void latePlacementDoesNotReopenATerminalHold() {
         Account released = account();
-        released.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
-        released.releaseHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        released.placeHold(10, DebitCredit.DEBIT, AMOUNT);
+        released.releaseHold(10, DebitCredit.DEBIT, AMOUNT);
         Account settled = account();
-        settled.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
-        settled.settleHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        settled.placeHold(10, DebitCredit.DEBIT, AMOUNT);
+        settled.settleHold(10, DebitCredit.DEBIT, AMOUNT);
 
         assertEquals(
                 AccountHoldState.RELEASED,
-                released.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT));
+                released.placeHold(10, DebitCredit.DEBIT, AMOUNT));
         assertEquals(
                 AccountHoldState.SETTLED,
-                settled.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT));
+                settled.placeHold(10, DebitCredit.DEBIT, AMOUNT));
         assertEquals(0, released.getDebitsHeld().minor());
         assertEquals(1100, settled.getBalance().minor());
     }
@@ -104,12 +104,12 @@ class AccountTest {
     @Test
     void rejectsConflictingDataForTheSameHoldIdentity() {
         Account account = account();
-        account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        account.placeHold(10, DebitCredit.DEBIT, AMOUNT);
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> account.placeHold(
-                        10, 0, DebitCredit.CREDIT, AMOUNT));
+                        10, DebitCredit.CREDIT, AMOUNT));
     }
 
     @Test
@@ -118,27 +118,27 @@ class AccountTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> account.releaseHold(10, 0, DebitCredit.DEBIT, AMOUNT));
+                () -> account.releaseHold(10, DebitCredit.DEBIT, AMOUNT));
         assertThrows(
                 IllegalStateException.class,
-                () -> account.settleHold(10, 0, DebitCredit.DEBIT, AMOUNT));
+                () -> account.settleHold(10, DebitCredit.DEBIT, AMOUNT));
     }
 
     @Test
     void rejectsConflictingTerminalOperations() {
         Account released = account();
-        released.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
-        released.releaseHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        released.placeHold(10, DebitCredit.DEBIT, AMOUNT);
+        released.releaseHold(10, DebitCredit.DEBIT, AMOUNT);
         Account settled = account();
-        settled.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT);
-        settled.settleHold(10, 0, DebitCredit.DEBIT, AMOUNT);
+        settled.placeHold(10, DebitCredit.DEBIT, AMOUNT);
+        settled.settleHold(10, DebitCredit.DEBIT, AMOUNT);
 
         assertThrows(
                 IllegalStateException.class,
-                () -> released.settleHold(10, 0, DebitCredit.DEBIT, AMOUNT));
+                () -> released.settleHold(10, DebitCredit.DEBIT, AMOUNT));
         assertThrows(
                 IllegalStateException.class,
-                () -> settled.releaseHold(10, 0, DebitCredit.DEBIT, AMOUNT));
+                () -> settled.releaseHold(10, DebitCredit.DEBIT, AMOUNT));
     }
 
     @Test
@@ -154,10 +154,10 @@ class AccountTest {
 
         assertThrows(
                 PostingRejectedException.class,
-                () -> account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT));
+                () -> account.placeHold(10, DebitCredit.DEBIT, AMOUNT));
         assertThrows(
                 PostingRejectedException.class,
-                () -> account.placeHold(10, 0, DebitCredit.DEBIT, AMOUNT));
+                () -> account.placeHold(10, DebitCredit.DEBIT, AMOUNT));
         assertEquals(0, account.getDebitsHeld().minor());
         assertEquals(1, account.getHolds().size());
         assertEquals(AccountHoldState.DECLINED, account.getHolds().getFirst().getState());

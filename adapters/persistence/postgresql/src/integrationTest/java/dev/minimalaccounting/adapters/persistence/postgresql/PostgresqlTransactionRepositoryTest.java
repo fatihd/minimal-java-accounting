@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,7 +49,7 @@ class PostgresqlTransactionRepositoryTest
                         new TransactionLine(
                                 new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
                                 AMOUNT, AMOUNT)),
-                List.of());
+                Map.of());
         transaction.start(Instant.EPOCH);
         return transaction;
     }
@@ -70,19 +71,21 @@ class PostgresqlTransactionRepositoryTest
 
     @Override
     protected void firstChange(Transaction value) {
-        value.placeEffect(new AccountNumber("DEBIT001"), 0, Instant.EPOCH.plusSeconds(1));
+        value.placeEffect(
+                new AccountNumber("DEBIT001"), Instant.EPOCH.plusSeconds(1));
     }
 
     @Override
     protected void secondChange(Transaction value) {
-        value.placeEffect(new AccountNumber("CREDIT01"), 1, Instant.EPOCH.plusSeconds(2));
+        value.placeEffect(
+                new AccountNumber("CREDIT01"), Instant.EPOCH.plusSeconds(2));
     }
 
     @Override
     protected Object stateOf(Transaction value) {
         return new State(
                 value.getState(),
-                value.getEffects().stream().map(AccountEffect::getState).toList());
+                value.getEffects().values().stream().map(AccountEffect::getState).toList());
     }
 
     @Test
@@ -107,7 +110,7 @@ class PostgresqlTransactionRepositoryTest
         Transaction stale = repository.get(TransactionIdentifier.id(transaction.getId()))
                 .orElseThrow();
         transaction.placeEffect(
-                new AccountNumber("DEBIT001"), 0, Instant.EPOCH.plusSeconds(1));
+                new AccountNumber("DEBIT001"), Instant.EPOCH.plusSeconds(1));
         repository.update(transaction);
 
         assertThrows(IllegalStateException.class, () -> repository.add(createValue()));

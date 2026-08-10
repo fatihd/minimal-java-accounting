@@ -4,6 +4,5 @@ import dev.minimalaccounting.model.AccountNumber;
 
 public record AccountHoldPlaced(
         AccountNumber accountNumber,
-        long transactionId,
-        int effectNumber) {
+        long transactionId) {
 }

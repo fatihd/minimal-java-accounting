@@ -15,7 +15,6 @@ import java.util.Objects;
 @NoArgsConstructor
 public final class AccountHold {
     private long transactionId;
-    private int effectNumber;
     private DebitCredit side;
     private Money amount;
     @Setter(AccessLevel.NONE)
@@ -25,13 +24,11 @@ public final class AccountHold {
 
     public AccountHold(
             long transactionId,
-            int effectNumber,
             DebitCredit side,
             Money amount,
             AccountHoldState state,
             String failureReason) {
         this.transactionId = transactionId;
-        this.effectNumber = effectNumber;
         this.side = side;
         this.amount = amount;
         this.state = state;
@@ -41,12 +38,10 @@ public final class AccountHold {
 
     static AccountHold placed(
             long transactionId,
-            int effectNumber,
             DebitCredit side,
             Money amount) {
         return new AccountHold(
                 transactionId,
-                effectNumber,
                 side,
                 amount,
                 AccountHoldState.HELD,
@@ -61,20 +56,13 @@ public final class AccountHold {
         return state;
     }
 
-    Identifier identifier() {
-        return new Identifier(transactionId, effectNumber);
-    }
-
-    boolean hasIdentity(long expectedTransactionId, int expectedEffectNumber) {
-        return transactionId == expectedTransactionId && effectNumber == expectedEffectNumber;
+    boolean hasIdentity(long expectedTransactionId) {
+        return transactionId == expectedTransactionId;
     }
 
     void validate() {
         if (transactionId < 1) {
             throw new IllegalArgumentException("transactionId must be positive");
-        }
-        if (effectNumber < 0) {
-            throw new IllegalArgumentException("effectNumber must not be negative");
         }
         Objects.requireNonNull(side, "side");
         Money value = Objects.requireNonNull(amount, "amount");
@@ -139,8 +127,5 @@ public final class AccountHold {
             return amount;
         }
         return Money.zero(amount.currency());
-    }
-
-    record Identifier(long transactionId, int effectNumber) {
     }
 }

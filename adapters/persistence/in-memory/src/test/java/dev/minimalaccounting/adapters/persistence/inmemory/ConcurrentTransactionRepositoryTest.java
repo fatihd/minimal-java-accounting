@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,7 +56,7 @@ class ConcurrentTransactionRepositoryTest
                         new TransactionLine(
                                 new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
                                 AMOUNT, AMOUNT)),
-                List.of());
+                Map.of());
     }
 
     @Override
@@ -80,14 +81,15 @@ class ConcurrentTransactionRepositoryTest
 
     @Override
     protected void secondChange(Transaction value) {
-        value.placeEffect(new AccountNumber("DEBIT001"), 0, Instant.EPOCH.plusSeconds(1));
+        value.placeEffect(
+                new AccountNumber("DEBIT001"), Instant.EPOCH.plusSeconds(1));
     }
 
     @Override
     protected Object stateOf(Transaction value) {
         return new State(
                 value.getState(),
-                value.getEffects().stream().map(AccountEffect::getState).toList());
+                value.getEffects().values().stream().map(AccountEffect::getState).toList());
     }
 
     @Test

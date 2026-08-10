@@ -52,12 +52,12 @@ class PostgresqlAccountRepositoryTest
 
     @Override
     protected void firstChange(Account value) {
-        value.placeHold(10, 0, DebitCredit.DEBIT, HOLD);
+        value.placeHold(10, DebitCredit.DEBIT, HOLD);
     }
 
     @Override
     protected void secondChange(Account value) {
-        value.placeHold(11, 0, DebitCredit.DEBIT, HOLD);
+        value.placeHold(11, DebitCredit.DEBIT, HOLD);
     }
 
     @Override
@@ -83,7 +83,7 @@ class PostgresqlAccountRepositoryTest
         Account account = createValue();
         repository.add(account);
         Account stale = repository.get(NUMBER).orElseThrow();
-        account.placeHold(10, 0, DebitCredit.DEBIT, HOLD);
+        account.placeHold(10, DebitCredit.DEBIT, HOLD);
         repository.update(account);
 
         assertThrows(IllegalStateException.class, () -> repository.add(createValue()));

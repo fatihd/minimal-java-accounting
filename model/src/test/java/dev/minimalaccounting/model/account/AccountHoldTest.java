@@ -20,10 +20,7 @@ class AccountHoldTest {
     void requiresAValidBusinessIdentity() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> hold(0, 0, AMOUNT, AccountHoldState.HELD, null));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> hold(10, -1, AMOUNT, AccountHoldState.HELD, null));
+                () -> hold(0, AMOUNT, AccountHoldState.HELD, null));
     }
 
     @Test
@@ -31,7 +28,7 @@ class AccountHoldTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> hold(
-                        10, 0, Money.zero(AMOUNT.currency()),
+                        10, Money.zero(AMOUNT.currency()),
                         AccountHoldState.HELD, null));
     }
 
@@ -39,18 +36,18 @@ class AccountHoldTest {
     void permitsAReasonOnlyForADeclinedHold() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> hold(10, 0, AMOUNT, AccountHoldState.DECLINED, null));
+                () -> hold(10, AMOUNT, AccountHoldState.DECLINED, null));
         assertThrows(
                 IllegalArgumentException.class,
-                () -> hold(10, 0, AMOUNT, AccountHoldState.HELD, "not allowed"));
+                () -> hold(10, AMOUNT, AccountHoldState.HELD, "not allowed"));
     }
 
     @Test
     void placementConfirmationOwnsRetryAndConflictRules() {
-        AccountHold held = AccountHold.placed(10, 0, DebitCredit.DEBIT, AMOUNT);
-        AccountHold released = AccountHold.placed(10, 0, DebitCredit.DEBIT, AMOUNT);
+        AccountHold held = AccountHold.placed(10, DebitCredit.DEBIT, AMOUNT);
+        AccountHold released = AccountHold.placed(10, DebitCredit.DEBIT, AMOUNT);
         released.release();
-        AccountHold declined = AccountHold.placed(10, 0, DebitCredit.DEBIT, AMOUNT);
+        AccountHold declined = AccountHold.placed(10, DebitCredit.DEBIT, AMOUNT);
         declined.decline("limit exceeded");
 
         assertEquals(
@@ -68,17 +65,16 @@ class AccountHoldTest {
     }
 
     @Test
-    void holdOwnsItsCompositeIdentity() {
-        AccountHold hold = AccountHold.placed(10, 2, DebitCredit.DEBIT, AMOUNT);
+    void holdOwnsItsTransactionIdentity() {
+        AccountHold hold = AccountHold.placed(10, DebitCredit.DEBIT, AMOUNT);
 
-        assertEquals(new AccountHold.Identifier(10, 2), hold.identifier());
-        assertTrue(hold.hasIdentity(10, 2));
-        assertFalse(hold.hasIdentity(10, 1));
+        assertTrue(hold.hasIdentity(10));
+        assertFalse(hold.hasIdentity(11));
     }
 
     @Test
     void heldAmountContributesOnlyWhileHeldAndOnTheMatchingSide() {
-        AccountHold hold = AccountHold.placed(10, 0, DebitCredit.DEBIT, AMOUNT);
+        AccountHold hold = AccountHold.placed(10, DebitCredit.DEBIT, AMOUNT);
 
         assertEquals(AMOUNT, hold.heldAmount(DebitCredit.DEBIT));
         assertEquals(Money.zero(AMOUNT.currency()), hold.heldAmount(DebitCredit.CREDIT));
@@ -90,10 +86,10 @@ class AccountHoldTest {
 
     @Test
     void settlementRequirementHandlesRetriesAndConflicts() {
-        AccountHold held = AccountHold.placed(10, 0, DebitCredit.DEBIT, AMOUNT);
-        AccountHold settled = AccountHold.placed(10, 0, DebitCredit.DEBIT, AMOUNT);
+        AccountHold held = AccountHold.placed(10, DebitCredit.DEBIT, AMOUNT);
+        AccountHold settled = AccountHold.placed(10, DebitCredit.DEBIT, AMOUNT);
         settled.settle();
-        AccountHold released = AccountHold.placed(10, 0, DebitCredit.DEBIT, AMOUNT);
+        AccountHold released = AccountHold.placed(10, DebitCredit.DEBIT, AMOUNT);
         released.release();
 
         assertTrue(held.requiresSettlement());
@@ -103,13 +99,11 @@ class AccountHoldTest {
 
     private static AccountHold hold(
             long transactionId,
-            int effectNumber,
             Money amount,
             AccountHoldState state,
             String reason) {
         return new AccountHold(
                 transactionId,
-                effectNumber,
                 DebitCredit.DEBIT,
                 amount,
                 state,

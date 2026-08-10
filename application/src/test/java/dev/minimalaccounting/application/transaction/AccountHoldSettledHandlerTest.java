@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,7 +32,7 @@ class AccountHoldSettledHandlerTest {
 
         assertDoesNotThrow(
                 () -> handler.handle(new AccountHoldSettled(
-                        new AccountNumber("ACCOUNT01"), 99, 0)));
+                        new AccountNumber("ACCOUNT01"), 99)));
     }
 
     @Test
@@ -40,19 +41,19 @@ class AccountHoldSettledHandlerTest {
                 new ConcurrentTransactionRepository();
         long transactionId = transactions.add(transaction(
                 TransactionState.HELD,
-                effect(1, AccountEffectState.HELD))).id();
+                Map.of(account(1), effect(AccountEffectState.HELD)))).id();
         AccountHoldSettledHandler handler = new AccountHoldSettledHandler(transactions);
 
         assertThrows(
                 IllegalStateException.class,
                 () -> handler.handle(new AccountHoldSettled(
-                        new AccountNumber("ACCOUNT01"), transactionId, 0)));
+                        new AccountNumber("ACCOUNT01"), transactionId)));
         assertEquals(
                 AccountEffectState.HELD,
                 transactions.get(TransactionIdentifier.id(transactionId))
                         .orElseThrow()
                         .getEffects()
-                        .getFirst()
+                        .get(account(1))
                         .getState());
     }
 
@@ -62,12 +63,13 @@ class AccountHoldSettledHandlerTest {
                 new ConcurrentTransactionRepository();
         long transactionId = transactions.add(transaction(
                 TransactionState.SETTLING,
-                effect(1, AccountEffectState.SETTLED),
-                effect(2, AccountEffectState.SETTLING))).id();
+                Map.of(
+                        account(1), effect(AccountEffectState.SETTLED),
+                        account(2), effect(AccountEffectState.SETTLING)))).id();
         AccountHoldSettledHandler handler = new AccountHoldSettledHandler(transactions);
 
         handler.handle(new AccountHoldSettled(
-                new AccountNumber("ACCOUNT01"), transactionId, 0));
+                new AccountNumber("ACCOUNT01"), transactionId));
 
         assertEquals(
                 TransactionState.SETTLING,
@@ -78,17 +80,20 @@ class AccountHoldSettledHandlerTest {
 
     private static Transaction transaction(
             TransactionState state,
-            AccountEffect... effects) {
+            Map<AccountNumber, AccountEffect> effects) {
         return new Transaction(
                 null, null, state, "request", "TRANSFER", "document", "description",
-                Instant.EPOCH, Instant.EPOCH, null, null, List.of(), List.of(effects));
+                Instant.EPOCH, Instant.EPOCH, null, null, List.of(), effects);
     }
 
-    private static AccountEffect effect(long accountId, AccountEffectState state) {
+    private static AccountEffect effect(AccountEffectState state) {
         return new AccountEffect(
-                new AccountNumber("ACCOUNT0" + accountId),
                 DebitCredit.DEBIT,
                 AMOUNT,
                 state);
+    }
+
+    private static AccountNumber account(long number) {
+        return new AccountNumber("ACCOUNT0" + number);
     }
 }

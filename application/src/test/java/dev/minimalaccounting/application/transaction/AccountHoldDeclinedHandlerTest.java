@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,14 +43,14 @@ class AccountHoldDeclinedHandlerTest {
                     releases.add(command);
                 });
         AccountHoldDeclined event = new AccountHoldDeclined(
-                new AccountNumber("ACCOUNT01"), transactionId, 0, "limit exceeded");
+                new AccountNumber("ACCOUNT01"), transactionId, "limit exceeded");
 
         assertThrows(IllegalStateException.class, () -> handler.handle(event));
         handler.handle(event);
 
         assertEquals(
                 List.of(new ReleaseAccountHold(
-                        new AccountNumber("ACCOUNT02"), transactionId, 1,
+                        new AccountNumber("ACCOUNT02"), transactionId,
                         DebitCredit.DEBIT, AMOUNT)),
                 releases);
         Transaction stored = transactions.get(TransactionIdentifier.id(transactionId))
@@ -72,14 +73,13 @@ class AccountHoldDeclinedHandlerTest {
                 null,
                 null,
                 List.of(),
-                List.of(
-                        effect(1, AccountEffectState.PENDING),
-                        effect(2, AccountEffectState.HELD)));
+                Map.of(
+                        new AccountNumber("ACCOUNT01"), effect(AccountEffectState.PENDING),
+                        new AccountNumber("ACCOUNT02"), effect(AccountEffectState.HELD)));
     }
 
-    private static AccountEffect effect(long accountId, AccountEffectState state) {
+    private static AccountEffect effect(AccountEffectState state) {
         return new AccountEffect(
-                new AccountNumber("ACCOUNT0" + accountId),
                 DebitCredit.DEBIT,
                 AMOUNT,
                 state);

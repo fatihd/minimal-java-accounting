@@ -7,7 +7,6 @@ import dev.minimalaccounting.model.AccountNumber;
 public record PlaceAccountHold(
         AccountNumber accountNumber,
         long transactionId,
-        int effectNumber,
         DebitCredit side,
         Money amount) {
 }

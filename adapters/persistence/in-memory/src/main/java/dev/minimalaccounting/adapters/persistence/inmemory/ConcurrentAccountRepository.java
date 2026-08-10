@@ -39,7 +39,7 @@ public final class ConcurrentAccountRepository implements Repository<AccountNumb
     private static Account copy(Account value) {
         var holds = value.getHolds().stream()
                 .map(hold -> new AccountHold(
-                        hold.getTransactionId(), hold.getEffectNumber(), hold.getSide(),
+                        hold.getTransactionId(), hold.getSide(),
                         hold.getAmount(), hold.getState(), hold.getFailureReason()))
                 .toList();
         return new Account(

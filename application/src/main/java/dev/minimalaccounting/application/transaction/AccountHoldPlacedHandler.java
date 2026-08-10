@@ -35,7 +35,7 @@ public final class AccountHoldPlacedHandler implements Handler<AccountHoldPlaced
         }
         var process = new TransactionProcessManager(transaction);
         process.accountHoldPlaced(event, clock.instant());
-        var release = process.accountHoldToRelease(event.effectNumber());
+        var release = process.accountHoldToRelease(event.accountNumber());
         var journalization = process.transactionToJournalize();
         transactions.update(transaction);
         release.ifPresent(releases::send);

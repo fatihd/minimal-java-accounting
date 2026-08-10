@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,6 +45,13 @@ class TransactionStartTest {
         void createsOneEffectPerAffectedAccount() {
             assertEquals(2, transaction.getEffects().size());
         }
+
+        @Test
+        void exposesEffectsAsReadOnly() {
+            assertThrows(
+                    UnsupportedOperationException.class,
+                    () -> transaction.getEffects().clear());
+        }
     }
 
     @Test
@@ -54,7 +62,9 @@ class TransactionStartTest {
                 line("CREDIT01", DebitCredit.CREDIT, 100));
         transaction.start(Instant.EPOCH);
 
-        assertEquals(AMOUNT, transaction.getEffects().getFirst().getLedgerAmount());
+        assertEquals(AMOUNT,
+                transaction.getEffects().get(new AccountNumber("DEBIT001"))
+                        .getLedgerAmount());
     }
 
     @Test
@@ -72,6 +82,19 @@ class TransactionStartTest {
     }
 
     @Test
+    void storesAccountEffectsInCanonicalAccountNumberOrder() {
+        Transaction transaction = transaction(
+                line("ZZZZZZZ1", DebitCredit.DEBIT, 100),
+                line("AAAAAAAA", DebitCredit.CREDIT, 100));
+
+        transaction.start(Instant.EPOCH);
+
+        assertEquals(
+                List.of(new AccountNumber("AAAAAAAA"), new AccountNumber("ZZZZZZZ1")),
+                List.copyOf(transaction.getEffects().keySet()));
+    }
+
+    @Test
     void startsHeldWhenAllAccountEffectsNetToZero() {
         Transaction transaction = transaction(
                 line("DEBIT001", DebitCredit.DEBIT, 100),
@@ -81,7 +104,7 @@ class TransactionStartTest {
 
         assertEquals(TransactionState.HELD, transaction.getState());
         assertEquals(Instant.EPOCH, transaction.getHeldAt());
-        assertEquals(List.of(), transaction.getEffects());
+        assertEquals(Map.of(), transaction.getEffects());
     }
 
     @Test
@@ -177,7 +200,7 @@ class TransactionStartTest {
                 null,
                 null,
                 List.of(lines),
-                List.of());
+                Map.of());
     }
 
     private static TransactionLine line(
