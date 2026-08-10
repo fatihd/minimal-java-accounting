@@ -1,8 +1,8 @@
 package dev.minimalaccounting.adapters.messaging.artemis;
 
-import dev.minimalaccounting.ports.messaging.QueueContract;
-import dev.minimalaccounting.ports.messaging.Receiver;
-import dev.minimalaccounting.ports.messaging.Sender;
+import dev.minimalaccounting.shared.ports.QueueContract;
+import dev.minimalaccounting.shared.ports.Receiver;
+import dev.minimalaccounting.shared.ports.Sender;
 import org.junit.jupiter.api.AfterEach;
 
 class ArtemisQueueContractTest extends QueueContract<ExampleMessage> {

@@ -1,13 +1,15 @@
 package dev.minimalaccounting.application.transaction;
 
-import dev.minimalaccounting.core.account.AccountHoldPlaced;
-import dev.minimalaccounting.core.account.ReleaseAccountHold;
-import dev.minimalaccounting.core.journal.JournalizeTransaction;
-import dev.minimalaccounting.core.transaction.TransactionProcessManager;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.ports.messaging.Handler;
-import dev.minimalaccounting.ports.messaging.Sender;
-import dev.minimalaccounting.ports.persistence.TransactionRepository;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.account.AccountHoldPlaced;
+import dev.minimalaccounting.model.account.ReleaseAccountHold;
+import dev.minimalaccounting.model.journal.JournalizeTransaction;
+import dev.minimalaccounting.model.transaction.TransactionProcessManager;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.shared.ports.Sender;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -16,7 +18,7 @@ import java.time.Clock;
 @RequiredArgsConstructor
 public final class AccountHoldPlacedHandler implements Handler<AccountHoldPlaced> {
     @NonNull
-    private final TransactionRepository transactions;
+    private final Repository<TransactionIdentifier, Transaction> transactions;
     @NonNull
     private final Sender<ReleaseAccountHold> releases;
     @NonNull
@@ -26,7 +28,7 @@ public final class AccountHoldPlacedHandler implements Handler<AccountHoldPlaced
 
     @Override
     public void handle(AccountHoldPlaced event) {
-        var transaction = transactions.get(TransactionReference.id(event.transactionId()))
+        var transaction = transactions.get(TransactionIdentifier.id(event.transactionId()))
                 .orElse(null);
         if (transaction == null) {
             return;

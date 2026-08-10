@@ -1,16 +1,16 @@
 package dev.minimalaccounting.adapters.persistence.inmemory;
 
-import dev.minimalaccounting.core.transaction.AccountEffect;
-import dev.minimalaccounting.core.transaction.Transaction;
-import dev.minimalaccounting.core.transaction.TransactionLine;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.ports.persistence.TransactionRepository;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.transaction.AccountEffect;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.transaction.TransactionLine;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
 
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class ConcurrentTransactionRepository implements TransactionRepository {
+public final class ConcurrentTransactionRepository implements Repository<TransactionIdentifier, Transaction> {
     private final InMemoryRepository<Transaction> values = new InMemoryRepository<>(
             Transaction::getId,
             Transaction::setId,
@@ -20,7 +20,7 @@ public final class ConcurrentTransactionRepository implements TransactionReposit
     private final ConcurrentHashMap<String, Long> requests = new ConcurrentHashMap<>();
 
     @Override
-    public synchronized Optional<Transaction> get(TransactionReference key) {
+    public synchronized Optional<Transaction> get(TransactionIdentifier key) {
         Long id = key.id() != null ? key.id() : requests.get(key.requestId());
         return id == null ? Optional.empty() : values.get(id);
     }
@@ -41,7 +41,7 @@ public final class ConcurrentTransactionRepository implements TransactionReposit
     }
 
     @Override
-    public synchronized void remove(TransactionReference key) {
+    public synchronized void remove(TransactionIdentifier key) {
         Long id = key.id() != null ? key.id() : requests.get(key.requestId());
         if (id != null) {
             values.remove(id).ifPresent(value -> requests.remove(value.getRequestId()));

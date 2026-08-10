@@ -1,10 +1,11 @@
 package dev.minimalaccounting.adapters.api.console;
 
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
-import dev.minimalaccounting.ports.api.SubmitTransaction;
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.shared.ports.Handler;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -32,7 +33,7 @@ public final class ConsoleTransactionAdapter {
             """;
 
     @NonNull
-    private final SubmitTransactionHandler transactions;
+    private final Handler<SubmitTransaction> transactions;
 
     public int run(
             @NonNull String[] arguments,

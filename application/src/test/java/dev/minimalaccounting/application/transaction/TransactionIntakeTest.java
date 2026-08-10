@@ -1,13 +1,13 @@
 package dev.minimalaccounting.application.transaction;
 
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentJournalRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentTransactionRepository;
-import dev.minimalaccounting.ports.api.SubmitTransaction;
-import dev.minimalaccounting.core.transaction.TransactionReference;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +49,7 @@ class TransactionIntakeTest {
             // Expected; persistence is asserted independently.
         }
 
-        assertTrue(transactions.get(TransactionReference.request("request")).isEmpty());
+        assertTrue(transactions.get(TransactionIdentifier.request("request")).isEmpty());
     }
 
     private static SubmitTransaction transaction() {

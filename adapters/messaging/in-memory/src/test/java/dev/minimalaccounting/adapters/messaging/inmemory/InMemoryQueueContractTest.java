@@ -1,8 +1,8 @@
 package dev.minimalaccounting.adapters.messaging.inmemory;
 
-import dev.minimalaccounting.ports.messaging.QueueContract;
-import dev.minimalaccounting.ports.messaging.Receiver;
-import dev.minimalaccounting.ports.messaging.Sender;
+import dev.minimalaccounting.shared.ports.QueueContract;
+import dev.minimalaccounting.shared.ports.Receiver;
+import dev.minimalaccounting.shared.ports.Sender;
 
 class InMemoryQueueContractTest extends QueueContract<String> {
     private final InMemoryQueue<String> queue = new InMemoryQueue<>();

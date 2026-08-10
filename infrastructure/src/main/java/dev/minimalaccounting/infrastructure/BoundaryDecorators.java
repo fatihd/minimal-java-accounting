@@ -1,11 +1,10 @@
 package dev.minimalaccounting.infrastructure;
 
-import dev.minimalaccounting.ports.api.SubmitTransaction;
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
-import dev.minimalaccounting.ports.messaging.Handler;
-import dev.minimalaccounting.ports.messaging.Received;
-import dev.minimalaccounting.ports.messaging.Receiver;
-import dev.minimalaccounting.ports.messaging.Sender;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.shared.ports.Received;
+import dev.minimalaccounting.shared.ports.Receiver;
+import dev.minimalaccounting.shared.ports.Sender;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -17,13 +16,6 @@ import java.util.function.IntFunction;
 public final class BoundaryDecorators {
     @NonNull
     private final MetricsRegistry metrics;
-
-    public SubmitTransactionHandler handler(
-            @NonNull String name,
-            @NonNull SubmitTransactionHandler handler) {
-        Consumer<SubmitTransaction> decorated = observer(name).consumer(name, handler::handle);
-        return decorated::accept;
-    }
 
     public <T> Handler<T> handler(@NonNull String name, @NonNull Handler<T> handler) {
         Consumer<T> decorated = observer(name).consumer(name, handler::handle);

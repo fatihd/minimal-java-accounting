@@ -1,6 +1,6 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.Money;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

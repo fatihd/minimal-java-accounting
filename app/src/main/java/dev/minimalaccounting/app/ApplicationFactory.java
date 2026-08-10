@@ -1,28 +1,33 @@
 package dev.minimalaccounting.app;
 
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.journal.JournalEntry;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
 import dev.minimalaccounting.adapters.messaging.artemis.ArtemisPoller;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryPoller;
 import dev.minimalaccounting.adapters.messaging.postgresql.OutboxRoute;
 import dev.minimalaccounting.adapters.messaging.postgresql.PostgresqlOutboxPublisher;
 import dev.minimalaccounting.adapters.messaging.postgresql.TransactionalHandler;
-import dev.minimalaccounting.core.account.AccountHoldDeclined;
-import dev.minimalaccounting.core.account.AccountHoldPlaced;
-import dev.minimalaccounting.core.account.AccountHoldReleased;
-import dev.minimalaccounting.core.account.AccountHoldSettled;
-import dev.minimalaccounting.core.account.PlaceAccountHold;
-import dev.minimalaccounting.core.account.ReleaseAccountHold;
-import dev.minimalaccounting.core.account.SettleAccountHold;
-import dev.minimalaccounting.core.journal.JournalizeTransaction;
-import dev.minimalaccounting.core.journal.TransactionJournalized;
+import dev.minimalaccounting.model.account.AccountHoldDeclined;
+import dev.minimalaccounting.model.account.AccountHoldPlaced;
+import dev.minimalaccounting.model.account.AccountHoldReleased;
+import dev.minimalaccounting.model.account.AccountHoldSettled;
+import dev.minimalaccounting.model.account.PlaceAccountHold;
+import dev.minimalaccounting.model.account.ReleaseAccountHold;
+import dev.minimalaccounting.model.account.SettleAccountHold;
+import dev.minimalaccounting.model.journal.JournalizeTransaction;
+import dev.minimalaccounting.model.journal.TransactionJournalized;
 import dev.minimalaccounting.infrastructure.BoundaryDecorators;
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
-import dev.minimalaccounting.ports.messaging.Handler;
-import dev.minimalaccounting.ports.messaging.Receiver;
-import dev.minimalaccounting.ports.messaging.Sender;
-import dev.minimalaccounting.ports.persistence.AccountRepository;
-import dev.minimalaccounting.ports.persistence.JournalRepository;
-import dev.minimalaccounting.ports.persistence.TransactionRepository;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.shared.ports.Receiver;
+import dev.minimalaccounting.shared.ports.Sender;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -101,7 +106,7 @@ final class ApplicationFactory {
                     clock);
 
     @Getter(lazy = true)
-    private final SubmitTransactionHandler observedTransactions = getDecorators().handler(
+    private final Handler<SubmitTransaction> observedTransactions = getDecorators().handler(
             "transaction.submit", getApplicationModule().getTransactionIntake());
 
     @Getter(lazy = true)
@@ -159,7 +164,7 @@ final class ApplicationFactory {
                     getApplicationModule().getAccountHoldSettledHandler());
 
     @Getter(lazy = true)
-    private final SubmitTransactionHandler transactions =
+    private final Handler<SubmitTransaction> transactions =
             transactional(getObservedTransactions());
 
     @Getter(lazy = true)
@@ -453,21 +458,21 @@ final class ApplicationFactory {
         throw new IllegalStateException("only in-memory messaging can be drained");
     }
 
-    private AccountRepository accountRepository() {
+    private Repository<AccountIdentifier, Account> accountRepository() {
         return switch (modules) {
             case InMemoryModules memory -> memory.persistence().getAccountRepository();
             case DurableModules durable -> durable.persistence().getAccountRepository();
         };
     }
 
-    private TransactionRepository transactionRepository() {
+    private Repository<TransactionIdentifier, Transaction> transactionRepository() {
         return switch (modules) {
             case InMemoryModules memory -> memory.persistence().getTransactionRepository();
             case DurableModules durable -> durable.persistence().getTransactionRepository();
         };
     }
 
-    private JournalRepository journalRepository() {
+    private Repository<JournalIdentifier, JournalEntry> journalRepository() {
         return switch (modules) {
             case InMemoryModules memory -> memory.persistence().getJournalRepository();
             case DurableModules durable -> durable.persistence().getJournalRepository();
@@ -600,14 +605,6 @@ final class ApplicationFactory {
             case InMemoryModules memory -> memory.messaging().getAccountHoldSettledWorkflow();
             case DurableModules durable -> durable.broker().getAccountHoldSettledWorkflow();
         };
-    }
-
-    private SubmitTransactionHandler transactional(SubmitTransactionHandler handler) {
-        if (modules instanceof DurableModules durable) {
-            return transaction -> durable.persistence().getJdbcTransactions()
-                    .inTransaction(() -> handler.handle(transaction));
-        }
-        return handler;
     }
 
     private <T> Handler<T> transactional(Handler<T> handler) {

@@ -1,8 +1,9 @@
 package dev.minimalaccounting.adapters.messaging.inmemory;
 
-import dev.minimalaccounting.ports.messaging.Received;
-import dev.minimalaccounting.ports.messaging.Receiver;
-import dev.minimalaccounting.ports.messaging.Sender;
+import dev.minimalaccounting.shared.ports.Received;
+import dev.minimalaccounting.shared.ports.Receiver;
+import dev.minimalaccounting.shared.ports.Sender;
+
 import lombok.NonNull;
 
 import java.util.ArrayList;

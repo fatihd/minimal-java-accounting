@@ -1,11 +1,11 @@
 dependencies {
-    api project(':ports.messaging')
+    api project(':shared.ports')
     implementation 'org.apache.artemis:artemis-core-client:2.55.0'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.0'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.0'
 
-    testImplementation(testFixtures(project(':ports.messaging')))
-    testImplementation project(':core')
+    testImplementation(testFixtures(project(':shared.ports')))
+    testImplementation project(':model')
     testImplementation 'org.testcontainers:testcontainers:2.0.5'
 }
 

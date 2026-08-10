@@ -1,15 +1,15 @@
 package dev.minimalaccounting.adapters.persistence.inmemory;
 
-import dev.minimalaccounting.core.transaction.AccountEffect;
-import dev.minimalaccounting.core.transaction.AccountEffectState;
-import dev.minimalaccounting.core.transaction.Transaction;
-import dev.minimalaccounting.core.transaction.TransactionLine;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.core.transaction.TransactionState;
-import dev.minimalaccounting.ports.persistence.ExplicitUpdateRepositoryContract;
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.transaction.AccountEffect;
+import dev.minimalaccounting.model.transaction.AccountEffectState;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.transaction.TransactionLine;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.TransactionState;
+import dev.minimalaccounting.shared.ports.ExplicitUpdateRepositoryContract;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -65,7 +65,7 @@ class ConcurrentTransactionRepositoryTest
 
     @Override
     protected Optional<Transaction> get(long id) {
-        return repository.get(TransactionReference.id(id));
+        return repository.get(TransactionIdentifier.id(id));
     }
 
     @Override
@@ -97,7 +97,7 @@ class ConcurrentTransactionRepositoryTest
 
         assertEquals(
                 41,
-                repository.get(TransactionReference.id(id))
+                repository.get(TransactionIdentifier.id(id))
                         .orElseThrow()
                         .getLines()
                         .getFirst()
@@ -111,7 +111,7 @@ class ConcurrentTransactionRepositoryTest
 
         assertEquals(
                 transaction.getId(),
-                repository.get(TransactionReference.request("request"))
+                repository.get(TransactionIdentifier.request("request"))
                         .orElseThrow()
                         .getId());
     }
@@ -127,9 +127,9 @@ class ConcurrentTransactionRepositoryTest
     void removingByRequestAlsoClearsItsLookup() {
         repository.add(createValue());
 
-        repository.remove(TransactionReference.request("request"));
+        repository.remove(TransactionIdentifier.request("request"));
 
-        assertFalse(repository.get(TransactionReference.request("request")).isPresent());
+        assertFalse(repository.get(TransactionIdentifier.request("request")).isPresent());
     }
 
     private record State(TransactionState transaction, List<AccountEffectState> effects) {

@@ -1,8 +1,8 @@
 package dev.minimalaccounting.infrastructure;
 
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
-import dev.minimalaccounting.ports.messaging.Received;
-import dev.minimalaccounting.ports.messaging.Receiver;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.shared.ports.Received;
+import dev.minimalaccounting.shared.ports.Receiver;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -22,10 +22,10 @@ class BoundaryDecoratorsTest {
         var submissions = new AtomicInteger();
         var handled = new AtomicReference<String>();
         var sent = new AtomicReference<String>();
-        SubmitTransactionHandler submission = ignored -> submissions.incrementAndGet();
+        Handler<String> submission = ignored -> submissions.incrementAndGet();
 
         decorators.handler("transaction.submit", submission)
-                .handle(null);
+                .handle("submission");
         decorators.handler("command.handle", handled::set).handle("command");
         decorators.sender("event.send", sent::set).send("event");
 

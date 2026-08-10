@@ -1,12 +1,13 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountHold;
-import dev.minimalaccounting.core.account.AccountHoldState;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.ports.persistence.AccountRepository;
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountHold;
+import dev.minimalaccounting.model.account.AccountHoldState;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -18,12 +19,12 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public final class PostgresqlAccountRepository implements AccountRepository {
+public final class PostgresqlAccountRepository implements Repository<AccountIdentifier, Account> {
     @NonNull
     private final JdbcTransactions transactions;
 
     @Override
-    public Optional<Account> get(AccountReference key) {
+    public Optional<Account> get(AccountIdentifier key) {
         return transactions.withConnection(connection -> get(connection, key));
     }
 
@@ -82,7 +83,7 @@ public final class PostgresqlAccountRepository implements AccountRepository {
     }
 
     @Override
-    public void remove(AccountReference key) {
+    public void remove(AccountIdentifier key) {
         transactions.inTransaction(() -> transactions.withConnection(connection -> {
             String sql = key.id() != null
                     ? "DELETE FROM account WHERE id = ?"
@@ -99,7 +100,7 @@ public final class PostgresqlAccountRepository implements AccountRepository {
         }));
     }
 
-    private static Optional<Account> get(Connection connection, AccountReference key)
+    private static Optional<Account> get(Connection connection, AccountIdentifier key)
             throws SQLException {
         String sql = key.id() != null
                 ? "SELECT * FROM account WHERE id = ?"
@@ -157,7 +158,7 @@ public final class PostgresqlAccountRepository implements AccountRepository {
         return values;
     }
 
-    private static dev.minimalaccounting.shared.Money nullableBalance(
+    private static dev.minimalaccounting.model.Money nullableBalance(
             ResultSet result,
             String column,
             String currency) throws SQLException {

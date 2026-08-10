@@ -1,10 +1,10 @@
 package dev.minimalaccounting.adapters.persistence.inmemory;
 
-import dev.minimalaccounting.core.journal.JournalEntry;
-import dev.minimalaccounting.core.journal.JournalLine;
-import dev.minimalaccounting.core.journal.JournalReference;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.journal.JournalEntry;
+import dev.minimalaccounting.model.journal.JournalLine;
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,9 +33,9 @@ class ConcurrentJournalRepositoryTest {
         JournalEntry entry = entry();
         long id = repository.add(entry);
 
-        JournalEntry first = repository.get(JournalReference.id(id)).orElseThrow();
+        JournalEntry first = repository.get(JournalIdentifier.id(id)).orElseThrow();
         first.setRevision(99L);
-        JournalEntry second = repository.get(JournalReference.request("request"))
+        JournalEntry second = repository.get(JournalIdentifier.request("request"))
                 .orElseThrow();
 
         assertEquals(0L, second.getRevision());
@@ -54,9 +54,9 @@ class ConcurrentJournalRepositoryTest {
     void removingByRequestAlsoClearsItsLookup() {
         repository.add(entry());
 
-        repository.remove(JournalReference.request("request"));
+        repository.remove(JournalIdentifier.request("request"));
 
-        assertFalse(repository.get(JournalReference.request("request")).isPresent());
+        assertFalse(repository.get(JournalIdentifier.request("request")).isPresent());
     }
 
     private static JournalEntry entry() {

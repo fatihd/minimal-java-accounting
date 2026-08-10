@@ -1,9 +1,9 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +33,7 @@ class JdbcTransactionsTest {
             throw new ExpectedFailure();
         }));
 
-        assertFalse(accounts.get(AccountReference.number(account.getAccountNumber()))
+        assertFalse(accounts.get(AccountIdentifier.number(account.getAccountNumber()))
                 .isPresent());
     }
 
@@ -51,7 +51,7 @@ class JdbcTransactionsTest {
         });
 
         assertEquals("committed", result);
-        assertEquals(1L, accounts.get(AccountReference.id(account.getId()))
+        assertEquals(1L, accounts.get(AccountIdentifier.id(account.getId()))
                 .orElseThrow().getRevision());
     }
 

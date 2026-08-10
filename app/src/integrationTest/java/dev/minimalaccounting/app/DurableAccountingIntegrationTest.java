@@ -9,13 +9,13 @@ import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlConfigura
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlDataSourceFactory;
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlJournalRepository;
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlTransactionRepository;
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.core.journal.JournalReference;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.core.transaction.TransactionState;
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.TransactionState;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -94,7 +94,7 @@ class DurableAccountingIntegrationTest {
 
         assertEquals(TransactionState.PLACING_HOLDS,
                 new PostgresqlTransactionRepository(jdbc)
-                        .get(TransactionReference.request("request-1"))
+                        .get(TransactionIdentifier.request("request-1"))
                         .orElseThrow()
                         .getState());
         assertEquals(2, unpublishedMessages());
@@ -109,24 +109,24 @@ class DurableAccountingIntegrationTest {
             var transactions = new PostgresqlTransactionRepository(jdbc);
             var journals = new PostgresqlJournalRepository(jdbc);
             var accounts = new PostgresqlAccountRepository(jdbc);
-            long journalEntryId = journals.get(JournalReference.request("request-1"))
+            long journalEntryId = journals.get(JournalIdentifier.request("request-1"))
                     .orElseThrow().getId();
-            long debitBalance = accounts.get(AccountReference.number(
+            long debitBalance = accounts.get(AccountIdentifier.number(
                     new AccountNumber("DEBIT001"))).orElseThrow().getBalance().minor();
-            long creditBalance = accounts.get(AccountReference.number(
+            long creditBalance = accounts.get(AccountIdentifier.number(
                     new AccountNumber("CREDIT01"))).orElseThrow().getBalance().minor();
 
             assertEquals(202, submit(server).statusCode());
             await(this::outboxEmpty);
 
-            assertTrue(transactions.get(TransactionReference.request("request-1"))
+            assertTrue(transactions.get(TransactionIdentifier.request("request-1"))
                     .isEmpty());
             assertEquals(journalEntryId,
-                    journals.get(JournalReference.request("request-1"))
+                    journals.get(JournalIdentifier.request("request-1"))
                             .orElseThrow().getId());
-            assertEquals(debitBalance, accounts.get(AccountReference.number(
+            assertEquals(debitBalance, accounts.get(AccountIdentifier.number(
                     new AccountNumber("DEBIT001"))).orElseThrow().getBalance().minor());
-            assertEquals(creditBalance, accounts.get(AccountReference.number(
+            assertEquals(creditBalance, accounts.get(AccountIdentifier.number(
                     new AccountNumber("CREDIT01"))).orElseThrow().getBalance().minor());
         }
     }
@@ -202,9 +202,9 @@ class DurableAccountingIntegrationTest {
 
     private boolean completed() {
         var transaction = new PostgresqlTransactionRepository(jdbc)
-                .get(TransactionReference.request("request-1"));
+                .get(TransactionIdentifier.request("request-1"));
         var journal = new PostgresqlJournalRepository(jdbc)
-                .get(JournalReference.request("request-1"));
+                .get(JournalIdentifier.request("request-1"));
         return transaction.isEmpty() && journal.isPresent();
     }
 
@@ -246,9 +246,9 @@ class DurableAccountingIntegrationTest {
 
     private String diagnostics() {
         var transaction = new PostgresqlTransactionRepository(jdbc)
-                .get(TransactionReference.request("request-1"));
+                .get(TransactionIdentifier.request("request-1"));
         boolean journal = new PostgresqlJournalRepository(jdbc)
-                .get(JournalReference.request("request-1")).isPresent();
+                .get(JournalIdentifier.request("request-1")).isPresent();
         return "transaction="
                 + transaction.map(value -> value.getState() + "/" + value.getEffects())
                 .orElse("missing")

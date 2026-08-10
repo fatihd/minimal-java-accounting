@@ -1,7 +1,7 @@
 package dev.minimalaccounting.adapters.messaging.artemis;
 
-import dev.minimalaccounting.ports.messaging.Received;
-import dev.minimalaccounting.ports.messaging.Receiver;
+import dev.minimalaccounting.shared.ports.Received;
+import dev.minimalaccounting.shared.ports.Receiver;
 import org.apache.activemq.artemis.api.core.client.ClientConsumer;
 import org.apache.activemq.artemis.api.core.client.ClientMessage;
 import org.apache.activemq.artemis.api.core.client.ClientSession;

@@ -1,10 +1,14 @@
 package dev.minimalaccounting.app;
 
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryPoller;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryQueue;
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
 import dev.minimalaccounting.infrastructure.MetricsRegistry;
-import dev.minimalaccounting.ports.persistence.AccountRepository;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.shared.ports.Handler;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -17,9 +21,9 @@ final class InMemoryAccounting implements AccountingRuntime {
     private static final int MAXIMUM_POLL_CYCLES = 1_000;
 
     @NonNull
-    private final AccountRepository accounts;
+    private final Repository<AccountIdentifier, Account> accounts;
     @NonNull
-    private final SubmitTransactionHandler transactions;
+    private final Handler<SubmitTransaction> transactions;
     @NonNull
     private final MetricsRegistry metrics;
     @NonNull
@@ -28,12 +32,12 @@ final class InMemoryAccounting implements AccountingRuntime {
     private final List<IntSupplier> pollers;
 
     @Override
-    public AccountRepository accounts() {
+    public Repository<AccountIdentifier, Account> accounts() {
         return accounts;
     }
 
     @Override
-    public SubmitTransactionHandler transactions() {
+    public Handler<SubmitTransaction> transactions() {
         return transactions;
     }
 

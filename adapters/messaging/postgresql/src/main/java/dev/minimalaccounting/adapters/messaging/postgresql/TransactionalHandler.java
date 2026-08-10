@@ -1,7 +1,8 @@
 package dev.minimalaccounting.adapters.messaging.postgresql;
 
-import dev.minimalaccounting.ports.messaging.Handler;
-import dev.minimalaccounting.ports.persistence.TransactionBoundary;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.shared.ports.TransactionBoundary;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 

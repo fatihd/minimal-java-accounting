@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1375" viewBox="0 0 2500 1375" role="img" aria-labelledby="title description">
-  <title id="title">Minimal Java Accounting module architecture</title>
-  <desc id="description">Two-axis ports and adapters diagram pairing each Gradle module with its Java package root, with adapter height 100, port height 67, and core height 150.</desc>
+  <title id="title">Minimal Java Accounting — logical ports and adapters</title>
+  <desc id="description">Two-axis ports and adapters diagram with dashed logical API, persistence, and messaging ports backed by generic contracts in the shared ports module.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#263238"/>
+    </marker>
+    <marker id="implementation-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffffff" stroke="#263238" stroke-width="1.5"/>
     </marker>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.14"/>
@@ -19,42 +22,35 @@
       .note { font: 400 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #526168; }
       .band { stroke-width: 1.5; stroke-dasharray: 7 9; rx: 18; }
       .node { stroke-width: 2.5; rx: 14; filter: url(#shadow); }
+      .logical-node { stroke-dasharray: 10 7; filter: none; }
       .edge { fill: none; stroke: #263238; stroke-width: 3; marker-end: url(#arrow); stroke-linecap: round; stroke-linejoin: round; }
+      .implementation-edge { marker-end: url(#implementation-arrow); }
     </style>
   </defs>
   <rect class="canvas" x="0" y="0" width="2500" height="1375"/>
-  <text class="title" x="55" y="58">Minimal Java Accounting — ports and adapters</text>
-  <text class="subtitle" x="55" y="91">Composition and infrastructure left · shared foundation right · adapters top and bottom</text>
+  <text class="title" x="55" y="58">Minimal Java Accounting — logical ports and adapters</text>
+  <text class="subtitle" x="55" y="91">Dashed logical ports · generic contracts in shared.ports · Gradle modules remain solid</text>
 
   <rect class="band" x="290" y="105" width="1920" height="150" fill="#fff8f5" stroke="#e7b5a8"/>
   <text class="layer-label" x="315" y="133">API ADAPTERS</text>
   <rect class="band" x="290" y="295" width="1920" height="155" fill="#f4f8ff" stroke="#a9c7e8"/>
-  <text class="layer-label" x="315" y="323">API PORT</text>
+  <text class="layer-label" x="315" y="323">LOGICAL API PORT</text>
   <rect class="band" x="290" y="490" width="1920" height="235" fill="#fffaf0" stroke="#dbc88f"/>
   <text class="layer-label" x="315" y="518">CORE</text>
   <rect class="band" x="290" y="790" width="1920" height="175" fill="#f8f5ff" stroke="#c8b9e8"/>
-  <text class="layer-label" x="315" y="818">INFRASTRUCTURE PORTS</text>
+  <text class="layer-label" x="315" y="818">LOGICAL INFRASTRUCTURE PORTS</text>
   <rect class="band" x="290" y="1040" width="1920" height="200" fill="#f2fbf5" stroke="#acd7b9"/>
   <text class="layer-label" x="315" y="1068">INFRASTRUCTURE ADAPTERS</text>
   <path class="edge" d="M 145 685 L 145 715"/>
-  <path class="edge" d="M 835 230 L 835 280 L 1140 280 L 1140 340"/>
-  <path class="edge" d="M 1665 230 L 1665 280 L 1360 280 L 1360 340"/>
-  <path class="edge" d="M 650 535 L 650 470 L 1100 470 L 1100 407"/>
-  <path class="edge" d="M 1460 373.5 L 2185 373.5 L 2185 515 L 2355 515 L 2355 585"/>
+  <path class="edge" d="M 1250 230 L 1250 340"/>
   <path class="edge" d="M 930 610 L 1040 610"/>
-  <path class="edge" d="M 1460 610 L 1505 610 L 1505 745 L 2200 745 L 2200 635 L 2245 635"/>
-  <path class="edge" d="M 650 685 L 650 770 L 760 770 L 760 835"/>
-  <path class="edge" d="M 850 685 L 850 750 L 1510 750 L 1510 835"/>
-  <path class="edge" d="M 1040 835 L 1040 770 L 1190 770 L 1190 685"/>
-  <path class="edge" d="M 480 1090 L 700 902"/>
-  <path class="edge" d="M 860 1090 L 900 902"/>
-  <path class="edge" d="M 570 1090 C 650 1010 980 760 1160 685"/>
-  <path class="edge" d="M 930 1090 C 980 990 1080 780 1240 685"/>
-  <path class="edge" d="M 1170 1090 L 1050 965 L 1020 902"/>
-  <path class="edge" d="M 1320 1090 L 1510 965 L 1510 902"/>
-  <path class="edge" d="M 1065 1165 L 1035 1165"/>
-  <path class="edge" d="M 1620 1090 L 1610 902"/>
-  <path class="edge" d="M 2000 1090 L 1810 902"/>
+  <path class="edge" d="M 650 685 L 650 770 L 690 770 L 690 835"/>
+  <path class="edge" d="M 850 685 L 850 750 L 1450 750 L 1450 835"/>
+  <path class="edge" d="M 1080 1140 L 1275 1140"/>
+  <path class="edge implementation-edge" d="M 650 535 L 650 470 L 1100 470 L 1100 407"/>
+  <path class="edge implementation-edge" d="M 535 1090 L 550 902"/>
+  <path class="edge implementation-edge" d="M 905 1090 L 900 902"/>
+  <path class="edge implementation-edge" d="M 1450 1090 L 1450 902"/>
 
   <g>
     <title>app — composition root</title>
@@ -69,28 +65,10 @@
     <text class="package" x="145" y="813">d.m.infrastructure</text>
   </g>
   <g>
-    <title>shared — common values</title>
-    <rect class="node" x="2245" y="585" width="220" height="100" fill="#f3f5f6" stroke="#65747b"/>
-    <text class="module" x="2355" y="629">shared</text>
-    <text class="package" x="2355" y="658">d.m.shared</text>
-  </g>
-  <g>
-    <title>adapters.api.console — command-line translation</title>
-    <rect class="node" x="585" y="130" width="500" height="100" fill="#fff0eb" stroke="#c65b43"/>
-    <text class="module" x="835" y="174">adapters.api.console</text>
-    <text class="package" x="835" y="203">d.m.adapters.api.console</text>
-  </g>
-  <g>
     <title>adapters.api.http — HTTP and JSON translation</title>
-    <rect class="node" x="1415" y="130" width="500" height="100" fill="#fff0eb" stroke="#c65b43"/>
-    <text class="module" x="1665" y="174">adapters.api.http</text>
-    <text class="package" x="1665" y="203">d.m.adapters.api.http</text>
-  </g>
-  <g>
-    <title>ports.api — SubmitTransactionHandler</title>
-    <rect class="node" x="1040" y="340" width="420" height="67" fill="#eaf3ff" stroke="#3978b8"/>
-    <text class="module" x="1250" y="367.5">ports.api</text>
-    <text class="package" x="1250" y="396.5">d.m.ports.api</text>
+    <rect class="node" x="1000" y="130" width="500" height="100" fill="#fff0eb" stroke="#c65b43"/>
+    <text class="module" x="1250" y="174">adapters.api.http</text>
+    <text class="package" x="1250" y="203">d.m.adapters.api.http</text>
   </g>
   <g>
     <title>application — use cases and handlers</title>
@@ -99,54 +77,54 @@
     <text class="package" x="705" y="633">d.m.application</text>
   </g>
   <g>
-    <title>core — aggregates and process manager</title>
+    <title>model — aggregates and process manager</title>
     <rect class="node" x="1040" y="535" width="420" height="150" fill="#fff3cd" stroke="#a97900"/>
-    <text class="module" x="1250" y="604">core</text>
-    <text class="package" x="1250" y="633">d.m.core</text>
-  </g>
-  <g>
-    <title>ports.persistence — repositories and transactions</title>
-    <rect class="node" x="590" y="835" width="520" height="67" fill="#efeaff" stroke="#7157b5"/>
-    <text class="module" x="850" y="862.5">ports.persistence</text>
-    <text class="package" x="850" y="891.5">d.m.ports.persistence</text>
-  </g>
-  <g>
-    <title>ports.messaging — send · receive · handle</title>
-    <rect class="node" x="1390" y="835" width="520" height="67" fill="#efeaff" stroke="#7157b5"/>
-    <text class="module" x="1650" y="862.5">ports.messaging</text>
-    <text class="package" x="1650" y="891.5">d.m.ports.messaging</text>
-  </g>
-  <g>
-    <title>adapters.persistence.in-memory — detached memory repositories</title>
-    <rect class="node" x="305" y="1090" width="350" height="100" fill="#eaf8ee" stroke="#3e8b58"/>
-    <text class="module" x="480" y="1134">adapters.persistence.in-memory</text>
-    <text class="package" x="480" y="1163">d.m.adapters.persistence.inmemory</text>
-  </g>
-  <g>
-    <title>adapters.persistence.postgresql — plain JDBC repositories</title>
-    <rect class="node" x="685" y="1090" width="350" height="100" fill="#eaf8ee" stroke="#3e8b58"/>
-    <text class="module" x="860" y="1134">adapters.persistence.postgresql</text>
-    <text class="package" x="860" y="1163">d.m.adapters.persistence.postgresql</text>
-  </g>
-  <g>
-    <title>adapters.messaging.postgresql — transactional outbox</title>
-    <rect class="node" x="1065" y="1090" width="350" height="100" fill="#eaf8ee" stroke="#3e8b58"/>
-    <text class="module" x="1240" y="1134">adapters.messaging.postgresql</text>
-    <text class="package" x="1240" y="1163">d.m.adapters.messaging.postgresql</text>
-  </g>
-  <g>
-    <title>adapters.messaging.in-memory — memory queues and topics</title>
-    <rect class="node" x="1445" y="1090" width="350" height="100" fill="#eaf8ee" stroke="#3e8b58"/>
-    <text class="module" x="1620" y="1134">adapters.messaging.in-memory</text>
-    <text class="package" x="1620" y="1163">d.m.adapters.messaging.inmemory</text>
+    <text class="module" x="1250" y="604">model</text>
+    <text class="package" x="1250" y="633">d.m.model</text>
   </g>
   <g>
     <title>adapters.messaging.artemis — durable queues and topics</title>
-    <rect class="node" x="1825" y="1090" width="350" height="100" fill="#eaf8ee" stroke="#3e8b58"/>
-    <text class="module" x="2000" y="1134">adapters.messaging.artemis</text>
-    <text class="package" x="2000" y="1163">d.m.adapters.messaging.artemis</text>
+    <rect class="node" x="360" y="1090" width="350" height="100" fill="#eaf8ee" stroke="#3e8b58"/>
+    <text class="module" x="535" y="1134">adapters.messaging.artemis</text>
+    <text class="package" x="535" y="1163">d.m.adapters.messaging.artemis</text>
+  </g>
+  <g>
+    <title>adapters.messaging.postgresql — transactional outbox</title>
+    <rect class="node" x="730" y="1090" width="350" height="100" fill="#eaf8ee" stroke="#3e8b58"/>
+    <text class="module" x="905" y="1134">adapters.messaging.postgresql</text>
+    <text class="package" x="905" y="1163">d.m.adapters.messaging.postgresql</text>
+  </g>
+  <g>
+    <title>adapters.persistence.postgresql — plain JDBC repositories</title>
+    <rect class="node" x="1275" y="1090" width="350" height="100" fill="#eaf8ee" stroke="#3e8b58"/>
+    <text class="module" x="1450" y="1134">adapters.persistence.postgresql</text>
+    <text class="package" x="1450" y="1163">d.m.adapters.persistence.postgresql</text>
+  </g>
+  <g>
+    <title>api — logical inbound API port</title>
+    <rect class="node logical-node" x="1040" y="340" width="420" height="67" fill="#eaf3ff" stroke="#3978b8"/>
+    <text class="module" x="1250" y="367.5">api</text>
+    <text class="package" x="1250" y="396.5">Handler&lt;SubmitTransaction&gt;</text>
+  </g>
+  <g>
+    <title>messaging — logical messaging ports</title>
+    <rect class="node logical-node" x="360" y="835" width="660" height="67" fill="#efeaff" stroke="#7157b5"/>
+    <text class="module" x="690" y="862.5">messaging</text>
+    <text class="package" x="690" y="891.5">Sender&lt;T&gt; · Receiver&lt;T&gt; · Handler&lt;T&gt;</text>
+  </g>
+  <g>
+    <title>persistence — logical persistence ports</title>
+    <rect class="node logical-node" x="1080" y="835" width="740" height="67" fill="#efeaff" stroke="#7157b5"/>
+    <text class="module" x="1450" y="862.5">persistence</text>
+    <text class="package" x="1450" y="891.5">Repository&lt;Identifier, Aggregate&gt; · TransactionBoundary</text>
+  </g>
+  <g>
+    <title>shared.ports — generic port contracts</title>
+    <rect class="node" x="2245" y="835" width="220" height="100" fill="#f3f5f6" stroke="#65747b"/>
+    <text class="module" x="2355" y="879">shared.ports</text>
+    <text class="package" x="2355" y="908">d.m.shared.ports</text>
   </g>
   <line x1="55" y1="1290" x2="2445" y2="1290" stroke="#d7dee1" stroke-width="1.5"/>
-  <text class="note" x="55" y="1328">Arrows point from a module to its production dependency; outer fan-out is omitted for legibility. d.m. = dev.minimalaccounting.</text>
-  <text class="note" x="55" y="1355">Adapter : port : core height = 100 : 67 : 150. Java package names omit Gradle hyphens.</text>
+  <text class="note" x="55" y="1328">Solid boxes are Gradle modules; dashed boxes are logical typed ports backed by the generic contracts in shared.ports.</text>
+  <text class="note" x="55" y="1355">Hollow triangles mean implements; filled arrows mean uses or depends on. Logical ports are 67 units high. d.m. = dev.minimalaccounting.</text>
 </svg>

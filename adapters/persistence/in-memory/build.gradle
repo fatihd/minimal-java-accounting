@@ -1,6 +1,6 @@
 dependencies {
-    api project(':core')
-    api project(':ports.persistence')
+    api project(':model')
+    api project(':shared.ports')
 
-    testImplementation(testFixtures(project(':ports.persistence')))
+    testImplementation(testFixtures(project(':shared.ports')))
 }

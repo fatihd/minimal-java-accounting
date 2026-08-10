@@ -3,10 +3,11 @@ package dev.minimalaccounting.app;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentJournalRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentTransactionRepository;
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.Money;
 
 import java.time.Clock;
 import java.util.Currency;
@@ -16,7 +17,7 @@ final class AccountingFixture {
     final ConcurrentAccountRepository accounts;
     final ConcurrentTransactionRepository transactions;
     final ConcurrentJournalRepository journals;
-    final SubmitTransactionHandler submitTransaction;
+    final Handler<SubmitTransaction> submitTransaction;
 
     private final InMemoryMessagingModuleFactory messaging;
     private final ApplicationFactory application;

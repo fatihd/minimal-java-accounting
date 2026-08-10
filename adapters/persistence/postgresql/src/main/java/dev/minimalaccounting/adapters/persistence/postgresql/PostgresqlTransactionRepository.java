@@ -1,14 +1,15 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
-import dev.minimalaccounting.core.transaction.AccountEffect;
-import dev.minimalaccounting.core.transaction.AccountEffectState;
-import dev.minimalaccounting.core.transaction.Transaction;
-import dev.minimalaccounting.core.transaction.TransactionLine;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.core.transaction.TransactionState;
-import dev.minimalaccounting.ports.persistence.TransactionRepository;
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.transaction.AccountEffect;
+import dev.minimalaccounting.model.transaction.AccountEffectState;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.transaction.TransactionLine;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.TransactionState;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -20,12 +21,12 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public final class PostgresqlTransactionRepository implements TransactionRepository {
+public final class PostgresqlTransactionRepository implements Repository<TransactionIdentifier, Transaction> {
     @NonNull
     private final JdbcTransactions transactions;
 
     @Override
-    public Optional<Transaction> get(TransactionReference key) {
+    public Optional<Transaction> get(TransactionIdentifier key) {
         return transactions.withConnection(connection -> get(connection, key));
     }
 
@@ -79,7 +80,7 @@ public final class PostgresqlTransactionRepository implements TransactionReposit
     }
 
     @Override
-    public void remove(TransactionReference key) {
+    public void remove(TransactionIdentifier key) {
         transactions.inTransaction(() -> transactions.withConnection(connection -> {
             String sql = key.id() != null
                     ? "DELETE FROM accounting_transaction WHERE id = ?"
@@ -96,7 +97,7 @@ public final class PostgresqlTransactionRepository implements TransactionReposit
         }));
     }
 
-    private static Optional<Transaction> get(Connection connection, TransactionReference key)
+    private static Optional<Transaction> get(Connection connection, TransactionIdentifier key)
             throws SQLException {
         String sql = key.id() != null
                 ? "SELECT * FROM accounting_transaction WHERE id = ?"

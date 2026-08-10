@@ -1,10 +1,11 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
-import dev.minimalaccounting.core.journal.JournalEntry;
-import dev.minimalaccounting.core.journal.JournalLine;
-import dev.minimalaccounting.core.journal.JournalReference;
-import dev.minimalaccounting.ports.persistence.JournalRepository;
-import dev.minimalaccounting.shared.DebitCredit;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.journal.JournalEntry;
+import dev.minimalaccounting.model.journal.JournalLine;
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.DebitCredit;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -16,12 +17,12 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public final class PostgresqlJournalRepository implements JournalRepository {
+public final class PostgresqlJournalRepository implements Repository<JournalIdentifier, JournalEntry> {
     @NonNull
     private final JdbcTransactions transactions;
 
     @Override
-    public Optional<JournalEntry> get(JournalReference key) {
+    public Optional<JournalEntry> get(JournalIdentifier key) {
         return transactions.withConnection(connection -> get(connection, key));
     }
 
@@ -73,7 +74,7 @@ public final class PostgresqlJournalRepository implements JournalRepository {
     }
 
     @Override
-    public void remove(JournalReference key) {
+    public void remove(JournalIdentifier key) {
         transactions.inTransaction(() -> transactions.withConnection(connection -> {
             String sql = key.id() != null
                     ? "DELETE FROM journal_entry WHERE id = ?"
@@ -90,7 +91,7 @@ public final class PostgresqlJournalRepository implements JournalRepository {
         }));
     }
 
-    private static Optional<JournalEntry> get(Connection connection, JournalReference key)
+    private static Optional<JournalEntry> get(Connection connection, JournalIdentifier key)
             throws SQLException {
         String sql = key.id() != null
                 ? "SELECT * FROM journal_entry WHERE id = ?"

@@ -1,9 +1,9 @@
 dependencies {
-    api project(':core')
-    api project(':ports.persistence')
+    api project(':model')
+    api project(':shared.ports')
     implementation 'org.postgresql:postgresql:42.7.13'
 
-    testImplementation(testFixtures(project(':ports.persistence')))
+    testImplementation(testFixtures(project(':shared.ports')))
     testImplementation 'org.testcontainers:testcontainers-postgresql:2.0.5'
 }
 

@@ -1,15 +1,15 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
-import dev.minimalaccounting.core.transaction.AccountEffect;
-import dev.minimalaccounting.core.transaction.AccountEffectState;
-import dev.minimalaccounting.core.transaction.Transaction;
-import dev.minimalaccounting.core.transaction.TransactionLine;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.core.transaction.TransactionState;
-import dev.minimalaccounting.ports.persistence.ExplicitUpdateRepositoryContract;
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.transaction.AccountEffect;
+import dev.minimalaccounting.model.transaction.AccountEffectState;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.transaction.TransactionLine;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.TransactionState;
+import dev.minimalaccounting.shared.ports.ExplicitUpdateRepositoryContract;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -60,7 +60,7 @@ class PostgresqlTransactionRepositoryTest
 
     @Override
     protected Optional<Transaction> get(long id) {
-        return repository.get(TransactionReference.id(id));
+        return repository.get(TransactionIdentifier.id(id));
     }
 
     @Override
@@ -90,20 +90,20 @@ class PostgresqlTransactionRepositoryTest
         Transaction transaction = createValue();
         repository.add(transaction);
 
-        Transaction loaded = repository.get(TransactionReference.request("request"))
+        Transaction loaded = repository.get(TransactionIdentifier.request("request"))
                 .orElseThrow();
         assertEquals(41, loaded.getLines().getFirst().getAccountId());
 
-        repository.remove(TransactionReference.request("request"));
+        repository.remove(TransactionIdentifier.request("request"));
 
-        assertFalse(repository.get(TransactionReference.request("request")).isPresent());
+        assertFalse(repository.get(TransactionIdentifier.request("request")).isPresent());
     }
 
     @Test
     void rejectsDuplicateRequestsAndStaleUpdates() {
         Transaction transaction = createValue();
         repository.add(transaction);
-        Transaction stale = repository.get(TransactionReference.id(transaction.getId()))
+        Transaction stale = repository.get(TransactionIdentifier.id(transaction.getId()))
                 .orElseThrow();
         transaction.placeEffect(41, 0, Instant.EPOCH.plusSeconds(1));
         repository.update(transaction);

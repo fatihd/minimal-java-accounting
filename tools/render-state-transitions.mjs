@@ -170,7 +170,7 @@ render({
     { path: "M 1355 215 L 1530 215", label: ["settleEffect", "all effects settled"], labelX: 1442, labelY: 178 },
   ],
   footer: "Solid arrows change TransactionState. Full-state adapter reconstruction is not a business transition.",
-  enumSource: "core/src/main/java/dev/minimalaccounting/core/transaction/TransactionState.java",
+  enumSource: "model/src/main/java/dev/minimalaccounting/model/transaction/TransactionState.java",
 });
 
 render({
@@ -201,7 +201,7 @@ render({
     { path: "M 1140 480 L 1350 480", label: "settle", labelX: 1245, labelY: 455 },
   ],
   footer: "Terminal states have a double border. Captions show explicitly idempotent same-state operations.",
-  enumSource: "core/src/main/java/dev/minimalaccounting/core/transaction/AccountEffectState.java",
+  enumSource: "model/src/main/java/dev/minimalaccounting/model/transaction/AccountEffectState.java",
 });
 
 render({
@@ -225,5 +225,5 @@ render({
     { path: "M 410 375 C 500 485 575 515 700 515", label: "settle", labelX: 555, labelY: 500 },
   ],
   footer: "Duplicate placement is handled by Account without mutating the existing hold. Other invalid transitions throw.",
-  enumSource: "core/src/main/java/dev/minimalaccounting/core/account/AccountHoldState.java",
+  enumSource: "model/src/main/java/dev/minimalaccounting/model/account/AccountHoldState.java",
 });

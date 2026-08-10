@@ -1,9 +1,13 @@
 package dev.minimalaccounting.app;
 
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.adapters.messaging.artemis.ArtemisConnection;
 import dev.minimalaccounting.infrastructure.MetricsRegistry;
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
-import dev.minimalaccounting.ports.persistence.AccountRepository;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.shared.ports.Handler;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -14,9 +18,9 @@ import java.util.function.IntSupplier;
 @RequiredArgsConstructor
 final class DurableAccounting implements AccountingRuntime {
     @NonNull
-    private final AccountRepository accounts;
+    private final Repository<AccountIdentifier, Account> accounts;
     @NonNull
-    private final SubmitTransactionHandler transactions;
+    private final Handler<SubmitTransaction> transactions;
     @NonNull
     private final MetricsRegistry metrics;
     @NonNull
@@ -25,12 +29,12 @@ final class DurableAccounting implements AccountingRuntime {
     private final ArtemisConnection broker;
 
     @Override
-    public AccountRepository accounts() {
+    public Repository<AccountIdentifier, Account> accounts() {
         return accounts;
     }
 
     @Override
-    public SubmitTransactionHandler transactions() {
+    public Handler<SubmitTransaction> transactions() {
         return transactions;
     }
 

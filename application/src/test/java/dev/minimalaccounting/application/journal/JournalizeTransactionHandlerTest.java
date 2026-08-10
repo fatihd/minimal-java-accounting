@@ -1,18 +1,18 @@
 package dev.minimalaccounting.application.journal;
 
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentJournalRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentTransactionRepository;
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.journal.JournalReference;
-import dev.minimalaccounting.core.journal.JournalizeTransaction;
-import dev.minimalaccounting.core.journal.TransactionJournalized;
-import dev.minimalaccounting.core.transaction.Transaction;
-import dev.minimalaccounting.core.transaction.TransactionLine;
-import dev.minimalaccounting.core.transaction.TransactionState;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.journal.JournalizeTransaction;
+import dev.minimalaccounting.model.journal.TransactionJournalized;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.transaction.TransactionLine;
+import dev.minimalaccounting.model.transaction.TransactionState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -66,7 +66,7 @@ class JournalizeTransactionHandlerTest {
         JournalizeTransaction command = new JournalizeTransaction(fixture.transactionId());
 
         assertThrows(IllegalStateException.class, () -> handler.handle(command));
-        long journalId = fixture.journals().get(JournalReference.request("request"))
+        long journalId = fixture.journals().get(JournalIdentifier.request("request"))
                 .orElseThrow()
                 .getId();
         handler.handle(command);
@@ -76,7 +76,7 @@ class JournalizeTransactionHandlerTest {
                 events);
         assertEquals(
                 journalId,
-                fixture.journals().get(JournalReference.request("request"))
+                fixture.journals().get(JournalIdentifier.request("request"))
                         .orElseThrow()
                         .getId());
     }
@@ -95,7 +95,7 @@ class JournalizeTransactionHandlerTest {
         assertThrows(
                 IllegalStateException.class,
                 () -> handler.handle(new JournalizeTransaction(fixture.transactionId())));
-        assertTrue(fixture.journals().get(JournalReference.request("request")).isEmpty());
+        assertTrue(fixture.journals().get(JournalIdentifier.request("request")).isEmpty());
         assertEquals(List.of(), events);
     }
 

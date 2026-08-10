@@ -235,3 +235,17 @@ currently owns sender, receiver, handler, and transaction wrappers together
 with pollers, outbox routes, runtime selection, and lifecycle assembly. This
 keeps generic adapters independent of accounting message types and leaves the
 cost of cross-module wiring visible for a later wiring-factory experiment.
+
+## 2026-08-10 — Consolidate model and shared port vocabulary
+
+Established `shared.ports` as the generic technical vocabulary used by the
+implementation and removed empty API, messaging, persistence, and repository
+aliases. The external operation now uses `Handler<SubmitTransaction>`, while
+repositories use `Repository<Identifier, Aggregate>` with aggregate-specific
+identifier values. Contract tests moved with the generic ports.
+
+Renamed the core module and package root to `model`. Stable accounting values
+and exceptions live at its root, with aggregate types beneath account,
+transaction, and journal packages. The retained architecture view renders
+typed API, messaging, and persistence capabilities as dashed logical ports
+without pretending that each use of a generic contract is a Gradle module.

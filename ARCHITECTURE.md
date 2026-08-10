@@ -1,18 +1,25 @@
 # Module dependencies
 
-The five architectural levels run from external API adapters at the top to
+The architectural levels run from external API adapters at the top to
 infrastructure adapters at the bottom. `app` and its neutral technical
-`infrastructure` are deliberately grouped at the left; `shared` is deliberately
-rightmost as the small common foundation. The diagram shows `app` selecting
-`infrastructure` but omits their remaining fan-out so the capability arrows
-remain readable.
+`infrastructure` are deliberately grouped at the left. `shared.ports` provides
+the common boundary vocabulary used by the implementation, while `app` and its
+factories compose concrete runtime graphs. The diagram shows only the durable
+adapter set and omits `app` fan-out plus some repetitive model or shared-port
+arrows so the capability arrows remain readable.
 
 [![Two-axis module architecture](ARCHITECTURE.svg)](ARCHITECTURE.svg)
 
-Arrows point from a module to its production project dependency. Box height
+The diagram keeps Gradle modules as solid boxes and shows logical ports as dashed
+ports. `api`, `persistence`, and `messaging` remain meaningful architectural
+boundaries even though their interfaces are typed uses of generic contracts
+from the grey `shared.ports` module rather than separate Gradle subprojects.
+Hollow triangle arrows identify implementations of those logical interfaces;
+filled arrows identify ordinary use or module dependencies. Box height
 communicates architectural weight: adapters are 100 units high, ports are 67
-units, and core or technical-infrastructure modules are 150 units. `d.m.`
-abbreviates `dev.minimalaccounting`; Java package names omit Gradle hyphens.
+units, and model, application, or technical-infrastructure modules are 150
+units. `d.m.` abbreviates `dev.minimalaccounting`; Java package names omit
+Gradle hyphens.
 
 Regenerate the checked-in image with:
 
@@ -24,33 +31,34 @@ Regenerate the checked-in image with:
 
 | Module | Direct project dependencies |
 |---|---|
-| `shared` | — |
-| `ports.api` | `shared` |
-| `ports.messaging` | — |
-| `core` | `shared` |
-| `ports.persistence` | `core` |
-| `application` | `ports.api`, `core`, `ports.persistence`, `ports.messaging` |
-| `infrastructure` | `ports.api`, `ports.messaging` |
-| `adapters.api.console` | `ports.api` |
-| `adapters.api.http` | `ports.api` |
-| `adapters.persistence.in-memory` | `core`, `ports.persistence` |
-| `adapters.persistence.postgresql` | `core`, `ports.persistence` |
-| `adapters.messaging.in-memory` | `ports.messaging` |
-| `adapters.messaging.artemis` | `ports.messaging` |
-| `adapters.messaging.postgresql` | `ports.messaging`, `ports.persistence`, `adapters.persistence.postgresql` |
-| `app` | `infrastructure`, `application`, `core`, all ports, and all adapters |
+| `shared.ports` | — |
+| `model` | — |
+| `application` | `model`, `shared.ports` |
+| `infrastructure` | `shared.ports` |
+| `adapters.api.console` | `model`, `shared.ports` |
+| `adapters.api.http` | `model`, `shared.ports` |
+| `adapters.persistence.in-memory` | `model`, `shared.ports` |
+| `adapters.persistence.postgresql` | `model`, `shared.ports` |
+| `adapters.messaging.in-memory` | `shared.ports` |
+| `adapters.messaging.artemis` | `shared.ports` |
+| `adapters.messaging.postgresql` | `shared.ports`, `adapters.persistence.postgresql` |
+| `app` | `shared.ports`, `infrastructure`, `application`, `model`, and all adapters |
 
 The PostgreSQL messaging adapter depends on the PostgreSQL persistence adapter
 only to share its active JDBC connection. That is what lets repository changes
 and outbox inserts commit atomically. It still implements `Sender<T>` and does
 not add messaging behavior to repository interfaces.
 
-`infrastructure` is neither core nor an adapter. It depends only on the API and
-messaging contracts needed to return decorated boundaries; `app` alone selects
-it for JDK logging, metrics, snapshots, and JMX.
+`shared.ports` supplies the generic technical vocabulary: handlers, senders,
+receivers, deliveries, repositories, and transaction boundaries. Domain
+repositories use its `Repository<Identifier, Aggregate>` shape directly. The
+`infrastructure` module consumes that vocabulary to provide JDK logging,
+metrics, snapshots, and JMX decorators; `app` alone selects and composes
+implementations.
 
-An API adapter translates an external representation into `ports.api`. An
-infrastructure adapter translates persistence or messaging technology into the
-corresponding infrastructure port. Application handlers implement use cases
-behind those boundaries; they are not adapters. No adapter owns aggregate state
-transitions, and nothing depends on `app`.
+An API adapter translates an external representation into the model
+`SubmitTransaction` command and invokes `Handler<SubmitTransaction>`. An
+infrastructure adapter implements a shared port for a concrete technology.
+Application handlers implement use cases behind those boundaries; they are not
+adapters. No adapter owns aggregate state transitions, and nothing depends on
+`app`.

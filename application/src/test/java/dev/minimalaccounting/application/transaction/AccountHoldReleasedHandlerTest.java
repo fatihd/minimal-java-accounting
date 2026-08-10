@@ -1,15 +1,15 @@
 package dev.minimalaccounting.application.transaction;
 
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentTransactionRepository;
-import dev.minimalaccounting.core.account.AccountHoldReleased;
-import dev.minimalaccounting.core.transaction.AccountEffect;
-import dev.minimalaccounting.core.transaction.AccountEffectState;
-import dev.minimalaccounting.core.transaction.Transaction;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.core.transaction.TransactionState;
+import dev.minimalaccounting.model.account.AccountHoldReleased;
+import dev.minimalaccounting.model.transaction.AccountEffect;
+import dev.minimalaccounting.model.transaction.AccountEffectState;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.TransactionState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -47,7 +47,7 @@ class AccountHoldReleasedHandlerTest {
                 () -> handler.handle(new AccountHoldReleased(1, transactionId, 0)));
         assertEquals(
                 AccountEffectState.HELD,
-                transactions.get(TransactionReference.id(transactionId))
+                transactions.get(TransactionIdentifier.id(transactionId))
                         .orElseThrow()
                         .getEffects()
                         .getFirst()
@@ -69,7 +69,7 @@ class AccountHoldReleasedHandlerTest {
 
         assertEquals(
                 TransactionState.REJECTED,
-                transactions.get(TransactionReference.id(transactionId))
+                transactions.get(TransactionIdentifier.id(transactionId))
                         .orElseThrow()
                         .getState());
     }

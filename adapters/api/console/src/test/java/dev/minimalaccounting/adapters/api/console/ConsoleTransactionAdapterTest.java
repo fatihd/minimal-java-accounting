@@ -1,6 +1,6 @@
 package dev.minimalaccounting.adapters.api.console;
 
-import dev.minimalaccounting.ports.api.SubmitTransaction;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;

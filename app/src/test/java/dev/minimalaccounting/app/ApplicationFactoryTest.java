@@ -4,9 +4,10 @@ import dev.minimalaccounting.adapters.api.http.HttpConfiguration;
 import dev.minimalaccounting.adapters.messaging.artemis.ArtemisConfiguration;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryTopic;
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlConfiguration;
-import dev.minimalaccounting.core.account.AccountHoldDeclined;
-import dev.minimalaccounting.core.account.AccountHoldPlaced;
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
+import dev.minimalaccounting.model.account.AccountHoldDeclined;
+import dev.minimalaccounting.model.account.AccountHoldPlaced;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.shared.ports.Handler;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
@@ -92,7 +93,7 @@ class ApplicationFactoryTest {
 
     @Test
     void httpModuleMemoizesItsServer() {
-        SubmitTransactionHandler transactions = transaction -> { };
+        Handler<SubmitTransaction> transactions = transaction -> { };
         var configuration = new HttpConfiguration(
                 new InetSocketAddress("127.0.0.1", 0), 0, 1_000);
         var http = new HttpApiModuleFactory(configuration, transactions);

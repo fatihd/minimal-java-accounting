@@ -1,8 +1,8 @@
 package dev.minimalaccounting.adapters.messaging.inmemory;
 
-import dev.minimalaccounting.ports.messaging.Receiver;
-import dev.minimalaccounting.ports.messaging.Sender;
-import dev.minimalaccounting.ports.messaging.TopicContract;
+import dev.minimalaccounting.shared.ports.Receiver;
+import dev.minimalaccounting.shared.ports.Sender;
+import dev.minimalaccounting.shared.ports.TopicContract;
 
 class InMemoryTopicContractTest extends TopicContract<String> {
     private final InMemoryTopic<String> topic = new InMemoryTopic<>();

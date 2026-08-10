@@ -1,41 +1,43 @@
 package dev.minimalaccounting.application.transaction;
 
-import dev.minimalaccounting.core.account.SettleAccountHold;
-import dev.minimalaccounting.core.journal.JournalReference;
-import dev.minimalaccounting.core.journal.TransactionJournalized;
-import dev.minimalaccounting.core.transaction.TransactionProcessManager;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.ports.messaging.Handler;
-import dev.minimalaccounting.ports.persistence.JournalRepository;
-import dev.minimalaccounting.ports.messaging.Sender;
-import dev.minimalaccounting.ports.persistence.TransactionRepository;
+import dev.minimalaccounting.model.journal.JournalEntry;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.account.SettleAccountHold;
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.journal.TransactionJournalized;
+import dev.minimalaccounting.model.transaction.TransactionProcessManager;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.shared.ports.Sender;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public final class TransactionJournalizedHandler implements Handler<TransactionJournalized> {
     @NonNull
-    private final TransactionRepository transactions;
+    private final Repository<TransactionIdentifier, Transaction> transactions;
     @NonNull
-    private final JournalRepository journals;
+    private final Repository<JournalIdentifier, JournalEntry> journals;
     @NonNull
     private final Sender<SettleAccountHold> settlements;
 
     @Override
     public void handle(TransactionJournalized event) {
-        var transaction = transactions.get(TransactionReference.id(event.transactionId()))
+        var transaction = transactions.get(TransactionIdentifier.id(event.transactionId()))
                 .orElse(null);
         if (transaction == null) {
             return;
         }
-        var journal = journals.get(JournalReference.id(event.journalEntryId()))
+        var journal = journals.get(JournalIdentifier.id(event.journalEntryId()))
                 .orElseThrow(() -> new IllegalStateException(
                         "Journal entry is not available: " + event.journalEntryId()));
         var process = new TransactionProcessManager(transaction);
         process.transactionJournalized(event, journal.getRequestId());
         var settlementCommands = process.accountHoldsToSettle();
         if (process.completed()) {
-            transactions.remove(TransactionReference.id(transaction.getId()));
+            transactions.remove(TransactionIdentifier.id(transaction.getId()));
         } else {
             transactions.update(transaction);
         }

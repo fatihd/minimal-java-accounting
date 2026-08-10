@@ -1,8 +1,8 @@
 package dev.minimalaccounting.adapters.messaging.artemis;
 
-import dev.minimalaccounting.ports.messaging.Receiver;
-import dev.minimalaccounting.ports.messaging.Sender;
-import dev.minimalaccounting.ports.messaging.TopicContract;
+import dev.minimalaccounting.shared.ports.Receiver;
+import dev.minimalaccounting.shared.ports.Sender;
+import dev.minimalaccounting.shared.ports.TopicContract;
 import org.junit.jupiter.api.AfterEach;
 
 class ArtemisTopicContractTest extends TopicContract<ExampleMessage> {

@@ -1,8 +1,8 @@
 package dev.minimalaccounting.app;
 
-import dev.minimalaccounting.shared.AccountNumber;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepository;
-import dev.minimalaccounting.core.account.AccountReference;
+import dev.minimalaccounting.model.account.AccountIdentifier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -27,7 +27,7 @@ class AccountFileTest {
         AccountFile.load(file, accounts);
         AccountFile.load(file, accounts);
 
-        var account = accounts.get(AccountReference.number(new AccountNumber("ACCOUNT01")))
+        var account = accounts.get(AccountIdentifier.number(new AccountNumber("ACCOUNT01")))
                 .orElseThrow();
         assertEquals("Operating account", account.getName());
         assertEquals(1250, account.getBalance().minor());

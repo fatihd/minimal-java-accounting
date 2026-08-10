@@ -1,14 +1,14 @@
 package dev.minimalaccounting.app;
 
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
-import dev.minimalaccounting.ports.api.SubmitTransaction;
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.core.journal.JournalReference;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.core.transaction.TransactionState;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.TransactionState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ class AccountingFlowTest {
         @Test
         void createsJournalEntry() {
             assertTrue(accounting.journals.get(
-                    JournalReference.request("request-1")).isPresent());
+                    JournalIdentifier.request("request-1")).isPresent());
         }
 
         @Test
@@ -82,7 +82,7 @@ class AccountingFlowTest {
         @Test
         void doesNotCreateJournalEntry() {
             assertTrue(accounting.journals.get(
-                    JournalReference.request("request-1")).isEmpty());
+                    JournalIdentifier.request("request-1")).isEmpty());
         }
 
         @Test
@@ -104,7 +104,7 @@ class AccountingFlowTest {
         void rejectsTransaction() {
             assertEquals(TransactionState.REJECTED,
                     accounting.transactions.get(
-                            TransactionReference.request("request-1"))
+                            TransactionIdentifier.request("request-1"))
                             .orElseThrow()
                             .getState());
         }
@@ -128,13 +128,13 @@ class AccountingFlowTest {
         @Test
         void createsJournalEntry() {
             assertTrue(accounting.journals.get(
-                    JournalReference.request("request-without-effects")).isPresent());
+                    JournalIdentifier.request("request-without-effects")).isPresent());
         }
 
         @Test
         void removesCompletedTransaction() {
             assertTrue(accounting.transactions.get(
-                    TransactionReference.request("request-without-effects")).isEmpty());
+                    TransactionIdentifier.request("request-without-effects")).isEmpty());
         }
 
         @Test
@@ -152,7 +152,7 @@ class AccountingFlowTest {
     }
 
     private Account account(String number) {
-        return accounting.accounts.get(AccountReference.number(new AccountNumber(number)))
+        return accounting.accounts.get(AccountIdentifier.number(new AccountNumber(number)))
                 .orElseThrow();
     }
 

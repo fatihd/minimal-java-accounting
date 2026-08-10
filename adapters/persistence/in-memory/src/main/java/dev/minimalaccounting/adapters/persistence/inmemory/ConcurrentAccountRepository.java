@@ -1,14 +1,14 @@
 package dev.minimalaccounting.adapters.persistence.inmemory;
 
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountHold;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.ports.persistence.AccountRepository;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountHold;
+import dev.minimalaccounting.model.account.AccountIdentifier;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class ConcurrentAccountRepository implements AccountRepository {
+public final class ConcurrentAccountRepository implements Repository<AccountIdentifier, Account> {
     private final InMemoryRepository<Account> values = new InMemoryRepository<>(
             Account::getId,
             Account::setId,
@@ -18,7 +18,7 @@ public final class ConcurrentAccountRepository implements AccountRepository {
     private final ConcurrentHashMap<String, Long> numbers = new ConcurrentHashMap<>();
 
     @Override
-    public synchronized Optional<Account> get(AccountReference key) {
+    public synchronized Optional<Account> get(AccountIdentifier key) {
         Long id = key.id() != null ? key.id() : numbers.get(key.accountNumber().value());
         return id == null ? Optional.empty() : values.get(id);
     }
@@ -39,7 +39,7 @@ public final class ConcurrentAccountRepository implements AccountRepository {
     }
 
     @Override
-    public synchronized void remove(AccountReference key) {
+    public synchronized void remove(AccountIdentifier key) {
         Long id = key.id() != null ? key.id() : numbers.get(key.accountNumber().value());
         if (id != null) {
             values.remove(id).ifPresent(

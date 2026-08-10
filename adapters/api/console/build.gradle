@@ -1,3 +1,4 @@
 dependencies {
-    api project(':ports.api')
+    api project(':model')
+    api project(':shared.ports')
 }

@@ -1,11 +1,11 @@
 package dev.minimalaccounting.adapters.persistence.inmemory;
 
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.ports.persistence.ExplicitUpdateRepositoryContract;
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.shared.ports.ExplicitUpdateRepositoryContract;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,7 @@ class ConcurrentAccountRepositoryTest extends ExplicitUpdateRepositoryContract<A
 
     @Override
     protected Optional<Account> get(long id) {
-        return repository.get(AccountReference.id(id));
+        return repository.get(AccountIdentifier.id(id));
     }
 
     @Override
@@ -70,7 +70,7 @@ class ConcurrentAccountRepositoryTest extends ExplicitUpdateRepositoryContract<A
 
         assertEquals(
                 account.getId(),
-                repository.get(AccountReference.number(NUMBER)).orElseThrow().getId());
+                repository.get(AccountIdentifier.number(NUMBER)).orElseThrow().getId());
     }
 
     @Test
@@ -84,8 +84,8 @@ class ConcurrentAccountRepositoryTest extends ExplicitUpdateRepositoryContract<A
     void removingByNumberAlsoClearsItsLookup() {
         repository.add(createValue());
 
-        repository.remove(AccountReference.number(NUMBER));
+        repository.remove(AccountIdentifier.number(NUMBER));
 
-        assertFalse(repository.get(AccountReference.number(NUMBER)).isPresent());
+        assertFalse(repository.get(AccountIdentifier.number(NUMBER)).isPresent());
     }
 }

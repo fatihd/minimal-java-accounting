@@ -1,8 +1,9 @@
 package dev.minimalaccounting.adapters.messaging.artemis;
 
-import dev.minimalaccounting.ports.messaging.Handler;
-import dev.minimalaccounting.ports.messaging.Received;
-import dev.minimalaccounting.ports.messaging.Receiver;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.shared.ports.Received;
+import dev.minimalaccounting.shared.ports.Receiver;
+
 import lombok.NonNull;
 
 import java.util.List;

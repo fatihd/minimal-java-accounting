@@ -1,8 +1,8 @@
 package dev.minimalaccounting.adapters.api.http;
 
-import dev.minimalaccounting.ports.api.SubmitTransaction;
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
-import dev.minimalaccounting.shared.PostingRejectedException;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.model.PostingRejectedException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -134,7 +134,7 @@ class HttpTransactionServerTest {
     }
 
     private void start(
-            SubmitTransactionHandler submitTransaction,
+            Handler<SubmitTransaction> submitTransaction,
             int maximumBodyBytes) throws Exception {
         server = HttpTransactionServerFactory.create(
                 new HttpConfiguration(

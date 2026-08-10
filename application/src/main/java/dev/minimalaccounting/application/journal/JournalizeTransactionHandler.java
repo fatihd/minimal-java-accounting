@@ -1,17 +1,18 @@
 package dev.minimalaccounting.application.journal;
 
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.core.journal.JournalReference;
-import dev.minimalaccounting.core.journal.JournalService;
-import dev.minimalaccounting.core.journal.JournalizeTransaction;
-import dev.minimalaccounting.core.journal.TransactionJournalized;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.ports.persistence.AccountRepository;
-import dev.minimalaccounting.ports.messaging.Handler;
-import dev.minimalaccounting.ports.persistence.JournalRepository;
-import dev.minimalaccounting.ports.messaging.Sender;
-import dev.minimalaccounting.ports.persistence.TransactionRepository;
+import dev.minimalaccounting.model.journal.JournalEntry;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.journal.JournalService;
+import dev.minimalaccounting.model.journal.JournalizeTransaction;
+import dev.minimalaccounting.model.journal.TransactionJournalized;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.shared.ports.Sender;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -21,11 +22,11 @@ import java.util.ArrayList;
 @RequiredArgsConstructor
 public final class JournalizeTransactionHandler implements Handler<JournalizeTransaction> {
     @NonNull
-    private final AccountRepository accounts;
+    private final Repository<AccountIdentifier, Account> accounts;
     @NonNull
-    private final TransactionRepository transactions;
+    private final Repository<TransactionIdentifier, Transaction> transactions;
     @NonNull
-    private final JournalRepository journals;
+    private final Repository<JournalIdentifier, JournalEntry> journals;
     @NonNull
     private final Sender<TransactionJournalized> journalized;
     @NonNull
@@ -34,12 +35,12 @@ public final class JournalizeTransactionHandler implements Handler<JournalizeTra
 
     @Override
     public void handle(JournalizeTransaction command) {
-        var transaction = transactions.get(TransactionReference.id(command.transactionId()))
+        var transaction = transactions.get(TransactionIdentifier.id(command.transactionId()))
                 .orElse(null);
         if (transaction == null) {
             return;
         }
-        var existing = journals.get(JournalReference.request(transaction.getRequestId()));
+        var existing = journals.get(JournalIdentifier.request(transaction.getRequestId()));
         if (existing.isPresent()) {
             journalized.send(new TransactionJournalized(
                     transaction.getId(), existing.orElseThrow().getId()));
@@ -47,7 +48,7 @@ public final class JournalizeTransactionHandler implements Handler<JournalizeTra
         }
         ArrayList<Account> values = new ArrayList<>();
         for (var number : transaction.accountNumbers()) {
-            values.add(accounts.get(AccountReference.number(number))
+            values.add(accounts.get(AccountIdentifier.number(number))
                     .orElseThrow(() -> new IllegalStateException(
                             "Account is not available for journalization: "
                                     + number.value())));

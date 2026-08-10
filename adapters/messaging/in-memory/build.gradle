@@ -1,5 +1,5 @@
 dependencies {
-    api project(':ports.messaging')
+    api project(':shared.ports')
 
-    testImplementation(testFixtures(project(':ports.messaging')))
+    testImplementation(testFixtures(project(':shared.ports')))
 }

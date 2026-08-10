@@ -1,10 +1,11 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
-import dev.minimalaccounting.ports.persistence.TransactionBoundary;
+import dev.minimalaccounting.shared.ports.TransactionBoundary;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-
 import javax.sql.DataSource;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
@@ -16,13 +17,6 @@ public final class JdbcTransactions implements TransactionBoundary {
     private final ThreadLocal<Connection> current = new ThreadLocal<>();
 
     @Override
-    public void inTransaction(Runnable work) {
-        inTransaction(() -> {
-            work.run();
-            return null;
-        });
-    }
-
     public <T> T inTransaction(@NonNull Supplier<T> work) {
         if (current.get() != null) {
             return work.get();

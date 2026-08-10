@@ -33,18 +33,20 @@
 
 ## Boundaries and modules
 
-- Keep `shared` extremely small: only stable values and exceptions genuinely
-  shared across boundaries.
-- Keep `ports.api` external-facing. It contains business-named interfaces and
-  immutable boundary contracts, never core entities, persistence state,
-  workflow state, test probes, or technical names such as `Dto`, `Info`, or
-  `Manager`.
+- Treat `shared.ports` as generic boundary vocabulary, not as composition. It
+  owns only generic technical contracts. Do not add speculative shared modules
+  before they have a distinct responsibility.
+- Keep external commands business-named and immutable. They must never expose
+  model entities, persistence state, workflow state, test probes, or technical
+  names such as `Dto`, `Info`, or `Manager`. `SubmitTransaction` belongs beside
+  the other transaction commands in `model.transaction`.
 - The production API currently has one operation:
-  `SubmitTransactionHandler.handle(SubmitTransaction)`.
-- Keep entities, internal messages, state transitions, and pure business rules in
-  the single `core` module. Core must not depend on persistence, messaging,
-  protocols, frameworks, or adapters.
-- Group core types under `dev.minimalaccounting.core.account`,
+  `Handler<SubmitTransaction>.handle(SubmitTransaction)`.
+- Keep stable business values and exceptions, entities, internal messages,
+  state transitions, and pure business rules in the single `model` module.
+  Model must not depend on persistence, messaging, protocols, frameworks, or
+  adapters.
+- Group model types under `dev.minimalaccounting.model.account`,
   `.transaction`, and `.journal`. Keep each aggregate's inbound commands and
   outbound events with that aggregate protocol. This protocol ownership is
   separate from application-handler placement, which follows the state or
@@ -78,19 +80,18 @@
   `AccountEffect` children; no lifecycle service or application code constructs
   new business effects.
 - Keep repository lookup in the application layer. Pass resolved aggregates to
-  core business factories, which derive canonical identities and create new
+  model business factories, which derive canonical identities and create new
   aggregate roots and owned entities without retaining or mutating the resolved
-  aggregates. Do not pass repositories into core factories.
+  aggregates. Do not pass repositories into model factories.
 - Use business-creation factories to omit technical identity, revision, and
   workflow defaults. Full-state constructors remain available for adapter
   reconstruction; they are not application creation APIs.
 - Put implementations of application services and workflow coordination in
-  `application`. Application code may depend on API, core, persistence ports,
-  and messaging ports, but not concrete adapters or the technical
-  `infrastructure` module.
-- Keep `infrastructure` outside core and application. It owns dependency-light
-  technical boundary decoration, logging, metrics, snapshots, and JMX; only
-  the outer `app` composition selects it.
+  `application`. Application code may depend on model and `shared.ports`, but
+  not concrete adapters or the technical `infrastructure` module.
+- Keep `infrastructure` outside model and application. It owns dependency-light
+  technical boundary decoration, logging, metrics, snapshots, and JMX. It
+  consumes `shared.ports`; only the outer `app` composition selects it.
 - Organize application handlers by the aggregate whose state they load and
   change. A command handler belongs with its target aggregate; an event handler
   belongs with the aggregate or application responsibility it advances, not
@@ -99,7 +100,7 @@
   invoke the matching aggregate operation, persist the result, and publish the
   resulting event. It must not decide which command advances another
   aggregate's workflow.
-- Keep a process manager in core beside the aggregate whose root state governs
+- Keep a process manager in model beside the aggregate whose root state governs
   the workflow. Construct it around that aggregate; do not give it repositories,
   senders, receivers, handlers, clocks, transport IDs, or other I/O concerns.
   Pass time values and relevant facts into its methods. It consumes events,
@@ -129,11 +130,13 @@
   behind an API port does not make the implementation an adapter.
 - Put each implementation family in its own adapter Gradle module. New HTTP,
   RDBMS, LocalStack, ActiveMQ, or other integrations must be additional adapters,
-  not changes to core rules.
+  not changes to model rules.
 - Match each Gradle module with its Java package root under
-  `dev.minimalaccounting`: `ports.<capability>` for boundary contracts and
+  `dev.minimalaccounting`: `model` for business types and stable values,
+  `shared.ports` for generic boundary contracts, and
   `adapters.<capability>.<implementation>` for implementations. Preserve
-  aggregate subpackages beneath `core` and `application`. Normalize a hyphenated
+  aggregate subpackages beneath `model` and
+  `application`. Normalize a hyphenated
   Gradle segment by removing the hyphen in Java, as in `in-memory` to
   `inmemory`; do not create split packages across modules.
 - Keep `app` as the outer composition root. It may select concrete adapters,
@@ -141,7 +144,7 @@
   depend on `app`.
 - Represent each runtime-contributing Gradle module with an app-local module
   factory. Keep these factories app-local when their typed object graph uses
-  accounting messages; generic adapter modules must not acquire core
+  accounting messages; generic adapter modules must not acquire model
   dependencies merely to simplify composition.
 - Use `@RequiredArgsConstructor` for module-factory dependencies and
   `@Getter(lazy = true)` on each produced object. A factory getter memoizes one
@@ -160,7 +163,10 @@
 
 - Repository interfaces use collection vocabulary only: `get`, `add`, `update`,
   and `remove`. Domain-specific lookup variants belong in repository key types,
-  not in extra repository methods.
+  not in extra repository methods. Use the generic
+  `Repository<Identifier, Aggregate>` contract from `shared.ports` directly
+  unless a repository genuinely adds another operation. Name compound keys
+  `*Identifier`, not `*Reference`.
 - Keep persistence coordination out of entities and business services. The
   in-memory repositories use defensive copies and concurrent JDK collections;
   the PostgreSQL repositories use plain JDBC and reconstruct equally detached
@@ -170,8 +176,11 @@
   state. Later mutation is invisible until `update` is called. Reuse the
   exported persistence contract tests for every mutable repository adapter; do
   not emulate dirty checking or a first-level cache in fakes.
-- Messaging ports stay minimal: `Sender<T>.send`, `Receiver<T>.receive`,
+- Shared messaging ports stay minimal: `Sender<T>.send`, `Receiver<T>.receive`,
   `Receiver<T>.ack`, `Receiver<T>.nack`, and `Handler<T>.handle`.
+- Keep `TransactionBoundary` in `shared.ports` and make its primary operation
+  return-capable. Its `Runnable` overload is only a convenience over the generic
+  `Supplier<T>` operation.
 - Keep transport identity outside business payloads. `Received<T>` carries an
   opaque receiver-scoped message ID solely for ACK/NACK.
 - Use stable business identity, not transport delivery identity, for command
@@ -203,7 +212,7 @@
   duplicate window. Do not claim exactly-once delivery.
 - Keep broker destinations in composition. Commands use Artemis anycast queues;
   events use multicast addresses with one durable queue per subscription.
-  Serialization belongs to messaging adapters, not core messages.
+  Serialization belongs to messaging adapters, not model messages.
 - An asynchronous command or event for a missing target may ACK as stale only
   when terminal removal makes that absence an expected state. Once the target
   exists, a missing referenced aggregate or journal is a consistency or

@@ -1,6 +1,7 @@
 package dev.minimalaccounting.adapters.messaging.inmemory;
 
-import dev.minimalaccounting.ports.messaging.Sender;
+import dev.minimalaccounting.shared.ports.Sender;
+
 import lombok.NonNull;
 
 import java.util.concurrent.ConcurrentHashMap;

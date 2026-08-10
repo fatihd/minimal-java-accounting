@@ -1,10 +1,11 @@
 package dev.minimalaccounting.app;
 
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.Money;
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.ports.persistence.AccountRepository;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.Money;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+
 import lombok.NonNull;
 
 import java.io.IOException;
@@ -27,7 +28,7 @@ final class AccountFile {
 
     static void load(
             @NonNull Path path,
-            @NonNull AccountRepository accounts) throws IOException {
+            @NonNull Repository<AccountIdentifier, Account> accounts) throws IOException {
         List<String> lines = Files.readAllLines(path);
         boolean headerSeen = false;
         int accountCount = 0;
@@ -45,7 +46,7 @@ final class AccountFile {
             }
             try {
                 Account account = account(value);
-                if (accounts.get(AccountReference.number(account.getAccountNumber()))
+                if (accounts.get(AccountIdentifier.number(account.getAccountNumber()))
                         .isEmpty()) {
                     accounts.add(account);
                 }

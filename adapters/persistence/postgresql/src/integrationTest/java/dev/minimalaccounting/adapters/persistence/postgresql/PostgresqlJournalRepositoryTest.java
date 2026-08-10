@@ -1,10 +1,10 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
-import dev.minimalaccounting.core.journal.JournalEntry;
-import dev.minimalaccounting.core.journal.JournalLine;
-import dev.minimalaccounting.core.journal.JournalReference;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.journal.JournalEntry;
+import dev.minimalaccounting.model.journal.JournalLine;
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,9 +35,9 @@ class PostgresqlJournalRepositoryTest {
         JournalEntry entry = entry();
         long id = repository.add(entry);
 
-        JournalEntry first = repository.get(JournalReference.id(id)).orElseThrow();
+        JournalEntry first = repository.get(JournalIdentifier.id(id)).orElseThrow();
         first.setRevision(99L);
-        JournalEntry second = repository.get(JournalReference.request("request"))
+        JournalEntry second = repository.get(JournalIdentifier.request("request"))
                 .orElseThrow();
 
         assertEquals(0L, second.getRevision());
@@ -49,7 +49,7 @@ class PostgresqlJournalRepositoryTest {
     void rejectsDuplicateRequestsAndStaleUpdates() {
         JournalEntry entry = entry();
         repository.add(entry);
-        JournalEntry stale = repository.get(JournalReference.id(entry.getId())).orElseThrow();
+        JournalEntry stale = repository.get(JournalIdentifier.id(entry.getId())).orElseThrow();
         repository.update(entry);
 
         assertThrows(IllegalStateException.class, () -> repository.add(entry()));
@@ -60,9 +60,9 @@ class PostgresqlJournalRepositoryTest {
     void removesByRequest() {
         repository.add(entry());
 
-        repository.remove(JournalReference.request("request"));
+        repository.remove(JournalIdentifier.request("request"));
 
-        assertFalse(repository.get(JournalReference.request("request")).isPresent());
+        assertFalse(repository.get(JournalIdentifier.request("request")).isPresent());
     }
 
     private static JournalEntry entry() {

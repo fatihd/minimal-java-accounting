@@ -1,8 +1,8 @@
 package dev.minimalaccounting.adapters.messaging.artemis;
 
-import dev.minimalaccounting.core.account.PlaceAccountHold;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.account.PlaceAccountHold;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.Test;
 
 import java.util.Currency;

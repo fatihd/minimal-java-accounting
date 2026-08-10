@@ -1,19 +1,19 @@
 package dev.minimalaccounting.application.transaction;
 
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentJournalRepository;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentTransactionRepository;
-import dev.minimalaccounting.core.account.SettleAccountHold;
-import dev.minimalaccounting.core.journal.JournalEntry;
-import dev.minimalaccounting.core.journal.JournalLine;
-import dev.minimalaccounting.core.journal.TransactionJournalized;
-import dev.minimalaccounting.core.transaction.AccountEffect;
-import dev.minimalaccounting.core.transaction.AccountEffectState;
-import dev.minimalaccounting.core.transaction.Transaction;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.core.transaction.TransactionState;
+import dev.minimalaccounting.model.account.SettleAccountHold;
+import dev.minimalaccounting.model.journal.JournalEntry;
+import dev.minimalaccounting.model.journal.JournalLine;
+import dev.minimalaccounting.model.journal.TransactionJournalized;
+import dev.minimalaccounting.model.transaction.AccountEffect;
+import dev.minimalaccounting.model.transaction.AccountEffectState;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.TransactionState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -56,7 +56,7 @@ class TransactionJournalizedHandlerTest {
         void advancesTransactionToSettlement() {
             assertEquals(
                     TransactionState.SETTLING,
-                    transactions.get(TransactionReference.id(transactionId))
+                    transactions.get(TransactionIdentifier.id(transactionId))
                             .orElseThrow()
                             .getState());
         }
@@ -92,7 +92,7 @@ class TransactionJournalizedHandlerTest {
         @Test
         void removesCompletedTransaction() {
             assertTrue(transactions.get(
-                    TransactionReference.id(transactionId)).isEmpty());
+                    TransactionIdentifier.id(transactionId)).isEmpty());
         }
 
         @Test
@@ -141,7 +141,7 @@ class TransactionJournalizedHandlerTest {
                 () -> handler.handle(new TransactionJournalized(transactionId, 99)));
         assertEquals(
                 TransactionState.HELD,
-                transactions.get(TransactionReference.id(transactionId))
+                transactions.get(TransactionIdentifier.id(transactionId))
                         .orElseThrow()
                         .getState());
     }

@@ -1,5 +1,12 @@
 package dev.minimalaccounting.app;
 
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.journal.JournalEntry;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.application.account.PlaceAccountHoldHandler;
 import dev.minimalaccounting.application.account.ReleaseAccountHoldHandler;
 import dev.minimalaccounting.application.account.SettleAccountHoldHandler;
@@ -10,19 +17,17 @@ import dev.minimalaccounting.application.transaction.AccountHoldReleasedHandler;
 import dev.minimalaccounting.application.transaction.AccountHoldSettledHandler;
 import dev.minimalaccounting.application.transaction.TransactionIntake;
 import dev.minimalaccounting.application.transaction.TransactionJournalizedHandler;
-import dev.minimalaccounting.core.account.AccountHoldDeclined;
-import dev.minimalaccounting.core.account.AccountHoldPlaced;
-import dev.minimalaccounting.core.account.AccountHoldReleased;
-import dev.minimalaccounting.core.account.AccountHoldSettled;
-import dev.minimalaccounting.core.account.PlaceAccountHold;
-import dev.minimalaccounting.core.account.ReleaseAccountHold;
-import dev.minimalaccounting.core.account.SettleAccountHold;
-import dev.minimalaccounting.core.journal.JournalizeTransaction;
-import dev.minimalaccounting.core.journal.TransactionJournalized;
-import dev.minimalaccounting.ports.messaging.Sender;
-import dev.minimalaccounting.ports.persistence.AccountRepository;
-import dev.minimalaccounting.ports.persistence.JournalRepository;
-import dev.minimalaccounting.ports.persistence.TransactionRepository;
+import dev.minimalaccounting.model.account.AccountHoldDeclined;
+import dev.minimalaccounting.model.account.AccountHoldPlaced;
+import dev.minimalaccounting.model.account.AccountHoldReleased;
+import dev.minimalaccounting.model.account.AccountHoldSettled;
+import dev.minimalaccounting.model.account.PlaceAccountHold;
+import dev.minimalaccounting.model.account.ReleaseAccountHold;
+import dev.minimalaccounting.model.account.SettleAccountHold;
+import dev.minimalaccounting.model.journal.JournalizeTransaction;
+import dev.minimalaccounting.model.journal.TransactionJournalized;
+import dev.minimalaccounting.shared.ports.Sender;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -30,9 +35,9 @@ import java.time.Clock;
 
 @RequiredArgsConstructor
 final class ApplicationModuleFactory {
-    private final AccountRepository accounts;
-    private final TransactionRepository transactions;
-    private final JournalRepository journals;
+    private final Repository<AccountIdentifier, Account> accounts;
+    private final Repository<TransactionIdentifier, Transaction> transactions;
+    private final Repository<JournalIdentifier, JournalEntry> journals;
     private final Sender<PlaceAccountHold> placeAccountHolds;
     private final Sender<ReleaseAccountHold> releaseAccountHolds;
     private final Sender<JournalizeTransaction> journalizeTransactions;

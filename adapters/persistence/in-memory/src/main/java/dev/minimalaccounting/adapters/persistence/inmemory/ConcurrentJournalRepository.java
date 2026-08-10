@@ -1,15 +1,15 @@
 package dev.minimalaccounting.adapters.persistence.inmemory;
 
-import dev.minimalaccounting.core.journal.JournalEntry;
-import dev.minimalaccounting.core.journal.JournalLine;
-import dev.minimalaccounting.core.journal.JournalReference;
-import dev.minimalaccounting.ports.persistence.JournalRepository;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.journal.JournalEntry;
+import dev.minimalaccounting.model.journal.JournalLine;
+import dev.minimalaccounting.model.journal.JournalIdentifier;
 
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class ConcurrentJournalRepository implements JournalRepository {
+public final class ConcurrentJournalRepository implements Repository<JournalIdentifier, JournalEntry> {
     private final InMemoryRepository<JournalEntry> values = new InMemoryRepository<>(
             JournalEntry::getId,
             JournalEntry::setId,
@@ -19,7 +19,7 @@ public final class ConcurrentJournalRepository implements JournalRepository {
     private final ConcurrentHashMap<String, Long> requests = new ConcurrentHashMap<>();
 
     @Override
-    public synchronized Optional<JournalEntry> get(JournalReference key) {
+    public synchronized Optional<JournalEntry> get(JournalIdentifier key) {
         Long id = key.id() != null ? key.id() : requests.get(key.requestId());
         return id == null ? Optional.empty() : values.get(id);
     }
@@ -40,7 +40,7 @@ public final class ConcurrentJournalRepository implements JournalRepository {
     }
 
     @Override
-    public synchronized void remove(JournalReference key) {
+    public synchronized void remove(JournalIdentifier key) {
         Long id = key.id() != null ? key.id() : requests.get(key.requestId());
         if (id != null) {
             values.remove(id).ifPresent(value -> requests.remove(value.getRequestId()));

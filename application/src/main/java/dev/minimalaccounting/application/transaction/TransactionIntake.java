@@ -1,19 +1,20 @@
 package dev.minimalaccounting.application.transaction;
 
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.core.account.PlaceAccountHold;
-import dev.minimalaccounting.core.journal.JournalReference;
-import dev.minimalaccounting.core.journal.JournalizeTransaction;
-import dev.minimalaccounting.core.transaction.Transaction;
-import dev.minimalaccounting.core.transaction.TransactionFactory;
-import dev.minimalaccounting.core.transaction.TransactionProcessManager;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.ports.persistence.AccountRepository;
-import dev.minimalaccounting.ports.persistence.JournalRepository;
-import dev.minimalaccounting.ports.messaging.Sender;
-import dev.minimalaccounting.ports.persistence.TransactionRepository;
+import dev.minimalaccounting.model.journal.JournalEntry;
+import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.account.PlaceAccountHold;
+import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.journal.JournalizeTransaction;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.transaction.TransactionFactory;
+import dev.minimalaccounting.model.transaction.TransactionProcessManager;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.shared.ports.Sender;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -22,13 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
-public final class TransactionIntake implements SubmitTransactionHandler {
+public final class TransactionIntake implements Handler<SubmitTransaction> {
     @NonNull
-    private final AccountRepository accounts;
+    private final Repository<AccountIdentifier, Account> accounts;
     @NonNull
-    private final TransactionRepository transactions;
+    private final Repository<TransactionIdentifier, Transaction> transactions;
     @NonNull
-    private final JournalRepository journals;
+    private final Repository<JournalIdentifier, JournalEntry> journals;
     @NonNull
     private final Sender<PlaceAccountHold> holds;
     @NonNull
@@ -37,16 +38,15 @@ public final class TransactionIntake implements SubmitTransactionHandler {
     private final Clock clock;
 
     @Override
-    public synchronized void handle(
-            @NonNull dev.minimalaccounting.ports.api.SubmitTransaction submitted) {
-        if (transactions.get(TransactionReference.request(submitted.requestId())).isPresent()
-                || journals.get(JournalReference.request(submitted.requestId())).isPresent()) {
+    public synchronized void handle(@NonNull SubmitTransaction submitted) {
+        if (transactions.get(TransactionIdentifier.request(submitted.requestId())).isPresent()
+                || journals.get(JournalIdentifier.request(submitted.requestId())).isPresent()) {
             return;
         }
 
         List<TransactionFactory.Line> lines = new ArrayList<>();
         for (var line : submitted.lines()) {
-            Account account = accounts.get(AccountReference.number(line.accountNumber()))
+            Account account = accounts.get(AccountIdentifier.number(line.accountNumber()))
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Account does not exist: " + line.accountNumber().value()));
             lines.add(new TransactionFactory.Line(

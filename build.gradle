@@ -27,12 +27,12 @@ tasks.register('renderStateTransitions', Exec) {
     def source = rootProject.file('tools/render-state-transitions.mjs')
     def outputDirectory = rootProject.file('docs/state-transitions')
     def domainSources = rootProject.files(
-            'core/src/main/java/dev/minimalaccounting/core/transaction/Transaction.java',
-            'core/src/main/java/dev/minimalaccounting/core/transaction/TransactionState.java',
-            'core/src/main/java/dev/minimalaccounting/core/transaction/AccountEffect.java',
-            'core/src/main/java/dev/minimalaccounting/core/transaction/AccountEffectState.java',
-            'core/src/main/java/dev/minimalaccounting/core/account/AccountHold.java',
-            'core/src/main/java/dev/minimalaccounting/core/account/AccountHoldState.java')
+            'model/src/main/java/dev/minimalaccounting/model/transaction/Transaction.java',
+            'model/src/main/java/dev/minimalaccounting/model/transaction/TransactionState.java',
+            'model/src/main/java/dev/minimalaccounting/model/transaction/AccountEffect.java',
+            'model/src/main/java/dev/minimalaccounting/model/transaction/AccountEffectState.java',
+            'model/src/main/java/dev/minimalaccounting/model/account/AccountHold.java',
+            'model/src/main/java/dev/minimalaccounting/model/account/AccountHoldState.java')
     inputs.file source
     inputs.files domainSources
     outputs.files(

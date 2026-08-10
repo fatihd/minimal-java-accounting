@@ -13,7 +13,7 @@ The repository includes two complete runtimes:
 - `durable` uses plain JDBC PostgreSQL repositories, a transactional PostgreSQL
   outbox, and Apache Artemis Core queues and topics.
 
-Both expose the same `SubmitTransactionHandler.handle(SubmitTransaction)` API
+Both expose the same `Handler<SubmitTransaction>.handle(SubmitTransaction)` API
 through a console adapter or the JDK HTTP server. This is a reference
 implementation of the architectural boundaries and workflow rules, not a
 production accounting product or a claim of exactly-once delivery.
@@ -24,22 +24,20 @@ production accounting product or a claim of exactly-once delivery.
 
 The modules have intentionally narrow responsibilities:
 
-- `shared` contains only stable boundary values: `Money`, `AccountNumber`,
-  `DebitCredit`, and the shared posting-rejection exception.
-- `ports.api` contains the external business API and immutable request values.
-- `core` contains account, transaction, and journal aggregates, their commands
-  and events, pure posting rules, and the transaction process manager.
-- `application` performs repository and messaging I/O around core operations.
+- `shared.ports` contains the generic technical vocabulary used throughout the
+  implementation: handlers, senders, receivers, deliveries, repositories, and
+  transaction boundaries.
+- `model` contains stable values such as `Money`, account, transaction, and
+  journal aggregates, their commands and events—including the inbound
+  `SubmitTransaction` command—pure posting rules, and the transaction process
+  manager.
+- `application` performs repository and messaging I/O around model operations.
   It implements use cases and handlers; it is not an adapter.
-- `ports.persistence` contains collection-shaped repositories and the explicit
-  transaction boundary. Its test fixture exports the detached explicit-update
-  repository contract.
-- `ports.messaging` contains only `Sender<T>`, `Receiver<T>`, `Received<T>`, and
-  `Handler<T>`. Its test fixtures export queue and topic contracts.
 - `adapters.api.console` and `adapters.api.http` translate external protocols
-  into the API port.
+  into `SubmitTransaction` and invoke its shared `Handler` port.
 - `adapters.persistence.in-memory` and `adapters.persistence.postgresql`
-  implement the same repository ports.
+  implement `Repository<Identifier, Aggregate>`. The shared test fixture
+  exports their detached explicit-update contract.
 - `adapters.messaging.in-memory` implements local queues, topics, and polling.
 - `adapters.messaging.postgresql` implements the transactional outbox.
 - `adapters.messaging.artemis` implements durable queues, topics,
@@ -48,8 +46,9 @@ The modules have intentionally narrow responsibilities:
   concurrent counters, latency histograms, immutable snapshots, and JMX.
 - `app` is the only composition root. Nothing depends on it.
 
-Composition is explicit and lazy rather than container-managed. The `app`
-module has one small factory context for each runtime-contributing module. Each
+`shared.ports` provides the generic boundary vocabulary spoken by the
+implementation. Composition is separate: `app` has one small factory context
+for each runtime-contributing module. Each
 context memoizes its objects independently, so an integration test can supply
 only the dependencies used by the graph branch it requests. Module contexts
 expose raw objects; the overall `ApplicationFactory` joins modules and applies
@@ -98,7 +97,8 @@ Changing an object does not alter stored state until `update` is called. Both
 adapters run the same exported contract tests.
 
 The durable composition wraps external submission and every asynchronous
-handler in one JDBC transaction. Repository changes and outbox inserts commit
+handler in one shared transaction boundary. Its JDBC implementation makes
+repository changes and outbox inserts commit
 atomically. A separate publisher locks pending rows with `SKIP LOCKED`, sends
 them to Artemis, and marks them published only after the broker send returns.
 
@@ -120,7 +120,7 @@ Use Java 25 and the checked-in Gradle wrapper:
 ```
 
 `test` is Docker-free. `integrationTest` starts pinned PostgreSQL 17.6 and
-Apache Artemis 2.55.0 containers and runs repository contracts, messaging
+Apache Artemis 2.55.0 containers and runs repository contracts, shared queue/topic
 contracts, outbox failure tests, and the durable HTTP restart flow.
 
 The reports are browsable at:
@@ -199,7 +199,7 @@ The project’s long-term target is a compact, executable example showing that:
   adapt them to business ports without annotations or framework-managed
   proxies; and
 - new HTTP, database, broker, LocalStack, or test adapters can be added as new
-  modules rather than edits to core rules.
+  modules rather than edits to model rules.
 
 Likely next production-oriented extensions are dead-letter and poison-message
 policy, outbox retention, broker reconnect tuning, database migration tooling,

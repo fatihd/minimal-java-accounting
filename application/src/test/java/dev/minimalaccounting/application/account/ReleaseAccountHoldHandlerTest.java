@@ -1,13 +1,13 @@
 package dev.minimalaccounting.application.account;
 
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepository;
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountHoldReleased;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.core.account.ReleaseAccountHold;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountHoldReleased;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.account.ReleaseAccountHold;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ class ReleaseAccountHoldHandlerTest {
                 events);
         assertEquals(
                 0,
-                accounts.get(AccountReference.id(1)).orElseThrow()
+                accounts.get(AccountIdentifier.id(1)).orElseThrow()
                         .getDebitsHeld().minor());
     }
 

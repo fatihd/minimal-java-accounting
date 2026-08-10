@@ -5,12 +5,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import dev.minimalaccounting.ports.api.SubmitTransaction;
-import dev.minimalaccounting.ports.api.SubmitTransactionHandler;
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
-import dev.minimalaccounting.shared.PostingRejectedException;
+import dev.minimalaccounting.model.transaction.SubmitTransaction;
+import dev.minimalaccounting.shared.ports.Handler;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
+import dev.minimalaccounting.model.PostingRejectedException;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -28,7 +29,7 @@ final class TransactionHttpHandler implements HttpHandler {
             System.getLogger(TransactionHttpHandler.class.getName());
 
     @NonNull
-    private final SubmitTransactionHandler transactions;
+    private final Handler<SubmitTransaction> transactions;
     @NonNull
     private final ObjectMapper json;
     private final int maximumBodyBytes;

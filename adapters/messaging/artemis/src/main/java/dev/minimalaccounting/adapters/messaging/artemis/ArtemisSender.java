@@ -1,6 +1,7 @@
 package dev.minimalaccounting.adapters.messaging.artemis;
 
-import dev.minimalaccounting.ports.messaging.Sender;
+import dev.minimalaccounting.shared.ports.Sender;
+
 import lombok.NonNull;
 
 final class ArtemisSender<T> implements Sender<T> {

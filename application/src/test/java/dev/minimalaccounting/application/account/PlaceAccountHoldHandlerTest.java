@@ -1,14 +1,14 @@
 package dev.minimalaccounting.application.account;
 
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepository;
-import dev.minimalaccounting.core.account.Account;
-import dev.minimalaccounting.core.account.AccountHoldDeclined;
-import dev.minimalaccounting.core.account.AccountHoldPlaced;
-import dev.minimalaccounting.core.account.AccountReference;
-import dev.minimalaccounting.core.account.PlaceAccountHold;
+import dev.minimalaccounting.model.account.Account;
+import dev.minimalaccounting.model.account.AccountHoldDeclined;
+import dev.minimalaccounting.model.account.AccountHoldPlaced;
+import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.account.PlaceAccountHold;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ class PlaceAccountHoldHandlerTest {
         assertEquals(2, declined.size());
         assertEquals(
                 1,
-                accounts.get(AccountReference.id(1)).orElseThrow().getHolds().size());
+                accounts.get(AccountIdentifier.id(1)).orElseThrow().getHolds().size());
     }
 
     @Test
@@ -84,7 +84,7 @@ class PlaceAccountHoldHandlerTest {
         assertEquals(List.of(new AccountHoldPlaced(1, 10, 0)), placed);
         assertEquals(
                 100,
-                accounts.get(AccountReference.id(1))
+                accounts.get(AccountIdentifier.id(1))
                         .orElseThrow()
                         .getDebitsHeld()
                         .minor());
@@ -108,7 +108,7 @@ class PlaceAccountHoldHandlerTest {
         assertEquals(List.of(), placed);
         assertEquals(
                 0,
-                accounts.get(AccountReference.id(1)).orElseThrow()
+                accounts.get(AccountIdentifier.id(1)).orElseThrow()
                         .getDebitsHeld().minor());
     }
 

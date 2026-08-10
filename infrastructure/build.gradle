@@ -1,4 +1,3 @@
 dependencies {
-    api project(':ports.api')
-    api project(':ports.messaging')
+    api project(':shared.ports')
 }

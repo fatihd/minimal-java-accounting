@@ -1,16 +1,16 @@
 package dev.minimalaccounting.application.transaction;
 
-import dev.minimalaccounting.shared.AccountNumber;
-import dev.minimalaccounting.shared.DebitCredit;
-import dev.minimalaccounting.shared.Money;
+import dev.minimalaccounting.model.AccountNumber;
+import dev.minimalaccounting.model.DebitCredit;
+import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentTransactionRepository;
-import dev.minimalaccounting.core.account.AccountHoldDeclined;
-import dev.minimalaccounting.core.account.ReleaseAccountHold;
-import dev.minimalaccounting.core.transaction.AccountEffect;
-import dev.minimalaccounting.core.transaction.AccountEffectState;
-import dev.minimalaccounting.core.transaction.Transaction;
-import dev.minimalaccounting.core.transaction.TransactionReference;
-import dev.minimalaccounting.core.transaction.TransactionState;
+import dev.minimalaccounting.model.account.AccountHoldDeclined;
+import dev.minimalaccounting.model.account.ReleaseAccountHold;
+import dev.minimalaccounting.model.transaction.AccountEffect;
+import dev.minimalaccounting.model.transaction.AccountEffectState;
+import dev.minimalaccounting.model.transaction.Transaction;
+import dev.minimalaccounting.model.transaction.TransactionIdentifier;
+import dev.minimalaccounting.model.transaction.TransactionState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -51,7 +51,7 @@ class AccountHoldDeclinedHandlerTest {
                 List.of(new ReleaseAccountHold(
                         2, transactionId, 1, DebitCredit.DEBIT, AMOUNT)),
                 releases);
-        Transaction stored = transactions.get(TransactionReference.id(transactionId))
+        Transaction stored = transactions.get(TransactionIdentifier.id(transactionId))
                 .orElseThrow();
         assertEquals(TransactionState.RELEASING_HOLDS, stored.getState());
         assertEquals("limit exceeded", stored.getFailureReason());
