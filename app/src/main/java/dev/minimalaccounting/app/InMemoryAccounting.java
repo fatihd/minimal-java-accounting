@@ -1,6 +1,6 @@
 package dev.minimalaccounting.app;
 
-import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.account.Account;
 import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryPoller;
@@ -21,7 +21,7 @@ final class InMemoryAccounting implements AccountingRuntime {
     private static final int MAXIMUM_POLL_CYCLES = 1_000;
 
     @NonNull
-    private final Repository<AccountIdentifier, Account> accounts;
+    private final Repository<AccountNumber, Account> accounts;
     @NonNull
     private final Handler<SubmitTransaction> transactions;
     @NonNull
@@ -32,7 +32,7 @@ final class InMemoryAccounting implements AccountingRuntime {
     private final List<IntSupplier> pollers;
 
     @Override
-    public Repository<AccountIdentifier, Account> accounts() {
+    public Repository<AccountNumber, Account> accounts() {
         return accounts;
     }
 

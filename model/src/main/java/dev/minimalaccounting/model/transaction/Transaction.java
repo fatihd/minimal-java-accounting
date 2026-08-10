@@ -105,10 +105,10 @@ public class Transaction {
     }
 
     public void placeEffect(
-            long accountId,
+            @NonNull AccountNumber accountNumber,
             int effectNumber,
             @NonNull Instant now) {
-        AccountEffect effect = effect(accountId, effectNumber);
+        AccountEffect effect = effect(accountNumber, effectNumber);
         if (effect.isAwaitingHold()
                 && state != TransactionState.PLACING_HOLDS
                 && state != TransactionState.RELEASING_HOLDS) {
@@ -136,10 +136,10 @@ public class Transaction {
     }
 
     public void declineEffect(
-            long accountId,
+            @NonNull AccountNumber accountNumber,
             int effectNumber,
             String reason) {
-        AccountEffect effect = effect(accountId, effectNumber);
+        AccountEffect effect = effect(accountNumber, effectNumber);
         if (effect.isAwaitingHold()
                 && state != TransactionState.PLACING_HOLDS
                 && state != TransactionState.RELEASING_HOLDS) {
@@ -151,8 +151,8 @@ public class Transaction {
         beginRelease();
     }
 
-    public void releaseEffect(long accountId, int effectNumber) {
-        AccountEffect effect = effect(accountId, effectNumber);
+    public void releaseEffect(@NonNull AccountNumber accountNumber, int effectNumber) {
+        AccountEffect effect = effect(accountNumber, effectNumber);
         effect.release();
         rejectIfFinished();
     }
@@ -178,8 +178,8 @@ public class Transaction {
         }
     }
 
-    public void settleEffect(long accountId, int effectNumber) {
-        AccountEffect effect = effect(accountId, effectNumber);
+    public void settleEffect(@NonNull AccountNumber accountNumber, int effectNumber) {
+        AccountEffect effect = effect(accountNumber, effectNumber);
         effect.settle();
         if (allHoldsSettled()) {
             complete();
@@ -194,26 +194,18 @@ public class Transaction {
     }
 
     private List<AccountEffect> deriveAccountEffects() {
-        Map<Long, Long> changes = new LinkedHashMap<>();
-        Map<Long, TransactionLine> accounts = new LinkedHashMap<>();
+        Map<AccountNumber, Long> changes = new LinkedHashMap<>();
         for (TransactionLine line : lines) {
-            TransactionLine existing = accounts.putIfAbsent(line.getAccountId(), line);
-            if (existing != null
-                    && !existing.getAccountNumber().equals(line.getAccountNumber())) {
-                throw new PostingRejectedException(
-                        "Account identity does not match transaction lines");
-            }
             long signed = line.getSide().signed(line.getLedgerAmount().minor());
-            changes.merge(line.getAccountId(), signed, Math::addExact);
+            changes.merge(line.getAccountNumber(), signed, Math::addExact);
         }
         List<AccountEffect> derived = new ArrayList<>();
-        for (Map.Entry<Long, Long> change : changes.entrySet()) {
+        Currency currency = lines.getFirst().getLedgerAmount().currency();
+        for (Map.Entry<AccountNumber, Long> change : changes.entrySet()) {
             if (change.getValue() != 0) {
-                TransactionLine line = accounts.get(change.getKey());
                 derived.add(AccountEffect.pending(
                         change.getKey(),
-                        line.getAccountNumber(),
-                        new Money(change.getValue(), line.getLedgerAmount().currency())));
+                        new Money(change.getValue(), currency)));
             }
         }
         return derived;
@@ -253,12 +245,12 @@ public class Transaction {
         state = TransactionState.COMPLETED;
     }
 
-    private AccountEffect effect(long accountId, int effectNumber) {
+    private AccountEffect effect(AccountNumber accountNumber, int effectNumber) {
         if (effectNumber < 0 || effectNumber >= effects.size()) {
             throw new IllegalArgumentException("Transaction effect does not exist");
         }
         AccountEffect effect = effects.get(effectNumber);
-        effect.requireAccount(accountId);
+        effect.requireAccount(accountNumber);
         return effect;
     }
 

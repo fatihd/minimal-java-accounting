@@ -3,7 +3,7 @@ package dev.minimalaccounting.application.transaction;
 import dev.minimalaccounting.model.journal.JournalEntry;
 import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.model.account.Account;
-import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.account.PlaceAccountHold;
 import dev.minimalaccounting.model.journal.JournalIdentifier;
 import dev.minimalaccounting.model.journal.JournalizeTransaction;
@@ -25,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public final class TransactionIntake implements Handler<SubmitTransaction> {
     @NonNull
-    private final Repository<AccountIdentifier, Account> accounts;
+    private final Repository<AccountNumber, Account> accounts;
     @NonNull
     private final Repository<TransactionIdentifier, Transaction> transactions;
     @NonNull
@@ -46,7 +46,7 @@ public final class TransactionIntake implements Handler<SubmitTransaction> {
 
         List<TransactionFactory.Line> lines = new ArrayList<>();
         for (var line : submitted.lines()) {
-            Account account = accounts.get(AccountIdentifier.number(line.accountNumber()))
+            Account account = accounts.get(line.accountNumber())
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Account does not exist: " + line.accountNumber().value()));
             lines.add(new TransactionFactory.Line(

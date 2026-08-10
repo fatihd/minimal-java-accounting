@@ -133,7 +133,8 @@ public final class PostgresqlJournalRepository implements Repository<JournalIden
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
                     values.add(new JournalLine(
-                            result.getLong("account_id"),
+                            new dev.minimalaccounting.model.AccountNumber(
+                                    result.getString("account_number")),
                             DebitCredit.valueOf(result.getString("side")),
                             JdbcValues.money(
                                     result.getLong("transaction_amount_minor"),
@@ -165,7 +166,7 @@ public final class PostgresqlJournalRepository implements Repository<JournalIden
             throws SQLException {
         try (var statement = connection.prepareStatement("""
                 INSERT INTO journal_line(
-                    journal_entry_id, line_number, account_id, side,
+                    journal_entry_id, line_number, account_number, side,
                     transaction_amount_minor, transaction_currency,
                     ledger_amount_minor, ledger_currency,
                     balance_after_minor, balance_currency)
@@ -175,7 +176,7 @@ public final class PostgresqlJournalRepository implements Repository<JournalIden
             for (JournalLine line : value.getLines()) {
                 statement.setLong(1, id);
                 statement.setInt(2, lineNumber++);
-                statement.setLong(3, line.getAccountId());
+                statement.setString(3, line.getAccountNumber().value());
                 statement.setString(4, line.getSide().name());
                 statement.setLong(5, line.getTransactionAmount().minor());
                 statement.setString(6,

@@ -55,13 +55,13 @@ public final class ConcurrentTransactionRepository implements Repository<Transac
         ArrayList<TransactionLine> lines = new ArrayList<>();
         for (TransactionLine line : value.getLines()) {
             lines.add(new TransactionLine(
-                    line.getAccountId(), line.getAccountNumber(), line.getSide(),
+                    line.getAccountNumber(), line.getSide(),
                     line.getTransactionAmount(), line.getLedgerAmount()));
         }
         ArrayList<AccountEffect> effects = new ArrayList<>();
         for (AccountEffect effect : value.getEffects()) {
             effects.add(new AccountEffect(
-                    effect.getAccountId(), effect.getAccountNumber(), effect.getSide(),
+                    effect.getAccountNumber(), effect.getSide(),
                     effect.getLedgerAmount(), effect.getState()));
         }
         return new Transaction(

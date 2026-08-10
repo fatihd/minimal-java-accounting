@@ -1,6 +1,6 @@
 package dev.minimalaccounting.app;
 
-import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.account.Account;
 import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.adapters.messaging.outbox.ArtemisConnection;
@@ -18,7 +18,7 @@ import java.util.function.IntSupplier;
 @RequiredArgsConstructor
 final class DurableAccounting implements AccountingRuntime {
     @NonNull
-    private final Repository<AccountIdentifier, Account> accounts;
+    private final Repository<AccountNumber, Account> accounts;
     @NonNull
     private final Handler<SubmitTransaction> transactions;
     @NonNull
@@ -29,7 +29,7 @@ final class DurableAccounting implements AccountingRuntime {
     private final ArtemisConnection broker;
 
     @Override
-    public Repository<AccountIdentifier, Account> accounts() {
+    public Repository<AccountNumber, Account> accounts() {
         return accounts;
     }
 

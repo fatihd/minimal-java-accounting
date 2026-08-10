@@ -1,39 +1,29 @@
 package dev.minimalaccounting.adapters.persistence.inmemory;
 
 import dev.minimalaccounting.shared.ports.Repository;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.account.Account;
 import dev.minimalaccounting.model.account.AccountHold;
-import dev.minimalaccounting.model.account.AccountIdentifier;
 
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
-public final class ConcurrentAccountRepository implements Repository<AccountIdentifier, Account> {
-    private final AtomicLong ids = new AtomicLong();
-    private final InMemoryRepository<Long, Account> values = new InMemoryRepository<>(
-            ignored -> ids.incrementAndGet(),
-            Account::getId,
-            Account::setId,
+public final class ConcurrentAccountRepository implements Repository<AccountNumber, Account> {
+    private final InMemoryRepository<AccountNumber, Account> values = new InMemoryRepository<>(
+            Account::getAccountNumber,
+            Account::getAccountNumber,
+            (account, accountNumber) -> { },
             Account::getRevision,
             Account::setRevision,
             ConcurrentAccountRepository::copy);
-    private final ConcurrentHashMap<String, Long> numbers = new ConcurrentHashMap<>();
 
     @Override
-    public synchronized Optional<Account> get(AccountIdentifier key) {
-        Long id = key.id() != null ? key.id() : numbers.get(key.accountNumber().value());
-        return id == null ? Optional.empty() : values.get(id);
+    public synchronized Optional<Account> get(AccountNumber accountNumber) {
+        return values.get(accountNumber);
     }
 
     @Override
-    public synchronized AccountIdentifier add(Account value) {
-        if (numbers.containsKey(value.getAccountNumber().value())) {
-            throw new IllegalStateException("Account already exists");
-        }
-        long id = values.add(value);
-        numbers.put(value.getAccountNumber().value(), id);
-        return AccountIdentifier.id(id);
+    public synchronized AccountNumber add(Account value) {
+        return values.add(value);
     }
 
     @Override
@@ -42,12 +32,8 @@ public final class ConcurrentAccountRepository implements Repository<AccountIden
     }
 
     @Override
-    public synchronized void remove(AccountIdentifier key) {
-        Long id = key.id() != null ? key.id() : numbers.get(key.accountNumber().value());
-        if (id != null) {
-            values.remove(id).ifPresent(
-                    value -> numbers.remove(value.getAccountNumber().value()));
-        }
+    public synchronized void remove(AccountNumber accountNumber) {
+        values.remove(accountNumber);
     }
 
     private static Account copy(Account value) {
@@ -57,7 +43,7 @@ public final class ConcurrentAccountRepository implements Repository<AccountIden
                         hold.getAmount(), hold.getState(), hold.getFailureReason()))
                 .toList();
         return new Account(
-                value.getId(), value.getRevision(), value.getAccountNumber(), value.getName(),
+                value.getRevision(), value.getAccountNumber(), value.getName(),
                 value.getBalance(), value.getMinimumBalance(), value.getMaximumBalance(), holds);
     }
 }

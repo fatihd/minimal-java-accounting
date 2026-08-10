@@ -54,7 +54,7 @@ public final class ConcurrentJournalRepository implements Repository<JournalIden
         ArrayList<JournalLine> lines = new ArrayList<>();
         for (JournalLine line : value.getLines()) {
             lines.add(new JournalLine(
-                    line.getAccountId(), line.getSide(), line.getTransactionAmount(),
+                    line.getAccountNumber(), line.getSide(), line.getTransactionAmount(),
                     line.getLedgerAmount(), line.getBalanceAfter()));
         }
         return new JournalEntry(

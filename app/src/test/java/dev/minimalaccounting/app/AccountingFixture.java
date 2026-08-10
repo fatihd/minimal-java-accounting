@@ -50,7 +50,6 @@ final class AccountingFixture {
             Long maximum) {
         accounts.add(new Account(
                 null,
-                null,
                 new AccountNumber(accountNumber),
                 accountNumber,
                 new Money(balance, currency),

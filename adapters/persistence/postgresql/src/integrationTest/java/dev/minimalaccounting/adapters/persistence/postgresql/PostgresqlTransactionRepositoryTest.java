@@ -43,10 +43,10 @@ class PostgresqlTransactionRepositoryTest
                 Instant.EPOCH, null, null, null,
                 List.of(
                         new TransactionLine(
-                                41, new AccountNumber("DEBIT001"), DebitCredit.DEBIT,
+                                new AccountNumber("DEBIT001"), DebitCredit.DEBIT,
                                 AMOUNT, AMOUNT),
                         new TransactionLine(
-                                42, new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
+                                new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
                                 AMOUNT, AMOUNT)),
                 List.of());
         transaction.start(Instant.EPOCH);
@@ -70,12 +70,12 @@ class PostgresqlTransactionRepositoryTest
 
     @Override
     protected void firstChange(Transaction value) {
-        value.placeEffect(41, 0, Instant.EPOCH.plusSeconds(1));
+        value.placeEffect(new AccountNumber("DEBIT001"), 0, Instant.EPOCH.plusSeconds(1));
     }
 
     @Override
     protected void secondChange(Transaction value) {
-        value.placeEffect(42, 1, Instant.EPOCH.plusSeconds(2));
+        value.placeEffect(new AccountNumber("CREDIT01"), 1, Instant.EPOCH.plusSeconds(2));
     }
 
     @Override
@@ -92,7 +92,8 @@ class PostgresqlTransactionRepositoryTest
 
         Transaction loaded = repository.get(TransactionIdentifier.request("request"))
                 .orElseThrow();
-        assertEquals(41, loaded.getLines().getFirst().getAccountId());
+        assertEquals(new AccountNumber("DEBIT001"),
+                loaded.getLines().getFirst().getAccountNumber());
 
         repository.remove(TransactionIdentifier.request("request"));
 
@@ -105,7 +106,8 @@ class PostgresqlTransactionRepositoryTest
         repository.add(transaction);
         Transaction stale = repository.get(TransactionIdentifier.id(transaction.getId()))
                 .orElseThrow();
-        transaction.placeEffect(41, 0, Instant.EPOCH.plusSeconds(1));
+        transaction.placeEffect(
+                new AccountNumber("DEBIT001"), 0, Instant.EPOCH.plusSeconds(1));
         repository.update(transaction);
 
         assertThrows(IllegalStateException.class, () -> repository.add(createValue()));

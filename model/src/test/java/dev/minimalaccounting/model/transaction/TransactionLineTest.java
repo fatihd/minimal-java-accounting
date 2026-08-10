@@ -15,30 +15,21 @@ class TransactionLineTest {
             new Money(100, Currency.getInstance("USD"));
 
     @Test
-    void rejectsAnUnresolvedAccountIdentity() {
-        assertThrows(
-                PostingRejectedException.class,
-                () -> line(0, AMOUNT, AMOUNT));
-    }
-
-    @Test
     void rejectsNonPositiveAmounts() {
         Money zero = Money.zero(AMOUNT.currency());
 
         assertThrows(
                 PostingRejectedException.class,
-                () -> line(1, zero, AMOUNT));
+                () -> line(zero, AMOUNT));
         assertThrows(
                 PostingRejectedException.class,
-                () -> line(1, AMOUNT, zero));
+                () -> line(AMOUNT, zero));
     }
 
     private static TransactionLine line(
-            long accountId,
             Money transactionAmount,
             Money ledgerAmount) {
         return new TransactionLine(
-                accountId,
                 new AccountNumber("ACCOUNT01"),
                 DebitCredit.DEBIT,
                 transactionAmount,

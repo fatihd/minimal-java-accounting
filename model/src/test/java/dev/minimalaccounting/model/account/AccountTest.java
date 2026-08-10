@@ -144,7 +144,6 @@ class AccountTest {
     @Test
     void rejectedHoldRetainsItsIdempotencyState() {
         Account account = new Account(
-                1L,
                 0L,
                 new AccountNumber("ACCOUNT01"),
                 "account",
@@ -166,7 +165,6 @@ class AccountTest {
 
     private static Account account() {
         return new Account(
-                1L,
                 0L,
                 new AccountNumber("ACCOUNT01"),
                 "account",

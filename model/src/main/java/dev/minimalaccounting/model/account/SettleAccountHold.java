@@ -2,9 +2,10 @@ package dev.minimalaccounting.model.account;
 
 import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
+import dev.minimalaccounting.model.AccountNumber;
 
 public record SettleAccountHold(
-        long accountId,
+        AccountNumber accountNumber,
         long transactionId,
         int effectNumber,
         DebitCredit side,

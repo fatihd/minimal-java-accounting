@@ -1,7 +1,6 @@
 package dev.minimalaccounting.adapters.persistence.postgresql;
 
 import dev.minimalaccounting.model.account.Account;
-import dev.minimalaccounting.model.account.AccountIdentifier;
 import dev.minimalaccounting.shared.ports.ExplicitUpdateRepositoryContract;
 import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.DebitCredit;
@@ -17,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PostgresqlAccountRepositoryTest
-        extends ExplicitUpdateRepositoryContract<AccountIdentifier, Account> {
+        extends ExplicitUpdateRepositoryContract<AccountNumber, Account> {
     private static final Currency USD = Currency.getInstance("USD");
     private static final AccountNumber NUMBER = new AccountNumber("ACCOUNT01");
     private static final Money HOLD = new Money(10, USD);
@@ -37,12 +36,12 @@ class PostgresqlAccountRepositoryTest
     }
 
     @Override
-    protected AccountIdentifier add(Account value) {
+    protected AccountNumber add(Account value) {
         return repository.add(value);
     }
 
     @Override
-    protected Optional<Account> get(AccountIdentifier identifier) {
+    protected Optional<Account> get(AccountNumber identifier) {
         return repository.get(identifier);
     }
 
@@ -67,23 +66,23 @@ class PostgresqlAccountRepositoryTest
     }
 
     @Test
-    void resolvesByNumberAndRemovesByNumber() {
+    void usesTheAccountNumberAsItsIdentity() {
         Account account = createValue();
-        repository.add(account);
+        AccountNumber identifier = repository.add(account);
 
-        assertEquals(account.getId(), repository.get(AccountIdentifier.number(NUMBER))
-                .orElseThrow().getId());
+        assertEquals(NUMBER, identifier);
+        assertEquals(NUMBER, repository.get(NUMBER).orElseThrow().getAccountNumber());
 
-        repository.remove(AccountIdentifier.number(NUMBER));
+        repository.remove(NUMBER);
 
-        assertFalse(repository.get(AccountIdentifier.number(NUMBER)).isPresent());
+        assertFalse(repository.get(NUMBER).isPresent());
     }
 
     @Test
     void rejectsDuplicateNumbersAndStaleUpdates() {
         Account account = createValue();
         repository.add(account);
-        Account stale = repository.get(AccountIdentifier.id(account.getId())).orElseThrow();
+        Account stale = repository.get(NUMBER).orElseThrow();
         account.placeHold(10, 0, DebitCredit.DEBIT, HOLD);
         repository.update(account);
 

@@ -25,8 +25,8 @@ class AccountCreationTest {
     }
 
     @Test
-    void hasNoPersistenceIdentity() {
-        assertNull(account.getId());
+    void usesItsAccountNumberAsItsIdentity() {
+        assertEquals(new AccountNumber("ACCOUNT01"), account.getAccountNumber());
     }
 
     @Test

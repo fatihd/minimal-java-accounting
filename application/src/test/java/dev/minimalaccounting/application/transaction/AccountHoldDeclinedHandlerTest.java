@@ -42,14 +42,15 @@ class AccountHoldDeclinedHandlerTest {
                     releases.add(command);
                 });
         AccountHoldDeclined event = new AccountHoldDeclined(
-                1, transactionId, 0, "limit exceeded");
+                new AccountNumber("ACCOUNT01"), transactionId, 0, "limit exceeded");
 
         assertThrows(IllegalStateException.class, () -> handler.handle(event));
         handler.handle(event);
 
         assertEquals(
                 List.of(new ReleaseAccountHold(
-                        2, transactionId, 1, DebitCredit.DEBIT, AMOUNT)),
+                        new AccountNumber("ACCOUNT02"), transactionId, 1,
+                        DebitCredit.DEBIT, AMOUNT)),
                 releases);
         Transaction stored = transactions.get(TransactionIdentifier.id(transactionId))
                 .orElseThrow();
@@ -78,7 +79,6 @@ class AccountHoldDeclinedHandlerTest {
 
     private static AccountEffect effect(long accountId, AccountEffectState state) {
         return new AccountEffect(
-                accountId,
                 new AccountNumber("ACCOUNT0" + accountId),
                 DebitCredit.DEBIT,
                 AMOUNT,

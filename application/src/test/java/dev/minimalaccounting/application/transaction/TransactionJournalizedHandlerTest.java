@@ -65,7 +65,8 @@ class TransactionJournalizedHandlerTest {
         void requestsSettlementForEachAccountEffect() {
             assertEquals(
                     List.of(new SettleAccountHold(
-                            1, transactionId, 0, DebitCredit.DEBIT, AMOUNT)),
+                            new AccountNumber("ACCOUNT01"), transactionId, 0,
+                            DebitCredit.DEBIT, AMOUNT)),
                     settlements);
         }
     }
@@ -172,17 +173,19 @@ class TransactionJournalizedHandlerTest {
         assertEquals(
                 List.of(
                         new SettleAccountHold(
-                                1, transactionId, 0, DebitCredit.DEBIT, AMOUNT),
+                                new AccountNumber("ACCOUNT01"), transactionId, 0,
+                                DebitCredit.DEBIT, AMOUNT),
                         new SettleAccountHold(
-                                1, transactionId, 0, DebitCredit.DEBIT, AMOUNT),
+                                new AccountNumber("ACCOUNT01"), transactionId, 0,
+                                DebitCredit.DEBIT, AMOUNT),
                         new SettleAccountHold(
-                                2, transactionId, 1, DebitCredit.CREDIT, AMOUNT)),
+                                new AccountNumber("ACCOUNT02"), transactionId, 1,
+                                DebitCredit.CREDIT, AMOUNT)),
                 settlements);
     }
 
     private static Transaction transaction(String requestId) {
         AccountEffect effect = new AccountEffect(
-                1,
                 new AccountNumber("ACCOUNT01"),
                 DebitCredit.DEBIT,
                 AMOUNT,
@@ -236,13 +239,11 @@ class TransactionJournalizedHandlerTest {
                 List.of(),
                 List.of(
                         new AccountEffect(
-                                1,
                                 new AccountNumber("ACCOUNT01"),
                                 DebitCredit.DEBIT,
                                 AMOUNT,
                                 AccountEffectState.HELD),
                         new AccountEffect(
-                                2,
                                 new AccountNumber("ACCOUNT02"),
                                 DebitCredit.CREDIT,
                                 AMOUNT,
@@ -261,10 +262,12 @@ class TransactionJournalizedHandlerTest {
                 Instant.EPOCH,
                 List.of(
                         new JournalLine(
-                                1, DebitCredit.DEBIT, AMOUNT, AMOUNT,
+                                new AccountNumber("ACCOUNT01"), DebitCredit.DEBIT,
+                                AMOUNT, AMOUNT,
                                 new Money(1100, USD)),
                         new JournalLine(
-                                2, DebitCredit.CREDIT, AMOUNT, AMOUNT,
+                                new AccountNumber("ACCOUNT02"), DebitCredit.CREDIT,
+                                AMOUNT, AMOUNT,
                                 new Money(900, USD))));
     }
 }

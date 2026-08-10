@@ -29,8 +29,8 @@ class TransactionStartTest {
         @BeforeEach
         void start() {
             transaction = transaction(
-                    line(1, "DEBIT001", DebitCredit.DEBIT, 100),
-                    line(2, "CREDIT01", DebitCredit.CREDIT, 100));
+                    line("DEBIT001", DebitCredit.DEBIT, 100),
+                    line("CREDIT01", DebitCredit.CREDIT, 100));
 
             transaction.start(Instant.EPOCH);
         }
@@ -49,9 +49,9 @@ class TransactionStartTest {
     @Test
     void netsMultipleLinesForOneAccount() {
         Transaction transaction = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT, 150),
-                line(1, "DEBIT001", DebitCredit.CREDIT, 50),
-                line(2, "CREDIT01", DebitCredit.CREDIT, 100));
+                line("DEBIT001", DebitCredit.DEBIT, 150),
+                line("DEBIT001", DebitCredit.CREDIT, 50),
+                line("CREDIT01", DebitCredit.CREDIT, 100));
         transaction.start(Instant.EPOCH);
 
         assertEquals(AMOUNT, transaction.getEffects().getFirst().getLedgerAmount());
@@ -60,9 +60,9 @@ class TransactionStartTest {
     @Test
     void exposesDistinctReferencedAccountNumbers() {
         Transaction transaction = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT, 150),
-                line(1, "DEBIT001", DebitCredit.CREDIT, 50),
-                line(2, "CREDIT01", DebitCredit.CREDIT, 100));
+                line("DEBIT001", DebitCredit.DEBIT, 150),
+                line("DEBIT001", DebitCredit.CREDIT, 50),
+                line("CREDIT01", DebitCredit.CREDIT, 100));
 
         assertEquals(
                 Set.of(
@@ -74,8 +74,8 @@ class TransactionStartTest {
     @Test
     void startsHeldWhenAllAccountEffectsNetToZero() {
         Transaction transaction = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT, 100),
-                line(1, "DEBIT001", DebitCredit.CREDIT, 100));
+                line("DEBIT001", DebitCredit.DEBIT, 100),
+                line("DEBIT001", DebitCredit.CREDIT, 100));
 
         transaction.start(Instant.EPOCH);
 
@@ -85,21 +85,10 @@ class TransactionStartTest {
     }
 
     @Test
-    void rejectsConflictingAccountIdentity() {
-        Transaction transaction = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT, 100),
-                line(1, "CREDIT01", DebitCredit.CREDIT, 100));
-
-        assertThrows(
-                PostingRejectedException.class,
-                () -> transaction.start(Instant.EPOCH));
-    }
-
-    @Test
     void cannotStartAnAlreadyStartedTransaction() {
         Transaction transaction = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT, 100),
-                line(2, "CREDIT01", DebitCredit.CREDIT, 100));
+                line("DEBIT001", DebitCredit.DEBIT, 100),
+                line("CREDIT01", DebitCredit.CREDIT, 100));
         transaction.start(Instant.EPOCH);
 
         assertThrows(
@@ -111,7 +100,7 @@ class TransactionStartTest {
     @Test
     void rejectsFewerThanTwoLines() {
         Transaction transaction = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT, 100));
+                line("DEBIT001", DebitCredit.DEBIT, 100));
 
         assertThrows(
                 PostingRejectedException.class,
@@ -135,8 +124,8 @@ class TransactionStartTest {
     @Test
     void rejectsLedgerLinesWithDifferentCurrencies() {
         Transaction transaction = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT, 100, USD),
-                line(2, "CREDIT01", DebitCredit.CREDIT, 100, EUR));
+                line("DEBIT001", DebitCredit.DEBIT, 100, USD),
+                line("CREDIT01", DebitCredit.CREDIT, 100, EUR));
 
         assertThrows(
                 PostingRejectedException.class,
@@ -146,12 +135,12 @@ class TransactionStartTest {
     @Test
     void rejectsMissingOrBlankRequiredText() {
         Transaction missingRequest = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT, 100),
-                line(2, "CREDIT01", DebitCredit.CREDIT, 100));
+                line("DEBIT001", DebitCredit.DEBIT, 100),
+                line("CREDIT01", DebitCredit.CREDIT, 100));
         missingRequest.setRequestId(null);
         Transaction blankDocumentType = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT, 100),
-                line(2, "CREDIT01", DebitCredit.CREDIT, 100));
+                line("DEBIT001", DebitCredit.DEBIT, 100),
+                line("CREDIT01", DebitCredit.CREDIT, 100));
         blankDocumentType.setDocumentType(" ");
 
         assertThrows(
@@ -165,8 +154,8 @@ class TransactionStartTest {
     @Test
     void onlyHeldTransactionsAreJournalizable() {
         Transaction transaction = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT, 100),
-                line(2, "CREDIT01", DebitCredit.CREDIT, 100));
+                line("DEBIT001", DebitCredit.DEBIT, 100),
+                line("CREDIT01", DebitCredit.CREDIT, 100));
         transaction.start(Instant.EPOCH);
 
         assertThrows(
@@ -192,22 +181,19 @@ class TransactionStartTest {
     }
 
     private static TransactionLine line(
-            long accountId,
             String accountNumber,
             DebitCredit side,
             long amount) {
-        return line(accountId, accountNumber, side, amount, USD);
+        return line(accountNumber, side, amount, USD);
     }
 
     private static TransactionLine line(
-            long accountId,
             String accountNumber,
             DebitCredit side,
             long amount,
             Currency currency) {
         Money money = new Money(amount, currency);
         return new TransactionLine(
-                accountId,
                 new AccountNumber(accountNumber),
                 side,
                 money,

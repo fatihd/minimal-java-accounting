@@ -128,9 +128,9 @@ class AccountEffectTest {
         AccountNumber accountNumber = new AccountNumber("ACCOUNT01");
 
         AccountEffect debit = AccountEffect.pending(
-                1, accountNumber, new Money(100, Currency.getInstance("USD")));
+                accountNumber, new Money(100, Currency.getInstance("USD")));
         AccountEffect credit = AccountEffect.pending(
-                1, accountNumber, new Money(-100, Currency.getInstance("USD")));
+                accountNumber, new Money(-100, Currency.getInstance("USD")));
 
         assertAll(
                 () -> assertEquals(DebitCredit.DEBIT, debit.getSide()),
@@ -142,19 +142,10 @@ class AccountEffectTest {
     }
 
     @Test
-    void effectRequiresARealAccountAndPositiveAmount() {
+    void effectRequiresAPositiveAmount() {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> new AccountEffect(
-                        0,
-                        new AccountNumber("ACCOUNT01"),
-                        DebitCredit.DEBIT,
-                        AMOUNT,
-                        AccountEffectState.PENDING));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new AccountEffect(
-                        1,
                         new AccountNumber("ACCOUNT01"),
                         DebitCredit.DEBIT,
                         Money.zero(Currency.getInstance("USD")),
@@ -162,7 +153,6 @@ class AccountEffectTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> AccountEffect.pending(
-                        1,
                         new AccountNumber("ACCOUNT01"),
                         Money.zero(Currency.getInstance("USD"))));
     }
@@ -171,9 +161,10 @@ class AccountEffectTest {
     void effectValidatesItsOwnAccountIdentity() {
         AccountEffect effect = effect(AccountEffectState.PENDING);
 
-        effect.requireAccount(1);
+        effect.requireAccount(new AccountNumber("ACCOUNT01"));
 
-        assertThrows(IllegalArgumentException.class, () -> effect.requireAccount(2));
+        assertThrows(IllegalArgumentException.class,
+                () -> effect.requireAccount(new AccountNumber("ACCOUNT02")));
     }
 
     @Test
@@ -189,7 +180,6 @@ class AccountEffectTest {
 
     private static AccountEffect effect(AccountEffectState state) {
         return new AccountEffect(
-                1,
                 new AccountNumber("ACCOUNT01"),
                 DebitCredit.DEBIT,
                 AMOUNT,

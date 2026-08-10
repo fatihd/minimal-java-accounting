@@ -31,14 +31,14 @@ class PostingServiceTest {
 
         @BeforeEach
         void post() {
-            debit = account(1, "DEBIT001", 1000);
-            credit = account(2, "CREDIT01", 1000);
+            debit = account("DEBIT001", 1000);
+            credit = account("CREDIT01", 1000);
             Transaction transaction = transaction(
                     new TransactionLine(
-                            1, new AccountNumber("DEBIT001"), DebitCredit.DEBIT,
+                            new AccountNumber("DEBIT001"), DebitCredit.DEBIT,
                             new Money(100, USD), new Money(100, USD)),
                     new TransactionLine(
-                            2, new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
+                            new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
                             new Money(100, USD), new Money(100, USD)));
 
             entry = new JournalService().journalize(
@@ -68,10 +68,10 @@ class PostingServiceTest {
 
     @Test
     void rejectsAMissingReferencedAccount() {
-        Account debit = account(1, "DEBIT001", 1000);
+        Account debit = account("DEBIT001", 1000);
         Transaction transaction = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT),
-                line(2, "CREDIT01", DebitCredit.CREDIT));
+                line("DEBIT001", DebitCredit.DEBIT),
+                line("CREDIT01", DebitCredit.CREDIT));
 
         assertThrows(
                 PostingRejectedException.class,
@@ -80,21 +80,8 @@ class PostingServiceTest {
     }
 
     @Test
-    void rejectsAnAccountWhoseIdentityChanged() {
-        Account changed = account(1, "CHANGED1", 1000);
-        Account credit = account(2, "CREDIT01", 1000);
-        Transaction transaction = transaction(
-                line(1, "DEBIT001", DebitCredit.DEBIT),
-                line(2, "CREDIT01", DebitCredit.CREDIT));
-
-        assertThrows(
-                PostingRejectedException.class,
-                () -> new JournalService().journalize(
-                        transaction, List.of(changed, credit), Instant.EPOCH));
-    }
-
-    private static Account account(long id, String number, long balance) {
-        return new Account(id, 0L, new AccountNumber(number), number,
+    private static Account account(String number, long balance) {
+        return new Account(0L, new AccountNumber(number), number,
                 new Money(balance, USD), null, null, List.of());
     }
 
@@ -116,12 +103,10 @@ class PostingServiceTest {
     }
 
     private static TransactionLine line(
-            long accountId,
             String accountNumber,
             DebitCredit side) {
         Money amount = new Money(100, USD);
         return new TransactionLine(
-                accountId,
                 new AccountNumber(accountNumber),
                 side,
                 amount,

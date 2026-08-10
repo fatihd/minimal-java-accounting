@@ -30,7 +30,8 @@ class AccountHoldReleasedHandlerTest {
                 new ConcurrentTransactionRepository());
 
         assertDoesNotThrow(
-                () -> handler.handle(new AccountHoldReleased(1, 99, 0)));
+                () -> handler.handle(new AccountHoldReleased(
+                        new AccountNumber("ACCOUNT01"), 99, 0)));
     }
 
     @Test
@@ -44,7 +45,8 @@ class AccountHoldReleasedHandlerTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> handler.handle(new AccountHoldReleased(1, transactionId, 0)));
+                () -> handler.handle(new AccountHoldReleased(
+                        new AccountNumber("ACCOUNT01"), transactionId, 0)));
         assertEquals(
                 AccountEffectState.HELD,
                 transactions.get(TransactionIdentifier.id(transactionId))
@@ -62,7 +64,8 @@ class AccountHoldReleasedHandlerTest {
                 TransactionState.RELEASING_HOLDS,
                 effect(AccountEffectState.RELEASING))).id();
         AccountHoldReleasedHandler handler = new AccountHoldReleasedHandler(transactions);
-        AccountHoldReleased event = new AccountHoldReleased(1, transactionId, 0);
+        AccountHoldReleased event = new AccountHoldReleased(
+                new AccountNumber("ACCOUNT01"), transactionId, 0);
 
         handler.handle(event);
         handler.handle(event);
@@ -84,6 +87,6 @@ class AccountHoldReleasedHandlerTest {
 
     private static AccountEffect effect(AccountEffectState state) {
         return new AccountEffect(
-                1, new AccountNumber("ACCOUNT01"), DebitCredit.DEBIT, AMOUNT, state);
+                new AccountNumber("ACCOUNT01"), DebitCredit.DEBIT, AMOUNT, state);
     }
 }

@@ -45,7 +45,8 @@ class AccountHoldPlacedHandlerTest {
                     journalizations.add(command);
                 },
                 Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
-        AccountHoldPlaced event = new AccountHoldPlaced(1, transactionId, 0);
+        AccountHoldPlaced event = new AccountHoldPlaced(
+                new AccountNumber("ACCOUNT01"), transactionId, 0);
 
         assertThrows(IllegalStateException.class, () -> handler.handle(event));
         handler.handle(event);
@@ -73,7 +74,6 @@ class AccountHoldPlacedHandlerTest {
                 null,
                 List.of(),
                 List.of(new AccountEffect(
-                        1,
                         new AccountNumber("ACCOUNT01"),
                         DebitCredit.DEBIT,
                         AMOUNT,

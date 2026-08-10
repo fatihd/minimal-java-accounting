@@ -4,7 +4,7 @@ import dev.minimalaccounting.adapters.messaging.inmemory.InMemoryPoller;
 import dev.minimalaccounting.adapters.messaging.outbox.OutboxPoller;
 import dev.minimalaccounting.infrastructure.MetricsRegistry;
 import dev.minimalaccounting.model.account.Account;
-import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.app.adapters.fake.InMemoryMessagingModuleFactory;
 import dev.minimalaccounting.app.adapters.fake.InMemoryPersistenceModuleFactory;
 import dev.minimalaccounting.app.adapters.MessagingComponents;
@@ -37,7 +37,7 @@ sealed interface RuntimeModules permits InMemoryModules, DurableModules {
     List<IntSupplier> pollers(List<IntSupplier> workflowPollers);
 
     AccountingRuntime runtime(
-            Repository<AccountIdentifier, Account> accounts,
+            Repository<AccountNumber, Account> accounts,
             Handler<SubmitTransaction> transactions,
             MetricsRegistry metrics,
             List<IntSupplier> pollers);
@@ -74,7 +74,7 @@ record InMemoryModules(
 
     @Override
     public AccountingRuntime runtime(
-            Repository<AccountIdentifier, Account> accounts,
+            Repository<AccountNumber, Account> accounts,
             Handler<SubmitTransaction> transactions,
             MetricsRegistry metrics,
             List<IntSupplier> pollers) {
@@ -124,7 +124,7 @@ record DurableModules(
 
     @Override
     public AccountingRuntime runtime(
-            Repository<AccountIdentifier, Account> accounts,
+            Repository<AccountNumber, Account> accounts,
             Handler<SubmitTransaction> transactions,
             MetricsRegistry metrics,
             List<IntSupplier> pollers) {

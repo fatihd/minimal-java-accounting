@@ -198,6 +198,9 @@
   unless a repository genuinely adds another operation. Name compound keys
   `*Identifier`, not `*Reference`. `add` returns the aggregate's canonical
   identifier; do not assume every aggregate uses a generated numeric identity.
+- Use `AccountNumber` directly as the account aggregate identity throughout
+  the model, messages, repositories, and schemas. Do not introduce a parallel
+  generated account ID or a compound account identifier.
 - Keep persistence coordination out of entities and business services. The
   in-memory repositories use defensive copies and concurrent JDK collections;
   the PostgreSQL repositories use plain JDBC and reconstruct equally detached

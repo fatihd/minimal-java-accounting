@@ -7,7 +7,6 @@ import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepo
 import dev.minimalaccounting.model.account.Account;
 import dev.minimalaccounting.model.account.AccountHoldDeclined;
 import dev.minimalaccounting.model.account.AccountHoldPlaced;
-import dev.minimalaccounting.model.account.AccountIdentifier;
 import dev.minimalaccounting.model.account.PlaceAccountHold;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +30,8 @@ class PlaceAccountHoldHandlerTest {
 
         handler.handle(command());
 
-        assertEquals(List.of(new AccountHoldPlaced(1, 10, 0)), placed);
+        assertEquals(List.of(new AccountHoldPlaced(
+                new AccountNumber("ACCOUNT01"), 10, 0)), placed);
     }
 
     @Test
@@ -47,7 +47,8 @@ class PlaceAccountHoldHandlerTest {
         assertEquals(2, declined.size());
         assertEquals(
                 1,
-                accounts.get(AccountIdentifier.id(1)).orElseThrow().getHolds().size());
+                accounts.get(new AccountNumber("ACCOUNT01"))
+                        .orElseThrow().getHolds().size());
     }
 
     @Test
@@ -81,10 +82,11 @@ class PlaceAccountHoldHandlerTest {
         assertThrows(IllegalStateException.class, () -> handler.handle(command()));
         handler.handle(command());
 
-        assertEquals(List.of(new AccountHoldPlaced(1, 10, 0)), placed);
+        assertEquals(List.of(new AccountHoldPlaced(
+                new AccountNumber("ACCOUNT01"), 10, 0)), placed);
         assertEquals(
                 100,
-                accounts.get(AccountIdentifier.id(1))
+                accounts.get(new AccountNumber("ACCOUNT01"))
                         .orElseThrow()
                         .getDebitsHeld()
                         .minor());
@@ -108,13 +110,12 @@ class PlaceAccountHoldHandlerTest {
         assertEquals(List.of(), placed);
         assertEquals(
                 0,
-                accounts.get(AccountIdentifier.id(1)).orElseThrow()
+                accounts.get(new AccountNumber("ACCOUNT01")).orElseThrow()
                         .getDebitsHeld().minor());
     }
 
     private static ConcurrentAccountRepository accounts(Long maximum) {
         Account account = new Account(
-                null,
                 null,
                 new AccountNumber("ACCOUNT01"),
                 "account",
@@ -129,7 +130,7 @@ class PlaceAccountHoldHandlerTest {
 
     private static PlaceAccountHold command() {
         return new PlaceAccountHold(
-                1,
+                new AccountNumber("ACCOUNT01"),
                 10,
                 0,
                 DebitCredit.DEBIT,

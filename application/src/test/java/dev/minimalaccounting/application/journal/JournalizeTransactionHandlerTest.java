@@ -134,10 +134,10 @@ class JournalizeTransactionHandlerTest {
                 null,
                 List.of(
                         new TransactionLine(
-                                1, new AccountNumber("DEBIT001"), DebitCredit.DEBIT,
+                                new AccountNumber("DEBIT001"), DebitCredit.DEBIT,
                                 AMOUNT, AMOUNT),
                         new TransactionLine(
-                                2, new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
+                                new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
                                 AMOUNT, AMOUNT)),
                 List.of());
     }

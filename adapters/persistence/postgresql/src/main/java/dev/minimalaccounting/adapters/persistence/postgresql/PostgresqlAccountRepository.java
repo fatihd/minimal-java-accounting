@@ -5,7 +5,6 @@ import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.model.account.Account;
 import dev.minimalaccounting.model.account.AccountHold;
 import dev.minimalaccounting.model.account.AccountHoldState;
-import dev.minimalaccounting.model.account.AccountIdentifier;
 import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.DebitCredit;
 
@@ -15,56 +14,27 @@ import lombok.RequiredArgsConstructor;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public final class PostgresqlAccountRepository implements Repository<AccountIdentifier, Account> {
+public final class PostgresqlAccountRepository implements Repository<AccountNumber, Account> {
     @NonNull
     private final JdbcTransactions transactions;
 
     @Override
-    public Optional<Account> get(AccountIdentifier key) {
-        return transactions.withConnection(connection -> get(connection, key));
+    public Optional<Account> get(AccountNumber accountNumber) {
+        return transactions.withConnection(connection -> get(connection, accountNumber));
     }
 
     @Override
-    public AccountIdentifier add(Account value) {
+    public AccountNumber add(Account value) {
         return transactions.inTransaction(() -> transactions.withConnection(connection -> {
             try (var statement = connection.prepareStatement("""
                     INSERT INTO account(
                         revision, account_number, name, balance_minor, currency,
                         minimum_balance_minor, maximum_balance_minor)
                     VALUES (0, ?, ?, ?, ?, ?, ?)
-                    """, Statement.RETURN_GENERATED_KEYS)) {
-                statement.setString(1, value.getAccountNumber().value());
-                statement.setString(2, value.getName());
-                statement.setLong(3, value.getBalance().minor());
-                statement.setString(4, value.getBalance().currency().getCurrencyCode());
-                JdbcValues.nullableLong(statement, 5, value.getMinimumBalance());
-                JdbcValues.nullableLong(statement, 6, value.getMaximumBalance());
-                statement.executeUpdate();
-                long id = generatedId(statement);
-                insertHolds(connection, id, value);
-                value.setId(id);
-                value.setRevision(0L);
-                return AccountIdentifier.id(id);
-            }
-        }));
-    }
-
-    @Override
-    public void update(Account value) {
-        transactions.inTransaction(() -> transactions.withConnection(connection -> {
-            long id = required(value.getId(), "Account has no identity");
-            long revision = required(value.getRevision(), "Account has no revision");
-            try (var statement = connection.prepareStatement("""
-                    UPDATE account
-                    SET revision = revision + 1,
-                        account_number = ?, name = ?, balance_minor = ?, currency = ?,
-                        minimum_balance_minor = ?, maximum_balance_minor = ?
-                    WHERE id = ? AND revision = ?
                     """)) {
                 statement.setString(1, value.getAccountNumber().value());
                 statement.setString(2, value.getName());
@@ -72,78 +42,87 @@ public final class PostgresqlAccountRepository implements Repository<AccountIden
                 statement.setString(4, value.getBalance().currency().getCurrencyCode());
                 JdbcValues.nullableLong(statement, 5, value.getMinimumBalance());
                 JdbcValues.nullableLong(statement, 6, value.getMaximumBalance());
-                statement.setLong(7, id);
-                statement.setLong(8, revision);
-                requireUpdated(statement.executeUpdate(), "account", id);
+                statement.executeUpdate();
+                insertHolds(connection, value.getAccountNumber(), value);
+                value.setRevision(0L);
+                return value.getAccountNumber();
             }
-            deleteChildren(connection, id);
-            insertHolds(connection, id, value);
+        }));
+    }
+
+    @Override
+    public void update(Account value) {
+        transactions.inTransaction(() -> transactions.withConnection(connection -> {
+            long revision = required(value.getRevision(), "Account has no revision");
+            try (var statement = connection.prepareStatement("""
+                    UPDATE account
+                    SET revision = revision + 1, name = ?, balance_minor = ?, currency = ?,
+                        minimum_balance_minor = ?, maximum_balance_minor = ?
+                    WHERE account_number = ? AND revision = ?
+                    """)) {
+                statement.setString(1, value.getName());
+                statement.setLong(2, value.getBalance().minor());
+                statement.setString(3, value.getBalance().currency().getCurrencyCode());
+                JdbcValues.nullableLong(statement, 4, value.getMinimumBalance());
+                JdbcValues.nullableLong(statement, 5, value.getMaximumBalance());
+                statement.setString(6, value.getAccountNumber().value());
+                statement.setLong(7, revision);
+                requireUpdated(statement.executeUpdate(), "account", value.getAccountNumber());
+            }
+            deleteChildren(connection, value.getAccountNumber());
+            insertHolds(connection, value.getAccountNumber(), value);
             value.setRevision(revision + 1);
             return null;
         }));
     }
 
     @Override
-    public void remove(AccountIdentifier key) {
+    public void remove(AccountNumber accountNumber) {
         transactions.inTransaction(() -> transactions.withConnection(connection -> {
-            String sql = key.id() != null
-                    ? "DELETE FROM account WHERE id = ?"
-                    : "DELETE FROM account WHERE account_number = ?";
-            try (var statement = connection.prepareStatement(sql)) {
-                if (key.id() != null) {
-                    statement.setLong(1, key.id());
-                } else {
-                    statement.setString(1, key.accountNumber().value());
-                }
+            try (var statement = connection.prepareStatement(
+                    "DELETE FROM account WHERE account_number = ?")) {
+                statement.setString(1, accountNumber.value());
                 statement.executeUpdate();
             }
             return null;
         }));
     }
 
-    private static Optional<Account> get(Connection connection, AccountIdentifier key)
+    private static Optional<Account> get(Connection connection, AccountNumber accountNumber)
             throws SQLException {
-        String sql = key.id() != null
-                ? "SELECT * FROM account WHERE id = ?"
-                : "SELECT * FROM account WHERE account_number = ?";
-        try (var statement = connection.prepareStatement(sql)) {
-            if (key.id() != null) {
-                statement.setLong(1, key.id());
-            } else {
-                statement.setString(1, key.accountNumber().value());
-            }
+        try (var statement = connection.prepareStatement(
+                "SELECT * FROM account WHERE account_number = ?")) {
+            statement.setString(1, accountNumber.value());
             try (ResultSet result = statement.executeQuery()) {
                 if (!result.next()) {
                     return Optional.empty();
                 }
-                long id = result.getLong("id");
                 String currency = result.getString("currency");
                 return Optional.of(new Account(
-                        id,
                         result.getLong("revision"),
                         new AccountNumber(result.getString("account_number")),
                         result.getString("name"),
                         JdbcValues.money(result.getLong("balance_minor"), currency),
                         nullableBalance(result, "minimum_balance_minor", currency),
                         nullableBalance(result, "maximum_balance_minor", currency),
-                        holds(connection, id, currency)));
+                        holds(connection, accountNumber, currency)));
             }
         }
     }
 
     private static java.util.List<AccountHold> holds(
             Connection connection,
-            long accountId,
+            AccountNumber accountNumber,
             String currency) throws SQLException {
         var values = new ArrayList<AccountHold>();
         try (var statement = connection.prepareStatement("""
                 SELECT transaction_id, effect_number, side, amount_minor, state,
                        failure_reason
                 FROM account_hold
-                WHERE account_id = ?
+                WHERE account_number = ?
                 ORDER BY transaction_id, effect_number
                 """)) {
-            statement.setLong(1, accountId);
+            statement.setString(1, accountNumber.value());
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
                     values.add(new AccountHold(
@@ -167,16 +146,19 @@ public final class PostgresqlAccountRepository implements Repository<AccountIden
         return value == null ? null : JdbcValues.money(value, currency);
     }
 
-    private static void insertHolds(Connection connection, long accountId, Account account)
+    private static void insertHolds(
+            Connection connection,
+            AccountNumber accountNumber,
+            Account account)
             throws SQLException {
         try (var statement = connection.prepareStatement("""
                 INSERT INTO account_hold(
-                    account_id, transaction_id, effect_number, side,
+                    account_number, transaction_id, effect_number, side,
                     amount_minor, state, failure_reason)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """)) {
             for (AccountHold hold : account.getHolds()) {
-                statement.setLong(1, accountId);
+                statement.setString(1, accountNumber.value());
                 statement.setLong(2, hold.getTransactionId());
                 statement.setInt(3, hold.getEffectNumber());
                 statement.setString(4, hold.getSide().name());
@@ -189,10 +171,12 @@ public final class PostgresqlAccountRepository implements Repository<AccountIden
         }
     }
 
-    private static void deleteChildren(Connection connection, long id) throws SQLException {
+    private static void deleteChildren(
+            Connection connection,
+            AccountNumber accountNumber) throws SQLException {
         try (var statement = connection.prepareStatement(
-                "DELETE FROM account_hold WHERE account_id = ?")) {
-            statement.setLong(1, id);
+                "DELETE FROM account_hold WHERE account_number = ?")) {
+            statement.setString(1, accountNumber.value());
             statement.executeUpdate();
         }
     }
@@ -213,9 +197,9 @@ public final class PostgresqlAccountRepository implements Repository<AccountIden
         return value;
     }
 
-    static void requireUpdated(int count, String type, long id) {
+    static void requireUpdated(int count, String type, Object identifier) {
         if (count != 1) {
-            throw new IllegalStateException("Stale or missing " + type + ": " + id);
+            throw new IllegalStateException("Stale or missing " + type + ": " + identifier);
         }
     }
 }

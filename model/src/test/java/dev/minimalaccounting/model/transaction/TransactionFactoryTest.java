@@ -30,7 +30,7 @@ class TransactionFactoryTest {
 
         @BeforeEach
         void createTransaction() {
-            account = account(7, "ACCOUNT07");
+            account = account("ACCOUNT07");
             transaction = TransactionFactory.create(
                     "request",
                     "TRANSFER",
@@ -39,11 +39,6 @@ class TransactionFactoryTest {
                     Instant.EPOCH,
                     List.of(new TransactionFactory.Line(
                             account, DebitCredit.DEBIT, AMOUNT, AMOUNT)));
-        }
-
-        @Test
-        void copiesResolvedAccountId() {
-            assertEquals(7, transaction.getLines().getFirst().getAccountId());
         }
 
         @Test
@@ -63,17 +58,11 @@ class TransactionFactoryTest {
             assertEquals(1000, account.getBalance().minor());
         }
 
-        @Test
-        void doesNotRetainAccountAggregate() {
-            account.setId(8L);
-
-            assertEquals(7, transaction.getLines().getFirst().getAccountId());
-        }
     }
 
     @Test
     void rejectsLedgerCurrencyDifferentFromAccount() {
-        Account account = account(7, "ACCOUNT07");
+        Account account = account("ACCOUNT07");
 
         assertThrows(
                 PostingRejectedException.class,
@@ -90,14 +79,13 @@ class TransactionFactoryTest {
                                 new Money(100, EUR)))));
     }
 
-    private static Account account(long id, String number) {
+    private static Account account(String number) {
         Account account = Account.create(
                 new AccountNumber(number),
                 number,
                 new Money(1000, USD),
                 null,
                 null);
-        account.setId(id);
         account.setRevision(0L);
         return account;
     }

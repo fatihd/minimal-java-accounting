@@ -1,5 +1,6 @@
 package dev.minimalaccounting.model.journal;
 
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.model.PostingRejectedException;
@@ -21,37 +22,37 @@ public final class PostingService {
             Transaction transaction,
             Collection<Account> accounts,
             @NonNull Instant journalizedAt) {
-        Map<Long, Account> byId = new HashMap<>();
+        Map<AccountNumber, Account> byNumber = new HashMap<>();
         for (Account account : accounts) {
-            byId.put(account.getId(), account);
+            byNumber.put(account.getAccountNumber(), account);
         }
 
-        Map<Long, Long> changes = new LinkedHashMap<>();
+        Map<AccountNumber, Long> changes = new LinkedHashMap<>();
         for (TransactionLine line : transaction.getLines()) {
-            Account account = account(byId, line);
+            Account account = account(byNumber, line);
             account.requireCurrency(line.getLedgerAmount());
             changes.merge(
-                    account.getId(), signed(line.getSide(), line.getLedgerAmount()),
+                    account.getAccountNumber(), signed(line.getSide(), line.getLedgerAmount()),
                     Math::addExact);
         }
-        for (Map.Entry<Long, Long> change : changes.entrySet()) {
-            require(byId.get(change.getKey()))
+        for (Map.Entry<AccountNumber, Long> change : changes.entrySet()) {
+            require(byNumber.get(change.getKey()))
                     .projectedBalance(change.getValue());
         }
 
-        Map<Long, Long> running = new HashMap<>();
+        Map<AccountNumber, Long> running = new HashMap<>();
         for (Account account : accounts) {
-            running.put(account.getId(), account.getBalance().minor());
+            running.put(account.getAccountNumber(), account.getBalance().minor());
         }
         List<JournalLine> lines = new ArrayList<>();
         for (TransactionLine line : transaction.getLines()) {
-            Account account = account(byId, line);
+            Account account = account(byNumber, line);
             long after = Math.addExact(
-                    require(running.get(account.getId())),
+                    require(running.get(account.getAccountNumber())),
                     signed(line.getSide(), line.getLedgerAmount()));
-            running.put(account.getId(), after);
+            running.put(account.getAccountNumber(), after);
             lines.add(new JournalLine(
-                    account.getId(),
+                    account.getAccountNumber(),
                     line.getSide(),
                     line.getTransactionAmount(),
                     line.getLedgerAmount(),
@@ -69,16 +70,12 @@ public final class PostingService {
     }
 
     private static Account account(
-            Map<Long, Account> accounts,
+            Map<AccountNumber, Account> accounts,
             TransactionLine line) {
-        Account account = accounts.get(line.getAccountId());
+        Account account = accounts.get(line.getAccountNumber());
         if (account == null) {
             throw new PostingRejectedException("Account does not exist: "
                     + line.getAccountNumber().value());
-        }
-        if (!account.getAccountNumber().equals(line.getAccountNumber())) {
-            throw new PostingRejectedException(
-                    "Account identity does not match transaction line");
         }
         return account;
     }

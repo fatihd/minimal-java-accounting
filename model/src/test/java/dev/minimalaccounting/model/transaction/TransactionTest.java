@@ -23,9 +23,9 @@ class TransactionTest {
                 TransactionState.PLACING_HOLDS,
                 effect(1, AccountEffectState.PENDING),
                 effect(2, AccountEffectState.PENDING));
-        transaction.placeEffect(1, 0, Instant.EPOCH);
+        transaction.placeEffect(account(1), 0, Instant.EPOCH);
 
-        transaction.placeEffect(2, 1, Instant.EPOCH);
+        transaction.placeEffect(account(2), 1, Instant.EPOCH);
 
         assertEquals(TransactionState.HELD, transaction.getState());
     }
@@ -36,9 +36,9 @@ class TransactionTest {
                 TransactionState.PLACING_HOLDS,
                 effect(1, AccountEffectState.PENDING),
                 effect(2, AccountEffectState.PENDING));
-        transaction.declineEffect(1, 0, "limit exceeded");
+        transaction.declineEffect(account(1), 0, "limit exceeded");
 
-        transaction.placeEffect(2, 1, Instant.EPOCH);
+        transaction.placeEffect(account(2), 1, Instant.EPOCH);
 
         assertEquals(
                 AccountEffectState.RELEASING,
@@ -52,7 +52,7 @@ class TransactionTest {
                 effect(1, AccountEffectState.DECLINED),
                 effect(2, AccountEffectState.HELD));
 
-        transaction.placeEffect(2, 1, Instant.EPOCH);
+        transaction.placeEffect(account(2), 1, Instant.EPOCH);
 
         assertEquals(
                 AccountEffectState.RELEASING,
@@ -66,7 +66,7 @@ class TransactionTest {
                 effect(1, AccountEffectState.HELD),
                 effect(2, AccountEffectState.PENDING));
 
-        transaction.placeEffect(1, 0, Instant.EPOCH);
+        transaction.placeEffect(account(1), 0, Instant.EPOCH);
 
         assertEquals(TransactionState.PLACING_HOLDS, transaction.getState());
         assertEquals(
@@ -83,7 +83,7 @@ class TransactionTest {
                     state,
                     effect(1, AccountEffectState.HELD));
 
-            transaction.placeEffect(1, 0, Instant.EPOCH);
+            transaction.placeEffect(account(1), 0, Instant.EPOCH);
 
             assertEquals(state, transaction.getState());
             assertEquals(
@@ -100,7 +100,7 @@ class TransactionTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> transaction.placeEffect(1, 0, Instant.EPOCH));
+                () -> transaction.placeEffect(account(1), 0, Instant.EPOCH));
     }
 
     @Test
@@ -111,7 +111,7 @@ class TransactionTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> transaction.placeEffect(1, 0, Instant.EPOCH));
+                () -> transaction.placeEffect(account(1), 0, Instant.EPOCH));
     }
 
     @Test
@@ -121,7 +121,7 @@ class TransactionTest {
                 effect(1, AccountEffectState.DECLINED),
                 effect(2, AccountEffectState.RELEASING));
 
-        transaction.releaseEffect(2, 1);
+        transaction.releaseEffect(account(2), 1);
 
         assertEquals(TransactionState.REJECTED, transaction.getState());
     }
@@ -132,9 +132,9 @@ class TransactionTest {
                 TransactionState.RELEASING_HOLDS,
                 effect(1, AccountEffectState.DECLINED),
                 effect(2, AccountEffectState.RELEASING));
-        transaction.releaseEffect(2, 1);
+        transaction.releaseEffect(account(2), 1);
 
-        transaction.releaseEffect(2, 1);
+        transaction.releaseEffect(account(2), 1);
 
         assertEquals(TransactionState.REJECTED, transaction.getState());
         assertEquals(AccountEffectState.RELEASED, transaction.getEffects().get(1).getState());
@@ -148,7 +148,7 @@ class TransactionTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> transaction.releaseEffect(1, 0));
+                () -> transaction.releaseEffect(account(1), 0));
     }
 
     @Test
@@ -169,7 +169,7 @@ class TransactionTest {
                 effect(1, AccountEffectState.HELD));
         transaction.beginSettlement("request");
 
-        transaction.settleEffect(1, 0);
+        transaction.settleEffect(account(1), 0);
 
         assertEquals(TransactionState.COMPLETED, transaction.getState());
     }
@@ -179,9 +179,9 @@ class TransactionTest {
         Transaction transaction = transaction(
                 TransactionState.SETTLING,
                 effect(1, AccountEffectState.SETTLING));
-        transaction.settleEffect(1, 0);
+        transaction.settleEffect(account(1), 0);
 
-        transaction.settleEffect(1, 0);
+        transaction.settleEffect(account(1), 0);
 
         assertEquals(TransactionState.COMPLETED, transaction.getState());
     }
@@ -194,7 +194,7 @@ class TransactionTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> transaction.settleEffect(1, 0));
+                () -> transaction.settleEffect(account(1), 0));
     }
 
     @Test
@@ -236,7 +236,7 @@ class TransactionTest {
                 TransactionState.SETTLING,
                 effect(1, AccountEffectState.SETTLING));
 
-        transaction.placeEffect(1, 0, Instant.EPOCH.plusSeconds(1));
+        transaction.placeEffect(account(1), 0, Instant.EPOCH.plusSeconds(1));
 
         assertEquals(TransactionState.SETTLING, transaction.getState());
         assertEquals(AccountEffectState.SETTLING, transaction.getEffects().getFirst().getState());
@@ -248,11 +248,11 @@ class TransactionTest {
                 TransactionState.PLACING_HOLDS,
                 effect(1, AccountEffectState.PENDING),
                 effect(2, AccountEffectState.PENDING));
-        transaction.placeEffect(1, 0, Instant.EPOCH);
+        transaction.placeEffect(account(1), 0, Instant.EPOCH);
 
         assertThrows(
                 IllegalStateException.class,
-                () -> transaction.declineEffect(1, 0, "declined too late"));
+                () -> transaction.declineEffect(account(1), 0, "declined too late"));
     }
 
     @Test
@@ -263,7 +263,7 @@ class TransactionTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> transaction.placeEffect(1, 0, Instant.EPOCH));
+                () -> transaction.placeEffect(account(1), 0, Instant.EPOCH));
     }
 
     @Test
@@ -272,9 +272,9 @@ class TransactionTest {
                 TransactionState.PLACING_HOLDS,
                 effect(1, AccountEffectState.PENDING),
                 effect(2, AccountEffectState.HELD));
-        transaction.declineEffect(1, 0, "limit exceeded");
+        transaction.declineEffect(account(1), 0, "limit exceeded");
 
-        transaction.declineEffect(1, 0, "different retry text");
+        transaction.declineEffect(account(1), 0, "different retry text");
 
         assertEquals(TransactionState.RELEASING_HOLDS, transaction.getState());
         assertEquals("limit exceeded", transaction.getFailureReason());
@@ -288,7 +288,7 @@ class TransactionTest {
                 effect(1, AccountEffectState.DECLINED),
                 effect(2, AccountEffectState.PENDING));
 
-        transaction.declineEffect(2, 1, "also declined");
+        transaction.declineEffect(account(2), 1, "also declined");
 
         assertEquals(TransactionState.REJECTED, transaction.getState());
         assertEquals(AccountEffectState.DECLINED, transaction.getEffects().get(1).getState());
@@ -302,7 +302,7 @@ class TransactionTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> transaction.declineEffect(1, 0, "late decline"));
+                () -> transaction.declineEffect(account(1), 0, "late decline"));
     }
 
     @Test
@@ -313,7 +313,7 @@ class TransactionTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> transaction.placeEffect(1, 1, Instant.EPOCH));
+                () -> transaction.placeEffect(account(1), 1, Instant.EPOCH));
     }
 
     @Test
@@ -324,7 +324,7 @@ class TransactionTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> transaction.placeEffect(1, -1, Instant.EPOCH));
+                () -> transaction.placeEffect(account(1), -1, Instant.EPOCH));
     }
 
     @Test
@@ -335,7 +335,7 @@ class TransactionTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> transaction.placeEffect(2, 0, Instant.EPOCH));
+                () -> transaction.placeEffect(account(2), 0, Instant.EPOCH));
     }
 
     @Test
@@ -379,10 +379,10 @@ class TransactionTest {
                 null,
                 List.of(
                         new TransactionLine(
-                                1, new AccountNumber("ACCOUNT01"), DebitCredit.DEBIT,
+                                new AccountNumber("ACCOUNT01"), DebitCredit.DEBIT,
                                 AMOUNT, AMOUNT),
                         new TransactionLine(
-                                2, new AccountNumber("ACCOUNT02"), DebitCredit.CREDIT,
+                                new AccountNumber("ACCOUNT02"), DebitCredit.CREDIT,
                                 new Money(99, USD), new Money(99, USD))),
                 List.of());
 
@@ -393,11 +393,14 @@ class TransactionTest {
 
     private static AccountEffect effect(long accountId, AccountEffectState state) {
         return new AccountEffect(
-                accountId,
-                new AccountNumber("ACCOUNT0" + accountId),
+                account(accountId),
                 DebitCredit.DEBIT,
                 AMOUNT,
                 state);
+    }
+
+    private static AccountNumber account(long id) {
+        return new AccountNumber("ACCOUNT0" + id);
     }
 
     private static Transaction transaction(

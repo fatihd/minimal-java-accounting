@@ -352,3 +352,17 @@ creation and assignment from each aggregate repository. Transaction, journal,
 and account repositories still use their existing identifier variants in this
 step, preserving behavior while preparing accounts to use their natural number
 as the sole identity.
+
+## 2026-08-10 — Use account number as the account identity
+
+Removed the generated numeric account ID and compound account identifier.
+`AccountNumber` is now the account aggregate's sole identity in the model,
+commands, events, repository key, in-memory store, PostgreSQL schema, and
+journal and transaction references. Repository lookup no longer selects
+between two unrelated key shapes, and persistence no longer stores duplicate
+account identity columns.
+
+Kept transaction and journal generated identities because their workflow
+messages and persistence lifecycle still require them. Account effects retain
+their existing ordinal only for this isolated change; replacing that ordinal
+with account-number map keys is the next separately validated design step.

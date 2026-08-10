@@ -2,6 +2,7 @@ package dev.minimalaccounting.model.journal;
 
 import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
+import dev.minimalaccounting.model.AccountNumber;
 import org.junit.jupiter.api.Test;
 
 import java.util.Currency;
@@ -13,24 +14,18 @@ class JournalLineTest {
             new Money(100, Currency.getInstance("USD"));
 
     @Test
-    void rejectsAnInvalidAccountIdentity() {
-        assertThrows(IllegalArgumentException.class, () -> line(0, AMOUNT, AMOUNT));
-    }
-
-    @Test
     void rejectsNonPositivePostedAmounts() {
         Money zero = Money.zero(AMOUNT.currency());
 
-        assertThrows(IllegalArgumentException.class, () -> line(1, zero, AMOUNT));
-        assertThrows(IllegalArgumentException.class, () -> line(1, AMOUNT, zero));
+        assertThrows(IllegalArgumentException.class, () -> line(zero, AMOUNT));
+        assertThrows(IllegalArgumentException.class, () -> line(AMOUNT, zero));
     }
 
     private static JournalLine line(
-            long accountId,
             Money transactionAmount,
             Money ledgerAmount) {
         return new JournalLine(
-                accountId,
+                new AccountNumber("ACCOUNT01"),
                 DebitCredit.DEBIT,
                 transactionAmount,
                 ledgerAmount,

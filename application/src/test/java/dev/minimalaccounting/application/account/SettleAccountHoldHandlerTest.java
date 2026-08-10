@@ -6,7 +6,6 @@ import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepository;
 import dev.minimalaccounting.model.account.Account;
 import dev.minimalaccounting.model.account.AccountHoldSettled;
-import dev.minimalaccounting.model.account.AccountIdentifier;
 import dev.minimalaccounting.model.account.SettleAccountHold;
 import org.junit.jupiter.api.Test;
 
@@ -33,19 +32,19 @@ class SettleAccountHoldHandlerTest {
         SettleAccountHoldHandler handler = new SettleAccountHoldHandler(
                 accounts, events::add);
         SettleAccountHold command = new SettleAccountHold(
-                1, 10, 0, DebitCredit.DEBIT, AMOUNT);
+                new AccountNumber("ACCOUNT01"), 10, 0, DebitCredit.DEBIT, AMOUNT);
 
         handler.handle(command);
         handler.handle(command);
 
         assertEquals(
                 List.of(
-                        new AccountHoldSettled(1, 10, 0),
-                        new AccountHoldSettled(1, 10, 0)),
+                        new AccountHoldSettled(new AccountNumber("ACCOUNT01"), 10, 0),
+                        new AccountHoldSettled(new AccountNumber("ACCOUNT01"), 10, 0)),
                 events);
         assertEquals(
                 1100,
-                accounts.get(AccountIdentifier.id(1)).orElseThrow()
+                accounts.get(new AccountNumber("ACCOUNT01")).orElseThrow()
                         .getBalance().minor());
     }
 
@@ -61,6 +60,7 @@ class SettleAccountHoldHandlerTest {
         assertThrows(
                 IllegalStateException.class,
                 () -> handler.handle(new SettleAccountHold(
-                        1, 10, 0, DebitCredit.DEBIT, AMOUNT)));
+                        new AccountNumber("ACCOUNT01"), 10, 0,
+                        DebitCredit.DEBIT, AMOUNT)));
     }
 }

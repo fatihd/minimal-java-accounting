@@ -37,9 +37,9 @@ class TransactionProcessManagerTest {
         assertEquals(
                 List.of(
                         new PlaceAccountHold(
-                                1, 10, 0, DebitCredit.DEBIT, AMOUNT),
+                                account(1), 10, 0, DebitCredit.DEBIT, AMOUNT),
                         new PlaceAccountHold(
-                                2, 10, 1, DebitCredit.DEBIT, AMOUNT)),
+                                account(2), 10, 1, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToPlace());
     }
 
@@ -52,7 +52,7 @@ class TransactionProcessManagerTest {
 
         assertEquals(
                 List.of(new PlaceAccountHold(
-                        2, 10, 1, DebitCredit.DEBIT, AMOUNT)),
+                        account(2), 10, 1, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToPlace());
     }
 
@@ -79,7 +79,8 @@ class TransactionProcessManagerTest {
                 effect(1, AccountEffectState.HELD),
                 effect(2, AccountEffectState.PENDING));
 
-        process.accountHoldPlaced(new AccountHoldPlaced(2, 10, 1), Instant.EPOCH);
+        process.accountHoldPlaced(
+                new AccountHoldPlaced(account(2), 10, 1), Instant.EPOCH);
 
         assertTrue(process.transactionToJournalize().isPresent());
     }
@@ -90,7 +91,8 @@ class TransactionProcessManagerTest {
                 TransactionState.HELD,
                 effect(1, AccountEffectState.HELD));
 
-        process.accountHoldPlaced(new AccountHoldPlaced(1, 10, 0), Instant.EPOCH);
+        process.accountHoldPlaced(
+                new AccountHoldPlaced(account(1), 10, 0), Instant.EPOCH);
 
         assertEquals(
                 new JournalizeTransaction(10),
@@ -104,11 +106,12 @@ class TransactionProcessManagerTest {
                 effect(1, AccountEffectState.DECLINED),
                 effect(2, AccountEffectState.PENDING));
 
-        process.accountHoldPlaced(new AccountHoldPlaced(2, 10, 1), Instant.EPOCH);
+        process.accountHoldPlaced(
+                new AccountHoldPlaced(account(2), 10, 1), Instant.EPOCH);
 
         assertEquals(
                 new ReleaseAccountHold(
-                        2, 10, 1, DebitCredit.DEBIT, AMOUNT),
+                        account(2), 10, 1, DebitCredit.DEBIT, AMOUNT),
                 process.accountHoldToRelease(1).orElseThrow());
     }
 
@@ -152,11 +155,11 @@ class TransactionProcessManagerTest {
                 effect(2, AccountEffectState.HELD));
 
         process.accountHoldDeclined(new AccountHoldDeclined(
-                1, 10, 0, "limit exceeded"));
+                account(1), 10, 0, "limit exceeded"));
 
         assertEquals(
                 List.of(new ReleaseAccountHold(
-                        2, 10, 1, DebitCredit.DEBIT, AMOUNT)),
+                        account(2), 10, 1, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToRelease());
     }
 
@@ -168,11 +171,11 @@ class TransactionProcessManagerTest {
                 effect(2, AccountEffectState.RELEASING));
 
         process.accountHoldDeclined(new AccountHoldDeclined(
-                1, 10, 0, "limit exceeded"));
+                account(1), 10, 0, "limit exceeded"));
 
         assertEquals(
                 List.of(new ReleaseAccountHold(
-                        2, 10, 1, DebitCredit.DEBIT, AMOUNT)),
+                        account(2), 10, 1, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToRelease());
     }
 
@@ -187,7 +190,7 @@ class TransactionProcessManagerTest {
 
         assertEquals(
                 List.of(new SettleAccountHold(
-                        1, 10, 0, DebitCredit.DEBIT, AMOUNT)),
+                        account(1), 10, 0, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToSettle());
     }
 
@@ -203,7 +206,7 @@ class TransactionProcessManagerTest {
 
         assertEquals(
                 List.of(new SettleAccountHold(
-                        2, 10, 1, DebitCredit.DEBIT, AMOUNT)),
+                        account(2), 10, 1, DebitCredit.DEBIT, AMOUNT)),
                 process.accountHoldsToSettle());
     }
 
@@ -213,7 +216,8 @@ class TransactionProcessManagerTest {
                 TransactionState.SETTLING,
                 effect(1, AccountEffectState.SETTLING));
 
-        process.accountHoldPlaced(new AccountHoldPlaced(1, 10, 0), Instant.EPOCH);
+        process.accountHoldPlaced(
+                new AccountHoldPlaced(account(1), 10, 0), Instant.EPOCH);
 
         assertTrue(process.accountHoldToRelease(0).isEmpty());
         assertTrue(process.transactionToJournalize().isEmpty());
@@ -232,11 +236,11 @@ class TransactionProcessManagerTest {
         assertThrows(
                 IllegalStateException.class,
                 () -> release.accountHoldReleased(
-                        new AccountHoldReleased(1, 10, 0)));
+                        new AccountHoldReleased(account(1), 10, 0)));
         assertThrows(
                 IllegalStateException.class,
                 () -> settlement.accountHoldSettled(
-                        new AccountHoldSettled(1, 10, 0)));
+                        new AccountHoldSettled(account(1), 10, 0)));
     }
 
     @Test
@@ -246,7 +250,7 @@ class TransactionProcessManagerTest {
                 effect(1, AccountEffectState.DECLINED),
                 effect(2, AccountEffectState.RELEASING));
 
-        process.accountHoldReleased(new AccountHoldReleased(2, 10, 1));
+        process.accountHoldReleased(new AccountHoldReleased(account(2), 10, 1));
 
         assertFalse(process.completed());
         assertTrue(process.accountHoldsToRelease().isEmpty());
@@ -269,7 +273,7 @@ class TransactionProcessManagerTest {
                 effect(1, AccountEffectState.SETTLING),
                 effect(2, AccountEffectState.SETTLING));
 
-        process.accountHoldSettled(new AccountHoldSettled(1, 10, 0));
+        process.accountHoldSettled(new AccountHoldSettled(account(1), 10, 0));
 
         assertFalse(process.completed());
     }
@@ -288,7 +292,7 @@ class TransactionProcessManagerTest {
                 effect(1, AccountEffectState.SETTLED),
                 effect(2, AccountEffectState.SETTLING));
 
-        process.accountHoldSettled(new AccountHoldSettled(2, 10, 1));
+        process.accountHoldSettled(new AccountHoldSettled(account(2), 10, 1));
 
         assertTrue(process.completed());
     }
@@ -302,7 +306,7 @@ class TransactionProcessManagerTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> process.accountHoldPlaced(
-                        new AccountHoldPlaced(1, 11, 0), Instant.EPOCH));
+                        new AccountHoldPlaced(account(1), 11, 0), Instant.EPOCH));
     }
 
     @Test
@@ -349,10 +353,13 @@ class TransactionProcessManagerTest {
 
     private static AccountEffect effect(long accountId, AccountEffectState state) {
         return new AccountEffect(
-                accountId,
-                new AccountNumber("ACCOUNT0" + accountId),
+                account(accountId),
                 DebitCredit.DEBIT,
                 AMOUNT,
                 state);
+    }
+
+    private static AccountNumber account(long id) {
+        return new AccountNumber("ACCOUNT0" + id);
     }
 }

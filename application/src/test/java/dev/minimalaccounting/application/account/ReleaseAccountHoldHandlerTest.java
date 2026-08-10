@@ -6,7 +6,6 @@ import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.adapters.persistence.inmemory.ConcurrentAccountRepository;
 import dev.minimalaccounting.model.account.Account;
 import dev.minimalaccounting.model.account.AccountHoldReleased;
-import dev.minimalaccounting.model.account.AccountIdentifier;
 import dev.minimalaccounting.model.account.ReleaseAccountHold;
 import org.junit.jupiter.api.Test;
 
@@ -33,19 +32,19 @@ class ReleaseAccountHoldHandlerTest {
         ReleaseAccountHoldHandler handler = new ReleaseAccountHoldHandler(
                 accounts, events::add);
         ReleaseAccountHold command = new ReleaseAccountHold(
-                1, 10, 0, DebitCredit.DEBIT, AMOUNT);
+                new AccountNumber("ACCOUNT01"), 10, 0, DebitCredit.DEBIT, AMOUNT);
 
         handler.handle(command);
         handler.handle(command);
 
         assertEquals(
                 List.of(
-                        new AccountHoldReleased(1, 10, 0),
-                        new AccountHoldReleased(1, 10, 0)),
+                        new AccountHoldReleased(new AccountNumber("ACCOUNT01"), 10, 0),
+                        new AccountHoldReleased(new AccountNumber("ACCOUNT01"), 10, 0)),
                 events);
         assertEquals(
                 0,
-                accounts.get(AccountIdentifier.id(1)).orElseThrow()
+                accounts.get(new AccountNumber("ACCOUNT01")).orElseThrow()
                         .getDebitsHeld().minor());
     }
 
@@ -61,6 +60,7 @@ class ReleaseAccountHoldHandlerTest {
         assertThrows(
                 IllegalStateException.class,
                 () -> handler.handle(new ReleaseAccountHold(
-                        1, 10, 0, DebitCredit.DEBIT, AMOUNT)));
+                        new AccountNumber("ACCOUNT01"), 10, 0,
+                        DebitCredit.DEBIT, AMOUNT)));
     }
 }

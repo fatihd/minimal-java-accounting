@@ -39,7 +39,9 @@ The modules have intentionally narrow responsibilities:
 - `adapters.persistence.in-memory` and `adapters.persistence.postgresql`
   implement `Repository<Identifier, Aggregate>`. The shared test fixture
   exports their detached explicit-update contract, and `add` returns the
-  aggregate-specific identifier rather than assuming a numeric key.
+  aggregate-specific identifier rather than assuming a numeric key. Accounts
+  use `AccountNumber` directly as their sole identity; no parallel generated
+  account ID exists in the model or schema.
 - `adapters.messaging.in-memory` implements local queues, topics, and polling.
 - `adapters.messaging.outbox` is the selected durable messaging adapter. It
   stages sends in PostgreSQL and delivers queues, topics, subscriptions, and

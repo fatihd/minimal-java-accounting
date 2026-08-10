@@ -2,6 +2,7 @@ package dev.minimalaccounting.model.journal;
 
 import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
+import dev.minimalaccounting.model.AccountNumber;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,10 +29,12 @@ class JournalEntryCreationTest {
                 Instant.EPOCH,
                 List.of(
                         new JournalLine(
-                                1, DebitCredit.DEBIT, amount, amount,
+                                new AccountNumber("ACCOUNT01"), DebitCredit.DEBIT,
+                                amount, amount,
                                 new Money(1100, currency)),
                         new JournalLine(
-                                2, DebitCredit.CREDIT, amount, amount,
+                                new AccountNumber("ACCOUNT02"), DebitCredit.CREDIT,
+                                amount, amount,
                                 new Money(900, currency))));
     }
 

@@ -4,7 +4,7 @@ import dev.minimalaccounting.model.journal.JournalEntry;
 import dev.minimalaccounting.model.transaction.Transaction;
 import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.model.account.Account;
-import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.journal.JournalIdentifier;
 import dev.minimalaccounting.model.journal.JournalService;
 import dev.minimalaccounting.model.journal.JournalizeTransaction;
@@ -22,7 +22,7 @@ import java.util.ArrayList;
 @RequiredArgsConstructor
 public final class JournalizeTransactionHandler implements Handler<JournalizeTransaction> {
     @NonNull
-    private final Repository<AccountIdentifier, Account> accounts;
+    private final Repository<AccountNumber, Account> accounts;
     @NonNull
     private final Repository<TransactionIdentifier, Transaction> transactions;
     @NonNull
@@ -48,7 +48,7 @@ public final class JournalizeTransactionHandler implements Handler<JournalizeTra
         }
         ArrayList<Account> values = new ArrayList<>();
         for (var number : transaction.accountNumbers()) {
-            values.add(accounts.get(AccountIdentifier.number(number))
+            values.add(accounts.get(number)
                     .orElseThrow(() -> new IllegalStateException(
                             "Account is not available for journalization: "
                                     + number.value())));

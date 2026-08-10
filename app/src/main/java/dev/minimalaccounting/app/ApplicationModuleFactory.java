@@ -4,7 +4,7 @@ import dev.minimalaccounting.model.journal.JournalIdentifier;
 import dev.minimalaccounting.model.journal.JournalEntry;
 import dev.minimalaccounting.model.transaction.TransactionIdentifier;
 import dev.minimalaccounting.model.transaction.Transaction;
-import dev.minimalaccounting.model.account.AccountIdentifier;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.account.Account;
 import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.application.account.PlaceAccountHoldHandler;
@@ -37,7 +37,7 @@ import java.time.Clock;
 
 @RequiredArgsConstructor
 final class ApplicationModuleFactory {
-    private final Repository<AccountIdentifier, Account> accounts;
+    private final Repository<AccountNumber, Account> accounts;
     private final Repository<TransactionIdentifier, Transaction> transactions;
     private final Repository<JournalIdentifier, JournalEntry> journals;
     private final Sender<PlaceAccountHold> placeAccountHolds;

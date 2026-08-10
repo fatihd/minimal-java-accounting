@@ -4,7 +4,6 @@ import dev.minimalaccounting.shared.ports.Repository;
 import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.model.account.Account;
-import dev.minimalaccounting.model.account.AccountIdentifier;
 
 import lombok.NonNull;
 
@@ -28,7 +27,7 @@ final class AccountFile {
 
     static void load(
             @NonNull Path path,
-            @NonNull Repository<AccountIdentifier, Account> accounts) throws IOException {
+            @NonNull Repository<AccountNumber, Account> accounts) throws IOException {
         List<String> lines = Files.readAllLines(path);
         boolean headerSeen = false;
         int accountCount = 0;
@@ -46,8 +45,7 @@ final class AccountFile {
             }
             try {
                 Account account = account(value);
-                if (accounts.get(AccountIdentifier.number(account.getAccountNumber()))
-                        .isEmpty()) {
+                if (accounts.get(account.getAccountNumber()).isEmpty()) {
                     accounts.add(account);
                 }
                 accountCount++;

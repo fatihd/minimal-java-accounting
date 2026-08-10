@@ -5,7 +5,6 @@ import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
 import dev.minimalaccounting.model.transaction.SubmitTransaction;
 import dev.minimalaccounting.model.account.Account;
-import dev.minimalaccounting.model.account.AccountIdentifier;
 import dev.minimalaccounting.model.journal.JournalIdentifier;
 import dev.minimalaccounting.model.transaction.TransactionIdentifier;
 import dev.minimalaccounting.model.transaction.TransactionState;
@@ -152,7 +151,7 @@ class AccountingFlowTest {
     }
 
     private Account account(String number) {
-        return accounting.accounts.get(AccountIdentifier.number(new AccountNumber(number)))
+        return accounting.accounts.get(new AccountNumber(number))
                 .orElseThrow();
     }
 

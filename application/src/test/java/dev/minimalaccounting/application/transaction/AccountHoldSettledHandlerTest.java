@@ -30,7 +30,8 @@ class AccountHoldSettledHandlerTest {
                 new ConcurrentTransactionRepository());
 
         assertDoesNotThrow(
-                () -> handler.handle(new AccountHoldSettled(1, 99, 0)));
+                () -> handler.handle(new AccountHoldSettled(
+                        new AccountNumber("ACCOUNT01"), 99, 0)));
     }
 
     @Test
@@ -44,7 +45,8 @@ class AccountHoldSettledHandlerTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> handler.handle(new AccountHoldSettled(1, transactionId, 0)));
+                () -> handler.handle(new AccountHoldSettled(
+                        new AccountNumber("ACCOUNT01"), transactionId, 0)));
         assertEquals(
                 AccountEffectState.HELD,
                 transactions.get(TransactionIdentifier.id(transactionId))
@@ -64,7 +66,8 @@ class AccountHoldSettledHandlerTest {
                 effect(2, AccountEffectState.SETTLING))).id();
         AccountHoldSettledHandler handler = new AccountHoldSettledHandler(transactions);
 
-        handler.handle(new AccountHoldSettled(1, transactionId, 0));
+        handler.handle(new AccountHoldSettled(
+                new AccountNumber("ACCOUNT01"), transactionId, 0));
 
         assertEquals(
                 TransactionState.SETTLING,
@@ -83,7 +86,6 @@ class AccountHoldSettledHandlerTest {
 
     private static AccountEffect effect(long accountId, AccountEffectState state) {
         return new AccountEffect(
-                accountId,
                 new AccountNumber("ACCOUNT0" + accountId),
                 DebitCredit.DEBIT,
                 AMOUNT,

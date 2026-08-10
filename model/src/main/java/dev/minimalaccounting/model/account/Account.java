@@ -21,9 +21,8 @@ import java.util.Set;
 @NoArgsConstructor
 public class Account {
     @Setter
-    private Long id;
-    @Setter
     private Long revision;
+    @Setter(AccessLevel.NONE)
     private AccountNumber accountNumber;
     private String name;
     private Money balance;
@@ -40,7 +39,6 @@ public class Account {
             Money maximumBalance) {
         return new Account(
                 null,
-                null,
                 accountNumber,
                 name,
                 balance,
@@ -50,7 +48,6 @@ public class Account {
     }
 
     public Account(
-            Long id,
             Long revision,
             @NonNull AccountNumber accountNumber,
             String name,
@@ -58,7 +55,6 @@ public class Account {
             Money minimumBalance,
             Money maximumBalance,
             @NonNull List<AccountHold> holds) {
-        this.id = id;
         this.revision = revision;
         this.accountNumber = accountNumber;
         if (name == null || name.isBlank()) {

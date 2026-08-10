@@ -27,18 +27,18 @@ public final class TransactionProcessManager {
             Instant occurredAt) {
         requireTransaction(event.transactionId());
         transaction.placeEffect(
-                event.accountId(), event.effectNumber(), occurredAt);
+                event.accountNumber(), event.effectNumber(), occurredAt);
     }
 
     public void accountHoldDeclined(@NonNull AccountHoldDeclined event) {
         requireTransaction(event.transactionId());
         transaction.declineEffect(
-                event.accountId(), event.effectNumber(), event.reason());
+                event.accountNumber(), event.effectNumber(), event.reason());
     }
 
     public void accountHoldReleased(@NonNull AccountHoldReleased event) {
         requireTransaction(event.transactionId());
-        transaction.releaseEffect(event.accountId(), event.effectNumber());
+        transaction.releaseEffect(event.accountNumber(), event.effectNumber());
     }
 
     public void transactionJournalized(
@@ -50,7 +50,7 @@ public final class TransactionProcessManager {
 
     public void accountHoldSettled(@NonNull AccountHoldSettled event) {
         requireTransaction(event.transactionId());
-        transaction.settleEffect(event.accountId(), event.effectNumber());
+        transaction.settleEffect(event.accountNumber(), event.effectNumber());
     }
 
     public List<PlaceAccountHold> accountHoldsToPlace() {
@@ -63,7 +63,7 @@ public final class TransactionProcessManager {
             AccountEffect effect = effects.get(effectNumber);
             if (effect.isAwaitingHold()) {
                 commands.add(new PlaceAccountHold(
-                        effect.getAccountId(), transactionId(), effectNumber,
+                        effect.getAccountNumber(), transactionId(), effectNumber,
                         effect.getSide(), effect.getLedgerAmount()));
             }
         }
@@ -113,7 +113,7 @@ public final class TransactionProcessManager {
             AccountEffect effect = effects.get(effectNumber);
             if (effect.isAwaitingSettlement()) {
                 commands.add(new SettleAccountHold(
-                        effect.getAccountId(), transactionId(), effectNumber,
+                        effect.getAccountNumber(), transactionId(), effectNumber,
                         effect.getSide(), effect.getLedgerAmount()));
             }
         }
@@ -134,7 +134,7 @@ public final class TransactionProcessManager {
 
     private ReleaseAccountHold release(AccountEffect effect, int effectNumber) {
         return new ReleaseAccountHold(
-                effect.getAccountId(), transactionId(), effectNumber,
+                effect.getAccountNumber(), transactionId(), effectNumber,
                 effect.getSide(), effect.getLedgerAmount());
     }
 

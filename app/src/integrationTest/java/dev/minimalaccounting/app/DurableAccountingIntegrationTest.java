@@ -10,7 +10,6 @@ import dev.minimalaccounting.shared.adapters.postgresql.PostgresqlDataSourceFact
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlJournalRepository;
 import dev.minimalaccounting.adapters.persistence.postgresql.PostgresqlTransactionRepository;
 import dev.minimalaccounting.model.account.Account;
-import dev.minimalaccounting.model.account.AccountIdentifier;
 import dev.minimalaccounting.model.journal.JournalIdentifier;
 import dev.minimalaccounting.model.transaction.TransactionIdentifier;
 import dev.minimalaccounting.model.transaction.TransactionState;
@@ -111,10 +110,10 @@ class DurableAccountingIntegrationTest {
             var accounts = new PostgresqlAccountRepository(jdbc);
             long journalEntryId = journals.get(JournalIdentifier.request("request-1"))
                     .orElseThrow().getId();
-            long debitBalance = accounts.get(AccountIdentifier.number(
-                    new AccountNumber("DEBIT001"))).orElseThrow().getBalance().minor();
-            long creditBalance = accounts.get(AccountIdentifier.number(
-                    new AccountNumber("CREDIT01"))).orElseThrow().getBalance().minor();
+            long debitBalance = accounts.get(new AccountNumber("DEBIT001"))
+                    .orElseThrow().getBalance().minor();
+            long creditBalance = accounts.get(new AccountNumber("CREDIT01"))
+                    .orElseThrow().getBalance().minor();
 
             assertEquals(202, submit(server).statusCode());
             await(this::outboxEmpty);
@@ -124,10 +123,10 @@ class DurableAccountingIntegrationTest {
             assertEquals(journalEntryId,
                     journals.get(JournalIdentifier.request("request-1"))
                             .orElseThrow().getId());
-            assertEquals(debitBalance, accounts.get(AccountIdentifier.number(
-                    new AccountNumber("DEBIT001"))).orElseThrow().getBalance().minor());
-            assertEquals(creditBalance, accounts.get(AccountIdentifier.number(
-                    new AccountNumber("CREDIT01"))).orElseThrow().getBalance().minor());
+            assertEquals(debitBalance, accounts.get(new AccountNumber("DEBIT001"))
+                    .orElseThrow().getBalance().minor());
+            assertEquals(creditBalance, accounts.get(new AccountNumber("CREDIT01"))
+                    .orElseThrow().getBalance().minor());
         }
     }
 

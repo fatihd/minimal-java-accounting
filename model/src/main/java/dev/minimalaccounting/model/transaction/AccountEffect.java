@@ -14,7 +14,6 @@ import lombok.Setter;
 @Setter(AccessLevel.PACKAGE)
 @NoArgsConstructor
 public class AccountEffect {
-    private long accountId;
     private AccountNumber accountNumber;
     private DebitCredit side;
     private Money ledgerAmount;
@@ -22,18 +21,13 @@ public class AccountEffect {
     private AccountEffectState state;
 
     public AccountEffect(
-            long accountId,
             @NonNull AccountNumber accountNumber,
             @NonNull DebitCredit side,
             @NonNull Money ledgerAmount,
             @NonNull AccountEffectState state) {
-        if (accountId < 1) {
-            throw new IllegalArgumentException("accountId must be positive");
-        }
         if (ledgerAmount.minor() <= 0) {
             throw new IllegalArgumentException("ledgerAmount must be positive");
         }
-        this.accountId = accountId;
         this.accountNumber = accountNumber;
         this.side = side;
         this.ledgerAmount = ledgerAmount;
@@ -41,7 +35,6 @@ public class AccountEffect {
     }
 
     static AccountEffect pending(
-            long accountId,
             @NonNull AccountNumber accountNumber,
             @NonNull Money netChange) {
         if (netChange.minor() == 0) {
@@ -49,7 +42,6 @@ public class AccountEffect {
         }
         boolean debit = netChange.minor() > 0;
         return new AccountEffect(
-                accountId,
                 accountNumber,
                 debit ? DebitCredit.DEBIT : DebitCredit.CREDIT,
                 new Money(
@@ -147,8 +139,8 @@ public class AccountEffect {
         };
     }
 
-    void requireAccount(long expectedAccountId) {
-        if (accountId != expectedAccountId) {
+    void requireAccount(AccountNumber expectedAccountNumber) {
+        if (!accountNumber.equals(expectedAccountNumber)) {
             throw new IllegalArgumentException("Account does not match transaction effect");
         }
     }

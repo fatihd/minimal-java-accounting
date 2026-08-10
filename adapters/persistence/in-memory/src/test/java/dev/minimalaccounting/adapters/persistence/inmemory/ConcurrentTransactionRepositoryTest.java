@@ -50,10 +50,10 @@ class ConcurrentTransactionRepositoryTest
                 null,
                 List.of(
                         new TransactionLine(
-                                41, new AccountNumber("DEBIT001"), DebitCredit.DEBIT,
+                                new AccountNumber("DEBIT001"), DebitCredit.DEBIT,
                                 AMOUNT, AMOUNT),
                         new TransactionLine(
-                                42, new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
+                                new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
                                 AMOUNT, AMOUNT)),
                 List.of());
     }
@@ -80,7 +80,7 @@ class ConcurrentTransactionRepositoryTest
 
     @Override
     protected void secondChange(Transaction value) {
-        value.placeEffect(41, 0, Instant.EPOCH.plusSeconds(1));
+        value.placeEffect(new AccountNumber("DEBIT001"), 0, Instant.EPOCH.plusSeconds(1));
     }
 
     @Override
@@ -91,17 +91,17 @@ class ConcurrentTransactionRepositoryTest
     }
 
     @Test
-    void preservesResolvedAccountIdentity() {
+    void preservesResolvedAccountNumber() {
         Transaction transaction = createValue();
         TransactionIdentifier identifier = repository.add(transaction);
 
         assertEquals(
-                41,
+                new AccountNumber("DEBIT001"),
                 repository.get(identifier)
                         .orElseThrow()
                         .getLines()
                         .getFirst()
-                        .getAccountId());
+                        .getAccountNumber());
     }
 
     @Test

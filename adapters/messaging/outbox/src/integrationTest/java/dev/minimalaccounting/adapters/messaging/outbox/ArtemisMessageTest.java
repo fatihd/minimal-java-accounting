@@ -1,6 +1,7 @@
 package dev.minimalaccounting.adapters.messaging.outbox;
 
 import dev.minimalaccounting.model.account.PlaceAccountHold;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,7 @@ class ArtemisMessageTest {
                      ArtemisTestBroker.uniqueName("business-message"),
                      PlaceAccountHold.class)) {
             PlaceAccountHold expected = new PlaceAccountHold(
-                    41,
+                    new AccountNumber("ACCOUNT41"),
                     73,
                     2,
                     DebitCredit.DEBIT,

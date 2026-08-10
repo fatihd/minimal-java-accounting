@@ -143,7 +143,6 @@ public final class PostgresqlTransactionRepository implements Repository<Transac
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
                     values.add(new TransactionLine(
-                            result.getLong("account_id"),
                             new AccountNumber(result.getString("account_number")),
                             DebitCredit.valueOf(result.getString("side")),
                             JdbcValues.money(
@@ -169,7 +168,6 @@ public final class PostgresqlTransactionRepository implements Repository<Transac
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
                     values.add(new AccountEffect(
-                            result.getLong("account_id"),
                             new AccountNumber(result.getString("account_number")),
                             DebitCredit.valueOf(result.getString("side")),
                             JdbcValues.money(
@@ -200,23 +198,22 @@ public final class PostgresqlTransactionRepository implements Repository<Transac
             throws SQLException {
         try (var statement = connection.prepareStatement("""
                 INSERT INTO transaction_line(
-                    transaction_id, line_number, account_id, account_number, side,
+                    transaction_id, line_number, account_number, side,
                     transaction_amount_minor, transaction_currency,
                     ledger_amount_minor, ledger_currency)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """)) {
             int lineNumber = 0;
             for (TransactionLine line : value.getLines()) {
                 statement.setLong(1, id);
                 statement.setInt(2, lineNumber++);
-                statement.setLong(3, line.getAccountId());
-                statement.setString(4, line.getAccountNumber().value());
-                statement.setString(5, line.getSide().name());
-                statement.setLong(6, line.getTransactionAmount().minor());
-                statement.setString(7,
+                statement.setString(3, line.getAccountNumber().value());
+                statement.setString(4, line.getSide().name());
+                statement.setLong(5, line.getTransactionAmount().minor());
+                statement.setString(6,
                         line.getTransactionAmount().currency().getCurrencyCode());
-                statement.setLong(8, line.getLedgerAmount().minor());
-                statement.setString(9, line.getLedgerAmount().currency().getCurrencyCode());
+                statement.setLong(7, line.getLedgerAmount().minor());
+                statement.setString(8, line.getLedgerAmount().currency().getCurrencyCode());
                 statement.addBatch();
             }
             statement.executeBatch();
@@ -227,21 +224,20 @@ public final class PostgresqlTransactionRepository implements Repository<Transac
             throws SQLException {
         try (var statement = connection.prepareStatement("""
                 INSERT INTO account_effect(
-                    transaction_id, effect_number, account_id, account_number,
+                    transaction_id, effect_number, account_number,
                     side, ledger_amount_minor, ledger_currency, state)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """)) {
             int effectNumber = 0;
             for (AccountEffect effect : value.getEffects()) {
                 statement.setLong(1, id);
                 statement.setInt(2, effectNumber++);
-                statement.setLong(3, effect.getAccountId());
-                statement.setString(4, effect.getAccountNumber().value());
-                statement.setString(5, effect.getSide().name());
-                statement.setLong(6, effect.getLedgerAmount().minor());
-                statement.setString(7,
+                statement.setString(3, effect.getAccountNumber().value());
+                statement.setString(4, effect.getSide().name());
+                statement.setLong(5, effect.getLedgerAmount().minor());
+                statement.setString(6,
                         effect.getLedgerAmount().currency().getCurrencyCode());
-                statement.setString(8, effect.getState().name());
+                statement.setString(7, effect.getState().name());
                 statement.addBatch();
             }
             statement.executeBatch();

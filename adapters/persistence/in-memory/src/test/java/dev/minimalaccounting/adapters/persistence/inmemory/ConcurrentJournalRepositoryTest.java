@@ -3,6 +3,7 @@ package dev.minimalaccounting.adapters.persistence.inmemory;
 import dev.minimalaccounting.model.journal.JournalEntry;
 import dev.minimalaccounting.model.journal.JournalLine;
 import dev.minimalaccounting.model.journal.JournalIdentifier;
+import dev.minimalaccounting.model.AccountNumber;
 import dev.minimalaccounting.model.DebitCredit;
 import dev.minimalaccounting.model.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,10 +70,12 @@ class ConcurrentJournalRepositoryTest {
                 Instant.EPOCH,
                 List.of(
                         new JournalLine(
-                                1, DebitCredit.DEBIT, AMOUNT, AMOUNT,
+                                new AccountNumber("DEBIT001"), DebitCredit.DEBIT,
+                                AMOUNT, AMOUNT,
                                 new Money(1100, USD)),
                         new JournalLine(
-                                2, DebitCredit.CREDIT, AMOUNT, AMOUNT,
+                                new AccountNumber("CREDIT01"), DebitCredit.CREDIT,
+                                AMOUNT, AMOUNT,
                                 new Money(900, USD))));
     }
 }
