@@ -26,11 +26,7 @@ sealed interface RuntimeModules permits InMemoryModules, DurableModules {
 
     MessagingComponents messaging();
 
-    AccountingDestinations destinations();
-
     HandlerWrapper handlerWrapper();
-
-    String receiveName(String localName, String destination);
 
     <T> IntSupplier poller(Receiver<T> receiver, Handler<T> handler, int batchSize);
 
@@ -44,18 +40,12 @@ sealed interface RuntimeModules permits InMemoryModules, DurableModules {
 }
 
 record InMemoryModules(
-        AccountingDestinations destinations,
         InMemoryPersistenceModuleFactory persistence,
         InMemoryMessagingModuleFactory messaging) implements RuntimeModules {
 
     @Override
     public HandlerWrapper handlerWrapper() {
         return HandlerWrapper.identity();
-    }
-
-    @Override
-    public String receiveName(String localName, String destination) {
-        return "receive." + localName;
     }
 
     @Override
@@ -84,7 +74,6 @@ record InMemoryModules(
 }
 
 record DurableModules(
-        AccountingDestinations destinations,
         PostgresqlModuleFactory postgresql,
         PostgresqlPersistenceModuleFactory persistence,
         OutboxMessagingModuleFactory messaging) implements RuntimeModules {
@@ -98,11 +87,6 @@ record DurableModules(
                         .inTransaction(() -> handler.handle(message));
             }
         };
-    }
-
-    @Override
-    public String receiveName(String localName, String destination) {
-        return "receive." + destination;
     }
 
     @Override

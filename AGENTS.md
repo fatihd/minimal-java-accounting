@@ -183,20 +183,24 @@
 - Keep lazy factory fields in topological order. When one produced field depends
   on another, call its getter; avoid nested object construction in field
   initializers. Prefer independent fields where the graph permits it.
-- Module factories expose undecorated objects owned by their represented
-  module, except that factories creating application handlers receive one
-  already-composed, type-preserving handler wrapper from outer composition.
-  Apply that wrapper at the same lazy field that constructs the handler. Fake
-  composition supplies identity; durable composition adds its transaction
-  boundary. Do not duplicate observed and transactional handler fields in the
-  overall factory.
+- Factories creating application handlers receive one already-composed,
+  type-preserving handler wrapper from outer composition. Apply it at the same
+  lazy field that constructs the handler. Fake composition supplies identity;
+  durable composition adds its transaction boundary. Messaging factories
+  likewise receive type-preserving sender and receiver wrappers and apply them
+  where each port view is created. A duplex queue may retain one raw adapter for
+  routing or lifecycle while exposing distinct memoized wrapped sender and
+  receiver views. Do not duplicate raw and decorated ports in the overall
+  factory.
 - Use a generic-method handler-wrapper contract for one wrapper shared across
   heterogeneous `Handler<T>` types. An ordinary JDK `Function<X, X>` cannot
   express that rank-polymorphic relationship without unchecked casts. Keep
   wrapper composition type-preserving and provide explicit identity and
   composition operations.
-- The overall `ApplicationFactory` owns cross-module joins, boundary-wrapper
-  composition, pollers, outbox routes, and runtime assembly.
+- The overall `ApplicationFactory` owns cross-module joins, handler-wrapper
+  composition, pollers, and runtime assembly. Module factories own their
+  adapter-specific outbox routes and apply the sender and receiver wrappers
+  supplied by composition.
 
 ## Persistence and messaging
 

@@ -394,3 +394,19 @@ hydrates and snapshots the same sorted map shape.
 The extraction reduced `Transaction` from 302 to 266 physical lines while
 adding one 79-line cohesive type. Existing aggregate behavior tests cover every
 line and branch of both classes, so no decomposition-specific tests were added.
+
+## 2026-08-10 — Wrap messaging ports in their module factories
+
+Passed type-preserving sender and receiver wrappers into both messaging module
+factories and applied them at each memoized port-view field. Raw duplex adapters
+remain available inside those factories for queue depth, outbox routes, and
+broker lifecycle. The overall factory now consumes decorated messaging
+components directly and no longer owns repeated sender, receiver, or
+runtime-specific observation-name fields.
+
+This moved explicit wiring to the factories that own the adapters: the overall
+factory fell from 309 to 188 physical lines, while total app production source
+grew by 46 lines because raw duplex adapters and their two decorated views are
+represented honestly. Docker-free and durable integration suites pass, and a
+focused wiring test confirms that sender, receive, and acknowledgement metrics
+remain attached to the shared underlying queue.

@@ -44,6 +44,13 @@ apply it at creation time. Fake composition contributes an identity wrapper;
 durable composition contributes the shared JDBC transaction boundary. This is
 internal wiring within `app` and does not add a module or logical port.
 
+The infrastructure factory also supplies type-preserving sender and receiver
+wrappers to the selected messaging factory. Each messaging factory applies the
+wrappers where it creates the corresponding port view, while retaining its raw
+duplex queue or topic only for adapter-specific routing and lifecycle. The
+overall factory therefore consumes already-decorated messaging components
+without repeating every sender and receiver.
+
 Regenerate the checked-in image with:
 
 ```shell

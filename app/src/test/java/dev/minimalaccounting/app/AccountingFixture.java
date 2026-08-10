@@ -25,11 +25,12 @@ final class AccountingFixture {
     private final ApplicationFactory application;
 
     AccountingFixture(Clock clock) {
-        var persistence = new InMemoryPersistenceModuleFactory();
-        messaging = new InMemoryMessagingModuleFactory();
-        var modules = new InMemoryModules(
-                AccountingDestinations.prefixed("test"), persistence, messaging);
         var infrastructure = new InfrastructureModuleFactory(clock);
+        var persistence = new InMemoryPersistenceModuleFactory();
+        messaging = new InMemoryMessagingModuleFactory(
+                infrastructure.getSenderWrapper(),
+                infrastructure.getReceiverWrapper());
+        var modules = new InMemoryModules(persistence, messaging);
         application = new ApplicationFactory(clock, modules, infrastructure);
 
         accounts = persistence.getAccountRepository();

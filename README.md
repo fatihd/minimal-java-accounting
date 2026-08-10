@@ -73,7 +73,10 @@ application module factory. Each lazy handler is wrapped where it is created;
 fake composition supplies `identity()` while durable composition adds the JDBC
 transaction boundary. A small generic-method interface is used because one JDK
 `Function<X, X>` cannot remain type-safe across heterogeneous `Handler<T>`
-types.
+types. The infrastructure factory similarly supplies type-preserving sender and
+receiver wrappers to each messaging module factory. Those factories retain raw
+duplex adapters for routing and lifecycle but expose memoized decorated port
+views; the overall factory no longer repeats every messaging boundary.
 
 Feature adapters do not depend on one another. Composition supplies shared
 technical support to each adapter independently: the PostgreSQL persistence
