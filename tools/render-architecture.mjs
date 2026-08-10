@@ -30,13 +30,13 @@ const nodes = [
   { id: "persistencePort", x: 1200, y: 835, width: 650, height: PORT_HEIGHT, kind: "infrastructurePort", label: "persistence", detail: "Repository<Identifier, Aggregate> · TransactionBoundary", role: "logical persistence ports", logical: true },
   { id: "sharedPorts", x: 2220, y: 835, width: 240, height: ADAPTER_HEIGHT, kind: "shared", label: "shared.ports", role: "generic port contracts" },
   { id: "outbox", x: 480, y: 1085, width: 650, height: ADAPTER_HEIGHT, kind: "infrastructureAdapter", label: "adapters.messaging.outbox", role: "PostgreSQL outbox to Artemis" },
-  { id: "postgresqlPersistence", x: 1240, y: 1085, width: 610, height: ADAPTER_HEIGHT, kind: "infrastructureAdapter", label: "adapters.persistence.postgresql", role: "plain JDBC repositories" },
+  { id: "postgresqlPersistence", x: 1220, y: 1085, width: 610, height: ADAPTER_HEIGHT, kind: "infrastructureAdapter", label: "adapters.persistence.postgresql", role: "plain JDBC repositories" },
   { id: "sharedPostgresql", x: 1985, y: 1085, width: 475, height: ADAPTER_HEIGHT, kind: "shared", label: "shared.adapters.postgresql", role: "shared JDBC transactions and migrations" },
 ];
 
 const resources = [
   { id: "artemisBroker", x: 550, y: 1350, width: 500, height: 70, orientation: "horizontal", label: "Apache Artemis", detail: "broker" },
-  { id: "postgresqlDatabase", x: 2140, y: 1305, width: 170, height: 165, orientation: "vertical", label: "PostgreSQL", detail: "database" },
+  { id: "postgresqlDatabase", x: 1440, y: 1305, width: 170, height: 165, orientation: "vertical", label: "PostgreSQL", detail: "database" },
 ];
 
 const node = (id) => nodes.find((candidate) => candidate.id === id);
@@ -54,12 +54,10 @@ const edges = [
   `M ${right("application")} ${centerY("application")} L ${left("model")} ${centerY("model")}`,
   `M 700 ${bottom("application")} L 700 ${top("messagingPort")}`,
   `M 950 ${bottom("application")} L 950 770 L 1450 770 L 1450 ${top("persistencePort")}`,
-  `M ${right("postgresqlPersistence")} ${centerY("postgresqlPersistence")} L ${left("sharedPostgresql")} ${centerY("sharedPostgresql")}`,
-  `M 1080 ${bottom("outbox")} L 1080 1260 L 2050 1260 L 2050 ${bottom("sharedPostgresql")}`,
   `M 805 ${bottom("outbox")} L 805 ${resource("artemisBroker").y}`,
-  `M ${centerX("sharedPostgresql")} ${bottom("sharedPostgresql")} L ${centerX("sharedPostgresql")} 1245 L ${resource("postgresqlDatabase").x + resource("postgresqlDatabase").width / 2} 1245 L ${resource("postgresqlDatabase").x + resource("postgresqlDatabase").width / 2} ${resource("postgresqlDatabase").y}`,
+  `M 1080 ${bottom("outbox")} L 1080 1260 L 1400 1260 L 1400 ${resource("postgresqlDatabase").y + resource("postgresqlDatabase").height / 2} L ${resource("postgresqlDatabase").x} ${resource("postgresqlDatabase").y + resource("postgresqlDatabase").height / 2}`,
+  `M ${centerX("postgresqlPersistence")} ${bottom("postgresqlPersistence")} L ${centerX("postgresqlPersistence")} ${resource("postgresqlDatabase").y}`,
   `M ${right("postgresqlPersistence")} ${centerY("postgresqlPersistence") - 18} L 1920 ${centerY("postgresqlPersistence") - 18} L 1920 ${centerY("model")} L ${right("model")} ${centerY("model")}`,
-  `M ${centerX("sharedPostgresql")} ${top("sharedPostgresql")} L ${centerX("sharedPostgresql")} ${bottom("sharedPorts")}`,
 ];
 
 const implementationEdges = [

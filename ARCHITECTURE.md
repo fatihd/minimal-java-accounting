@@ -28,7 +28,9 @@ transactional PostgreSQL staging and Artemis delivery.
 `adapters.persistence.postgresql` implements persistence and depends on the
 model because repository adapters reconstruct model aggregates. Both use the
 neutral `shared.adapters.postgresql` technical foundation; neither feature
-adapter depends on the other.
+adapter depends on the other. The shared module remains visible without its
+ordinary dependency arrows to reduce noise. Filled arrows from both adapters to
+the PostgreSQL cylinder show their direct JDBC use.
 
 Regenerate the checked-in image with:
 

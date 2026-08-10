@@ -51,15 +51,13 @@
   <path class="edge" d="M 1065 610 L 1250 610"/>
   <path class="edge" d="M 700 685 L 700 835"/>
   <path class="edge" d="M 950 685 L 950 770 L 1450 770 L 1450 835"/>
-  <path class="edge" d="M 1850 1135 L 1985 1135"/>
-  <path class="edge" d="M 1080 1185 L 1080 1260 L 2050 1260 L 2050 1185"/>
   <path class="edge" d="M 805 1185 L 805 1350"/>
-  <path class="edge" d="M 2222.5 1185 L 2222.5 1245 L 2225 1245 L 2225 1305"/>
-  <path class="edge" d="M 1850 1117 L 1920 1117 L 1920 610 L 1750 610"/>
-  <path class="edge" d="M 2222.5 1085 L 2222.5 935"/>
+  <path class="edge" d="M 1080 1185 L 1080 1260 L 1400 1260 L 1400 1387.5 L 1440 1387.5"/>
+  <path class="edge" d="M 1525 1185 L 1525 1305"/>
+  <path class="edge" d="M 1830 1117 L 1920 1117 L 1920 610 L 1750 610"/>
   <path class="edge implementation-edge" d="M 760 535 L 760 470 L 1150 470 L 1150 402"/>
   <path class="edge implementation-edge" d="M 805 1085 L 805 902"/>
-  <path class="edge implementation-edge" d="M 1545 1085 L 1545 902"/>
+  <path class="edge implementation-edge" d="M 1525 1085 L 1525 902"/>
 
   <g>
     <title>app — composition root</title>
@@ -123,9 +121,9 @@
   </g>
   <g>
     <title>adapters.persistence.postgresql — plain JDBC repositories</title>
-    <rect class="node" x="1240" y="1085" width="610" height="100" fill="#eaf8ee" stroke="#3e8b58"/>
-    <text class="module" x="1545" y="1129">adapters.persistence.postgresql</text>
-    <text class="package" x="1545" y="1158">d.m.adapters.persistence.postgresql</text>
+    <rect class="node" x="1220" y="1085" width="610" height="100" fill="#eaf8ee" stroke="#3e8b58"/>
+    <text class="module" x="1525" y="1129">adapters.persistence.postgresql</text>
+    <text class="package" x="1525" y="1158">d.m.adapters.persistence.postgresql</text>
   </g>
   <g>
     <title>shared.adapters.postgresql — shared JDBC transactions and migrations</title>
@@ -143,11 +141,11 @@
   </g>
   <g>
     <title>PostgreSQL — external database</title>
-    <rect class="resource-body" x="2140" y="1325" width="170" height="125"/>
-    <ellipse class="resource-cap" cx="2225" cy="1325" rx="85" ry="20"/>
-    <ellipse class="resource-cap" cx="2225" cy="1450" rx="85" ry="20"/>
-    <text class="module resource-label" x="2225" y="1384.5">PostgreSQL</text>
-    <text class="package" x="2225" y="1410.5">database</text>
+    <rect class="resource-body" x="1440" y="1325" width="170" height="125"/>
+    <ellipse class="resource-cap" cx="1525" cy="1325" rx="85" ry="20"/>
+    <ellipse class="resource-cap" cx="1525" cy="1450" rx="85" ry="20"/>
+    <text class="module resource-label" x="1525" y="1384.5">PostgreSQL</text>
+    <text class="package" x="1525" y="1410.5">database</text>
   </g>
   <line x1="55" y1="1530" x2="2445" y2="1530" stroke="#d7dee1" stroke-width="1.5"/>
   <text class="note" x="55" y="1568">Solid boxes are Gradle modules; dashed boxes are logical typed ports; cylinders are independently deployed external systems.</text>

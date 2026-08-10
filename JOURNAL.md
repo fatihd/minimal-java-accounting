@@ -284,3 +284,10 @@ modules. The repository adapter has a separate dependency arrow to `model`,
 making aggregate reconstruction visible in addition to its implementation of
 the logical persistence port. Documented the rule that feature adapters do not
 depend on one another and receive common technical context from composition.
+
+## 2026-08-10 — Emphasize direct JDBC resource use
+
+Aligned the PostgreSQL resource with the persistence port and gave the outbox
+and repository adapters separate filled arrows to the database they access.
+Kept shared PostgreSQL support visible as neutral structure while omitting its
+ordinary dependency arrows, which are already captured by the module table.
