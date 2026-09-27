@@ -1,5 +1,5 @@
 dependencies {
     api project(':model')
     api project(':shared.ports')
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.3'
 }
